@@ -35,6 +35,11 @@ class ModuleInitializer(object):
         for module, context in sorted(
                 self._registered_modules,
                 key=lambda mod: mod[0].get_module_order()):
+
+            # make sure module is not already initialized
+            if module in self._initialized_modules:
+                continue
+
             if safe:
                 try:
                     module.initialize(context)

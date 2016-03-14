@@ -15,6 +15,7 @@ from nio.testing.modules.persistence.module \
 from nio.testing.modules.communication.module \
     import TestingCommunicationModule
 from nio.testing.modules.security.module import TestingSecurityModule
+from nio.testing.modules.settings.module import TestingSettingsModule
 from nio.testing.modules.web.module import TestingWebModule
 
 
@@ -43,7 +44,26 @@ class NIOTestCase(TestCase):
 
         """
         self._module_initializer = ModuleInitializer()
-        for module_name in self.get_test_modules():
+
+        modules = self.get_test_modules()
+
+        # fully initialize settings before allowing any other module
+        # to be initialized
+        if "settings" in modules:
+            module_name = "settings"
+            module = self.get_module(module_name)
+            self._module_initializer.register_module(
+                module,
+                self.get_context(module_name, module))
+            self._module_initializer.initialize(safe=True)
+            # remove "settings" from any further processing
+            modules.remove(module_name)
+
+            # Now that Settings module is initialized, allow tests to set
+            # settings before the rest of the modules are initialized
+            self.set_settings()
+
+        for module_name in modules:
             module = self.get_module(module_name)
             self._module_initializer.register_module(
                 module,
@@ -70,6 +90,7 @@ class NIOTestCase(TestCase):
             'persistence': TestingPersistenceModule,
             'security': TestingSecurityModule,
             'communication': TestingCommunicationModule,
+            'settings': TestingSettingsModule,
             'web': TestingWebModule
         }
         if module_name not in known_modules:
@@ -99,7 +120,16 @@ class NIOTestCase(TestCase):
         Override this method to customize which modules you want to load
         during a test
         """
-        return {'scheduler', 'persistence'}
+        return {'settings', 'scheduler', 'persistence'}
+
+    def set_settings(self):
+        """ Allows test to set settings after 'settings' module is initialized
+
+        A given test can set settings by making calls such as:
+            Settings.set([section], [option], value)
+
+        """
+        pass
 
     def get_logging_config(self):
         """ Specifies the default logging configuration """
