@@ -9,6 +9,7 @@ from unittest import TestCase
 from nio.modules.initializer import ModuleInitializer
 
 # Testing module implementations
+from nio.modules.settings import Settings
 from nio.testing.modules.scheduler.module import TestingSchedulerModule
 from nio.testing.modules.persistence.module \
     import TestingPersistenceModule
@@ -176,6 +177,11 @@ class NIOTestCase(TestCase):
         self.setupModules()
 
     def tearDown(self):
+        try:
+            Settings.clear()
+        except NotImplementedError:
+            # can be triggered if test chooses not to have a Settings module
+            pass
         super().tearDown()
         self.tearDownModules()
 

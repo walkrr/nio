@@ -1,9 +1,11 @@
+from collections import defaultdict
+
 
 class Settings(object):
 
     """ Helper class to store settings """
 
-    _settings = {}
+    _settings = defaultdict(dict)
 
     @classmethod
     def get(cls, section=None, option=None, *args, **kwargs):
@@ -81,11 +83,9 @@ class Settings(object):
         if option is None:
             cls._settings[section] = value
         else:
-            if section not in cls._settings:
-                cls._settings[section] = {}
             cls._settings[section][option] = value
 
     @classmethod
     def clear(cls):
-        """Replace the current settings with empty """
-        cls._settings = {}
+        """ Reset settings """
+        cls._settings.clear()

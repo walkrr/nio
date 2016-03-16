@@ -4,10 +4,6 @@ from nio.testing.test_case import NIOTestCase
 
 class TestSettings(NIOTestCase):
 
-    def setUp(self):
-        super().setUp()
-        Settings.clear()
-
     def test_clear(self):
         settings = {'attr1': 'value1', 'attr2': 'value2'}
         Settings.set('attrs', value=settings)
@@ -65,3 +61,8 @@ class TestSettings(NIOTestCase):
         # Assert that previous values remain
         self.assertEqual(Settings.getint('test_section', 'int_attr'), 1)
         self.assertEqual(Settings.getfloat('test_section', 'float_attr'), 1.2)
+
+        # Assert that an option can be set to a brand new section
+        Settings.set('new_section', "boolean_attr", 'True')
+        self.assertTrue(Settings.getboolean('new_section', 'boolean_attr'))
+
