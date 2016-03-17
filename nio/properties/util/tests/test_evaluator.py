@@ -1,3 +1,4 @@
+import types
 from nio.properties.util.evaluator import Evaluator
 from nio.properties.exceptions import InvalidEvaluationCall
 from nio.signal.base import Signal
@@ -99,3 +100,16 @@ class TestEvaluator(NIOTestCaseNoModules):
             evaluator = Evaluator(expression)
             with self.assertRaises(InvalidEvaluationCall):
                 evaluator.evaluate()
+
+    def test_imported_libraries(self):
+        """Certain libraries should be able to be used in expressions."""
+        expressions = [
+            "{{ datetime }}",
+            "{{ json }}",
+            "{{ math }}",
+            "{{ random }}",
+            "{{ re }}",
+        ]
+        for expression in expressions:
+            evaluator = Evaluator(expression)
+            self.assertTrue(isinstance(evaluator.evaluate(), types.ModuleType))
