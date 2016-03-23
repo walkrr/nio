@@ -22,15 +22,17 @@ class ModuleInitializer(object):
         self._registered_modules = []
         self._initialized_modules = []
 
-    def initialize(self, safe=False):
-        """ Initialize and proxy any registered proxy implmentations.
+    def initialize(self, safe=False, raise_already_proxied=True):
+        """ Initialize and proxy any registered module proxy implementations.
 
-        This function will proxy any implmentations that have been registered
-        with this ModuleInitializer.
+        This function will initialize any module implementations that have been
+        registered with this ModuleInitializer.
 
         Args:
             safe (bool): True if you want the initialize to unproxy the proxy
                 first, before trying to proxy it. Defaults to False
+            raise_already_proxied (bool): True if you want to re-raise a
+                ProxyAlreadyProxied exception, False will just log a warning
         """
         for module, context in sorted(
                 self._registered_modules,
@@ -40,30 +42,32 @@ class ModuleInitializer(object):
             if module in self._initialized_modules:
                 continue
 
-            if safe:
-                try:
-                    module.initialize(context)
-                except ProxyAlreadyProxied:
-                    self.logger.warning(
-                        "Module {} was already proxied, unproxying and trying "
-                        "again".format(module.__class__.__name__))
+            try:
+                module.initialize(context)
+            except ProxyAlreadyProxied:
+                self.logger.warning(
+                    "Interface implemented by module '{}' is already proxied".
+                    format(module.__class__.__name__))
+                if safe:
+                    self.logger.warning("Unproxying and trying again")
                     module.finalize()
                     module.initialize(context)
-            else:
-                module.initialize(context)
+                else:
+                    if raise_already_proxied:
+                        raise
+                    continue
+
+            self.logger.info("Module {} is initialized".
+                             format(module.__class__.__name__))
             # Add this module to the list of modules that have been proxied
             self._initialized_modules.append(module)
 
     def register_module(self, module, context):
-        """ Register an implmentation of the WebEngine proxy
-
-        The class registered here will be proxied when the module initializer
-        is initialized. The implementation class can also be passed to that
-        method directly.
+        """ Register a module and context to use for its initialization
 
         Args:
-            implmentation_class (class): A class containing the implementation
-                for the WebEngine proxy
+            module (Module): A nio module implementation
+            context (ModuleContext): context to use when initializing module
 
         Raises:
             TypeError: if the implementation class is not a class
