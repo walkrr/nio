@@ -107,21 +107,6 @@ class TestModuleInitializer(NIOTestCaseNoModules):
         # We should not have finalized either
         self.assertEqual(impl.finalize.call_count, 0)
 
-    def test_safe_initialize(self):
-        """ Test that a safe module initialize tries to finalize first """
-        initializer = ModuleInitializer()
-        # Our implementation is a module that raises ProxyAlreadyProxied
-        # the first time it is called, but succeeds the second time.
-        # This simulates a module proxy getting unproxied in the middle
-        impl = MagicMock(spec=TestModuleInterface)
-        impl.initialize.side_effect = [ProxyAlreadyProxied, None]
-        initializer.register_module(impl, ModuleContext())
-        # This call should not raise an exception, it should make it to the
-        # second initialize call
-        initializer.initialize(safe=True)
-        # We should have seen a finalize call in the middle
-        impl.finalize.assert_called_once_with()
-
     def test_unsafe_finalize(self):
         """ Test that an unsafe module finalize raises an exception """
         initializer = ModuleInitializer()

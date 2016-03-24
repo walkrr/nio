@@ -33,6 +33,8 @@ class NIOTestCase(TestCase):
         super().__init__(*args, **kwargs)
 
         logging.config.dictConfig(self.get_logging_config())
+        # make sure modules are tearDown regardless of test outcome
+        self.addCleanup(self.tearDownModules)
 
     def setupModules(self):
         """ Initializes the modules that will be active when running the test
@@ -113,7 +115,11 @@ class NIOTestCase(TestCase):
 
     def tearDownModules(self):
         # Perform a safe finalization in case anything wasn't proxied first
-        self._module_initializer.finalize(safe=True)
+        try:
+            self._module_initializer.finalize(safe=True)
+        except AttributeError:
+            # cover case when setupModules method was not called
+            pass
 
     def get_test_modules(self):
         """ Returns set of modules to load during test
