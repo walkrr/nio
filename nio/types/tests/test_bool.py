@@ -57,10 +57,3 @@ class TestBool(NIOTestCase):
         self.assert_deserialize_equals({}, False)
         self.assert_deserialize_equals([], False)
         self.assert_deserialize_equals(None, False)
-
-    def test_deserialize_has_no_invalid_values(self):
-        """No values will raise a deserialize TypeError"""
-        with self.assertRaises(TypeError):
-            raise TypeError
-            # Replace this with an invalid value if there is one
-            # BoolType.deserialize(None)
