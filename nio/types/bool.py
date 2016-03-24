@@ -12,6 +12,12 @@ class BoolType(Type):
     def deserialize(value, **kwargs):
         """ Convert value to bool"""
         try:
+            if isinstance(value, str) and \
+                    value.lower() in ['true', 'yes', 'on']:
+                return True
+            elif isinstance(value, str) and \
+                    value.lower() in ['false', 'no', 'off']:
+                return False
             return bool(value)
         except:
             raise TypeError("Unable to cast value to bool: {}".format(value))
