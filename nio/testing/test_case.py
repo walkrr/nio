@@ -20,6 +20,29 @@ from nio.testing.modules.settings.module import TestingSettingsModule
 from nio.testing.modules.web.module import TestingWebModule
 
 
+class TestingModuleInitializer(ModuleInitializer):
+
+    def __init__(self, test):
+        super().__init__()
+        self._test = test
+
+    def _initialize_module(self, module, context, safe):
+        # carry on with initialization
+        super()._initialize_module(module, context, safe)
+
+        # if it is the 'settings' module, allow test to set settings
+        module_name = self._test.get_module_name(module)
+        if module_name == 'settings':
+            self._test.set_settings()
+
+    def get_context(self, module):
+        module_name = self._test.get_module_name(module)
+
+        # make sure to call get_context on the test since it is a method
+        # every test can redefine
+        return self._test.get_context(module_name, module)
+
+
 class NIOTestCase(TestCase):
 
     """ Base Unit Test case class
@@ -37,6 +60,9 @@ class NIOTestCase(TestCase):
         # make sure modules are tearDown regardless of test outcome
         self.addCleanup(self.tearDownModules)
 
+        # maintain a mapping from module to module_name
+        self._modules_mapping = {}
+
     def setupModules(self):
         """ Initializes the modules that will be active when running the test
 
@@ -47,31 +73,13 @@ class NIOTestCase(TestCase):
             - get_context
 
         """
-        self._module_initializer = ModuleInitializer()
+        self._module_initializer = TestingModuleInitializer(self)
 
         modules = self.get_test_modules()
-
-        # fully initialize settings before allowing any other module
-        # to be initialized
-        if "settings" in modules:
-            module_name = "settings"
-            module = self.get_module(module_name)
-            self._module_initializer.register_module(
-                module,
-                self.get_context(module_name, module))
-            self._module_initializer.initialize(safe=True)
-            # remove "settings" from any further processing
-            modules.remove(module_name)
-
-            # Now that Settings module is initialized, allow tests to set
-            # settings before the rest of the modules are initialized
-            self.set_settings()
-
         for module_name in modules:
             module = self.get_module(module_name)
-            self._module_initializer.register_module(
-                module,
-                self.get_context(module_name, module))
+            self._modules_mapping[module] = module_name
+            self._module_initializer.register_module(module)
 
         # Perform a safe initialization in case a proxy never got cleaned up
         self._module_initializer.initialize(safe=True)
@@ -187,6 +195,9 @@ class NIOTestCase(TestCase):
             # can be triggered if test chooses not to have a Settings module
             pass
         super().tearDown()
+
+    def get_module_name(self, module):
+        return self._modules_mapping.get(module, None)
 
 
 class NIOTestCaseNoModules(NIOTestCase):

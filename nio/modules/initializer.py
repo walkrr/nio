@@ -9,7 +9,6 @@ definitions.
 from nio.util.logging import get_nio_logger
 from nio.modules.proxy import ProxyNotProxied, ProxyAlreadyProxied
 from nio.modules.module import Module
-from nio.modules.context import ModuleContext
 
 
 class ModuleInitializer(object):
@@ -33,46 +32,27 @@ class ModuleInitializer(object):
                 trying to implement an already implemented interface.
                 Defaults to False
         """
-        for module, context in sorted(
-                self._registered_modules,
-                key=lambda mod: mod[0].get_module_order()):
+        for module in sorted(self._registered_modules,
+                             key=lambda mod: mod.get_module_order()):
 
             # make sure module is not already initialized
             if module in self._initialized_modules:
                 continue
 
-            try:
-                module.initialize(context)
-            except ProxyAlreadyProxied:
-                self.logger.warning(
-                    "Interface implemented by module '{}' is already proxied".
-                    format(module.__class__.__name__))
-                if safe:
-                    # ignore a module trying to re-proxy when in safe mode
-                    continue
-                else:
-                    raise
+            self._initialize_module(module, self.get_context(module), safe)
 
-            self.logger.info("Module {} is initialized".
-                             format(module.__class__.__name__))
-            # Add this module to the list of modules that have been proxied
-            self._initialized_modules.append(module)
-
-    def register_module(self, module, context):
+    def register_module(self, module):
         """ Register a module and context to use for its initialization
 
         Args:
             module (Module): A nio module implementation
-            context (ModuleContext): context to use when initializing module
 
         Raises:
             TypeError: if the implementation class is not a class
         """
         if not isinstance(module, Module):
             raise TypeError("Registered module must be an instance of Module")
-        if not isinstance(context, ModuleContext):
-            raise TypeError("Context must be an instance of ModuleContext")
-        self._registered_modules.append((module, context))
+        self._registered_modules.append(module)
 
     def finalize(self, safe=False):
         """ De-register and unproxy the registered modules on this initializer
@@ -95,3 +75,25 @@ class ModuleInitializer(object):
             else:
                 module.finalize()
         self._initialized_modules[:] = []
+
+    def _initialize_module(self, module, context, safe):
+        try:
+            module.initialize(context)
+        except ProxyAlreadyProxied:
+            self.logger.warning(
+                "Interface implemented by module '{}' is already proxied".
+                    format(module.__class__.__name__))
+            if safe:
+                # ignore a module trying to re-proxy when in safe mode
+                return
+            else:
+                raise
+
+        self.logger.info("Module {} is initialized".
+                         format(module.__class__.__name__))
+
+        # Add this module to the list of modules that have been proxied
+        self._initialized_modules.append(module)
+
+    def get_context(self, module):
+        raise NotImplementedError()
