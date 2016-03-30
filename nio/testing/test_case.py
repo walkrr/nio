@@ -6,10 +6,10 @@ import logging.config
 import multiprocessing
 from unittest import TestCase
 
-from nio.modules.initializer import ModuleInitializer
 
 # Testing module implementations
 from nio.modules.settings import Settings
+from nio.testing.module_initializer import TestingModuleInitializer
 from nio.testing.modules.scheduler.module import TestingSchedulerModule
 from nio.testing.modules.persistence.module \
     import TestingPersistenceModule
@@ -18,29 +18,6 @@ from nio.testing.modules.communication.module \
 from nio.testing.modules.security.module import TestingSecurityModule
 from nio.testing.modules.settings.module import TestingSettingsModule
 from nio.testing.modules.web.module import TestingWebModule
-
-
-class TestingModuleInitializer(ModuleInitializer):
-
-    def __init__(self, test):
-        super().__init__()
-        self._test = test
-
-    def _initialize_module(self, module, context, safe):
-        # carry on with initialization
-        super()._initialize_module(module, context, safe)
-
-        # if it is the 'settings' module, allow test to set settings
-        module_name = self._test.get_module_name(module)
-        if module_name == 'settings':
-            self._test.set_settings()
-
-    def get_context(self, module):
-        module_name = self._test.get_module_name(module)
-
-        # make sure to call get_context on the test since it is a method
-        # every test can redefine
-        return self._test.get_context(module_name, module)
 
 
 class NIOTestCase(TestCase):
