@@ -6,10 +6,10 @@ import logging.config
 import multiprocessing
 from unittest import TestCase
 
-from nio.modules.initializer import ModuleInitializer
 
 # Testing module implementations
 from nio.modules.settings import Settings
+from nio.testing.module_initializer import TestingModuleInitializer
 from nio.testing.modules.scheduler.module import TestingSchedulerModule
 from nio.testing.modules.persistence.module \
     import TestingPersistenceModule
@@ -37,6 +37,9 @@ class NIOTestCase(TestCase):
         # make sure modules are tearDown regardless of test outcome
         self.addCleanup(self.tearDownModules)
 
+        # maintain a mapping from module to module_name
+        self._modules_mapping = {}
+
     def setupModules(self):
         """ Initializes the modules that will be active when running the test
 
@@ -47,31 +50,13 @@ class NIOTestCase(TestCase):
             - get_context
 
         """
-        self._module_initializer = ModuleInitializer()
+        self._module_initializer = TestingModuleInitializer(self)
 
         modules = self.get_test_modules()
-
-        # fully initialize settings before allowing any other module
-        # to be initialized
-        if "settings" in modules:
-            module_name = "settings"
-            module = self.get_module(module_name)
-            self._module_initializer.register_module(
-                module,
-                self.get_context(module_name, module))
-            self._module_initializer.initialize(safe=True)
-            # remove "settings" from any further processing
-            modules.remove(module_name)
-
-            # Now that Settings module is initialized, allow tests to set
-            # settings before the rest of the modules are initialized
-            self.set_settings()
-
         for module_name in modules:
             module = self.get_module(module_name)
-            self._module_initializer.register_module(
-                module,
-                self.get_context(module_name, module))
+            self._modules_mapping[module] = module_name
+            self._module_initializer.register_module(module)
 
         # Perform a safe initialization in case a proxy never got cleaned up
         self._module_initializer.initialize(safe=True)
@@ -187,6 +172,9 @@ class NIOTestCase(TestCase):
             # can be triggered if test chooses not to have a Settings module
             pass
         super().tearDown()
+
+    def get_module_name(self, module):
+        return self._modules_mapping.get(module, None)
 
 
 class NIOTestCaseNoModules(NIOTestCase):
