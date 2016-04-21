@@ -97,7 +97,7 @@ class BlockRouter(Runner):
 
         self._mgmt_signal_handler = context.mgmt_signal_handler
         self._clone_signals = \
-            context.settings.get("clone_signals", False)
+            context.settings.get("clone_signals", True)
         if self._clone_signals:
             self.logger.info('Set to clone signals for multiple receivers')
         self._check_signal_type = \

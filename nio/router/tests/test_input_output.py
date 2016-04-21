@@ -198,7 +198,8 @@ class TestInputOutput(NIOTestCaseNoModules):
                                receivers={0: ["log1"],
                                           1: ["log2"]})]
 
-        router_context = RouterContext(execution, blocks)
+        router_context = RouterContext(execution, blocks,
+                                       settings={"clone_signals": False})
 
         block_router.do_configure(router_context)
         block_router.do_start()
@@ -261,7 +262,8 @@ class TestInputOutput(NIOTestCaseNoModules):
                        1: [{"name": "state", "input": input_id1}],
                        2: ["log2"]})]
 
-        router_context = RouterContext(execution, blocks)
+        router_context = RouterContext(execution, blocks,
+                                       settings={"clone_signals": False})
 
         block_router.do_configure(router_context)
         block_router.do_start()
