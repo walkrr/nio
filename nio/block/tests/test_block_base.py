@@ -9,6 +9,8 @@ from nio.signal.base import Signal
 from nio.router.base import BlockRouter
 from nio.router.context import RouterContext
 from nio.testing.test_case import NIOTestCaseNoModules
+from nio.signal.status import BlockStatusSignal
+from nio.util.runner import RunnerStatus
 
 
 class TestBaseBlock(NIOTestCaseNoModules):
@@ -154,3 +156,23 @@ class TestBaseBlock(NIOTestCaseNoModules):
         blk = GeneratorBlock()
         self.assertFalse(blk.is_input_valid(DEFAULT_TERMINAL))
         self.assertTrue(blk.is_output_valid(DEFAULT_TERMINAL))
+
+    def test_populate_block_status_signal(self):
+        blk = Block()
+
+        block_name = 'block1'
+        service_name = 'service1'
+        blk.configure(BlockContext(
+            BlockRouter(),
+            {"name": block_name},
+            service_name=service_name))
+
+        warning = BlockStatusSignal(
+                    RunnerStatus.warning, message='It just broke...')
+        self.assertIsNone(warning.service_name)
+        self.assertIsNone(warning.block_name)
+        blk.notify_management_signal(warning)
+        self.assertIsNotNone(warning.service_name)
+        self.assertIsNotNone(warning.block_name)
+        self.assertEqual(warning.service_name, service_name)
+        self.assertEqual(warning.block_name, block_name)
