@@ -21,7 +21,13 @@ class BaseProperty(object):
     def __init__(self, _type, title=None,
                  visible=True, allow_none=False, default=None, **kwargs):
         self.type = _type
-        self.title = title
+
+        # make sure title is valid
+        if isinstance(title, str) and len(title):
+            self.title = title
+        else:
+            raise ValueError("Title must be a non-empty string")
+
         self.visible = visible
         self.allow_none = allow_none
         self.kwargs = kwargs
