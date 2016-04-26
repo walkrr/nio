@@ -27,7 +27,7 @@ class GroupBy(object):
 
     """
 
-    group_by = Property(name="Group By", default=None, allow_none=True)
+    group_by = Property(title="Group By", default=None, allow_none=True)
 
     def __init__(self):
         super().__init__()
