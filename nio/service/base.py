@@ -57,7 +57,7 @@ class Service(PropertyHolder, CommandHolder, Runner):
     """
 
     version = VersionProperty(version='1.0.0')
-    type = StringProperty(title="Tyoe", visible=False, readonly=True)
+    type = StringProperty(title="Type", visible=False, readonly=True)
     name = StringProperty(title="Name")
 
     # indicates whether service is to be started when nio starts

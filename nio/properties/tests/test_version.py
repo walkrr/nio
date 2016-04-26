@@ -21,9 +21,9 @@ class ClassWithMinVersion(PropertyHolder):
 
 
 class ClassVersionInitialize(PropertyHolder):
-    version_straight = VersionProperty(version="1.1.1")
+    version_straight = VersionProperty("1.1.1")
     version_default = VersionProperty(default="1.1.2")
-    version_both = VersionProperty(version="1.1.3", default="1.1.4")
+    version_both = VersionProperty("1.1.3", default="1.1.4")
 
 
 class TestVersion(NIOTestCaseNoModules):

@@ -10,7 +10,7 @@ class VersionProperty(StringProperty):
     (major.minor.build) format
     """
 
-    def __init__(self, title="Version", version=None, **kwargs):
+    def __init__(self, version=None, title="Version", **kwargs):
         """ Initializes a version property.
 
         Keyword Args:
