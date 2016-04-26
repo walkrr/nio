@@ -5,11 +5,12 @@ from nio.testing.test_case import NIOTestCaseNoModules
 
 
 class ContainedClass(PropertyHolder):
-    sub_property = StringProperty(default='')
+    sub_property = StringProperty(title="sub_property", default='')
 
 
 class ContainerClass(PropertyHolder):
-    property = ObjectProperty(ContainedClass, default=ContainedClass())
+    property = ObjectProperty(
+        ContainedClass, title="property", default=ContainedClass())
 
 
 class TestObjectProperty(NIOTestCaseNoModules):

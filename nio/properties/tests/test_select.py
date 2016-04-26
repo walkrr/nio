@@ -16,7 +16,8 @@ class SampleClass(PropertyHolder):
 
     # Note, property name and receiving property have to match
     select_property = \
-        SelectProperty(SampleEnum, default=SampleEnum.option3)
+        SelectProperty(SampleEnum, title="select_property",
+                       default=SampleEnum.option3)
 
 
 class TestProperties(NIOTestCaseNoModules):
@@ -39,15 +40,17 @@ class TestProperties(NIOTestCaseNoModules):
 
     def test_deserialize(self):
         """Test select property deserialize works with various defaults."""
-        prop = SelectProperty(SampleEnum, default=SampleEnum.option1)
+        prop = \
+            SelectProperty(SampleEnum, title="prop", default=SampleEnum.option1)
         self.assertEqual(prop.deserialize(prop.default), SampleEnum.option1)
-        prop = SelectProperty(SampleEnum, default='option1')
+        prop = SelectProperty(SampleEnum, title="prop", default='option1')
         self.assertEqual(prop.deserialize(prop.default), SampleEnum.option1)
-        prop = SelectProperty(SampleEnum, default=0)
+        prop = SelectProperty(SampleEnum, title="prop", default=0)
         self.assertEqual(prop.deserialize(prop.default), SampleEnum.option1)
-        prop = SelectProperty(SampleEnum, default=SampleEnum.option1.value)
+        prop = \
+            SelectProperty(SampleEnum, title="prop", default=SampleEnum.option1.value)
         self.assertEqual(prop.deserialize(prop.default), SampleEnum.option1)
 
-        prop = SelectProperty(SampleEnum)
+        prop = SelectProperty(SampleEnum, title="prop")
         with self.assertRaises(TypeError):
             prop.deserialize('foo')

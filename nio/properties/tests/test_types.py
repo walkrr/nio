@@ -20,8 +20,8 @@ from nio.testing.test_case import NIOTestCaseNoModules
 
 
 class ContainedClass(PropertyHolder):
-    string_property = StringProperty(default="str")
-    int_property = IntProperty(default=5)
+    string_property = StringProperty(title="string_property", default="str")
+    int_property = IntProperty(title="int_property", default=5)
 
 
 class SampleEnum(Enum):
@@ -31,42 +31,58 @@ class SampleEnum(Enum):
 
 
 class ContainerClass(PropertyHolder):
-    string_property = StringProperty(default="string1")
+    string_property = StringProperty(title="string_property", default="string1")
     string_property_default_env_variable = \
-        StringProperty(default='[[ENV_VARIABLE]]')
+        StringProperty(title="string_property_default_env_variable",
+                       default='[[ENV_VARIABLE]]')
 
-    expression_property = StringProperty(default='Default to {{$v1}}')
+    expression_property = StringProperty(title="expression_property",
+                                         default='Default to {{$v1}}')
     expression_property_default_env_variable = \
-        StringProperty(default='[[ENV_VARIABLE]]')
+        StringProperty(title="expression_property_default_env_variable",
+                       default='[[ENV_VARIABLE]]')
 
-    bool_property = BoolProperty(default=False)
+    bool_property = BoolProperty(title="bool_property",
+                                 default=False)
     bool_property_default_env_variable = \
-        BoolProperty(default='[[ENV_VARIABLE]]')
+        BoolProperty(title="bool_property_default_env_variable",
+                     default='[[ENV_VARIABLE]]')
 
-    int_property = IntProperty(default=8)
-    int_property_default_env_variable = IntProperty(default='[[ENV_VARIABLE]]')
+    int_property = IntProperty(title="int_property", default=8)
+    int_property_default_env_variable = \
+        IntProperty(title="int_property_default_env_variable",
+                    default='[[ENV_VARIABLE]]')
 
-    float_property = FloatProperty(default=8)
+    float_property = FloatProperty(title="float_property", default=8)
     float_property_default_env_variable = \
-        FloatProperty(default='[[ENV_VARIABLE]]')
+        FloatProperty(title="float_property_default_env_variable",
+                      default='[[ENV_VARIABLE]]')
 
-    object_property = ObjectProperty(ContainedClass)
+    object_property = ObjectProperty(ContainedClass, title="object_property")
     object_property_default_env_variable = \
-        ObjectProperty(ContainedClass, default='[[ENV_VARIABLE]]')
+        ObjectProperty(ContainedClass,
+                       title="object_property_default_env_variable",
+                       default='[[ENV_VARIABLE]]')
 
-    list_property1 = ListProperty(ContainedClass, default=[ContainedClass()])
-    list_property2 = ListProperty(ContainedClass)
-    list_property3 = ListProperty(IntType, default=[1])
+    list_property1 = ListProperty(ContainedClass, title="list_property1",
+                                  default=[ContainedClass()])
+    list_property2 = ListProperty(ContainedClass, title="list_property2")
+    list_property3 = ListProperty(IntType, title="list_property3", default=[1])
     list_property_default_env_variable = \
-        ListProperty(ContainedClass, default='[[ENV_VARIABLE]]')
+        ListProperty(ContainedClass,
+                     title="list_property_default_env_variable",
+                     default='[[ENV_VARIABLE]]')
 
-    timedelta_property = TimeDeltaProperty(default={"seconds": 9})
-    timedelta_property_no_default = TimeDeltaProperty()
+    timedelta_property = TimeDeltaProperty(title="timedelta_property",
+                                           default={"seconds": 9})
+    timedelta_property_no_default = \
+        TimeDeltaProperty(title="timedelta_property_no_default")
 
     select_property = SelectProperty(
-        SampleEnum, default=SampleEnum.option2)
+        SampleEnum, title="select_property", default=SampleEnum.option2)
     select_property_default_env_variable = \
-        SelectProperty(SampleEnum, default='[[ENV_VARIABLE]]')
+        SelectProperty(SampleEnum, title="select_property_default_env_variable",
+                       default='[[ENV_VARIABLE]]')
 
 
 class TestTypes(NIOTestCaseNoModules):

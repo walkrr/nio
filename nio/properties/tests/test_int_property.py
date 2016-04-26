@@ -4,8 +4,8 @@ from nio.testing.test_case import NIOTestCaseNoModules
 
 
 class ContainerClass(PropertyHolder):
-    property = IntProperty()
-    default = IntProperty(default=1)
+    property = IntProperty(title="property")
+    default = IntProperty(title="default", default=1)
 
 
 class TestIntProperty(NIOTestCaseNoModules):

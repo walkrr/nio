@@ -15,7 +15,7 @@ class MyHolder(PropertyHolder):
     class MockBaseProperty(BaseProperty):
 
         def __init__(self):
-            super().__init__(MockType)
+            super().__init__(MockType, title="MockBaseProperty")
             self.serialize = MagicMock(return_value='serialized value')
             self.deserialize = MagicMock(return_value='deserialized value')
             self.type.serialize = MagicMock(return_value='serialized value')
@@ -28,7 +28,7 @@ class InvalidPropertyHolder(PropertyHolder):
     class MockBaseProperty(BaseProperty):
 
         def __init__(self):
-            super().__init__(Type)
+            super().__init__(Type, title="MockBaseProperty")
             self.serialize = MagicMock(return_value='serialized value')
             self.deserialize = MagicMock(side_effect=TypeError)
 
@@ -133,7 +133,8 @@ class TestPropertyHolder(NIOTestCaseNoModules):
     def test_additional_property_description(self):
         """Anything added to the property definition go to the description."""
         class AdditionalDescriptionClass(PropertyHolder):
-            property = BaseProperty(Type, bold=True, italics=True)
+            property = BaseProperty(Type, title="property",
+                                    bold=True, italics=True)
         description = AdditionalDescriptionClass.get_description()
         # check mandatory settings
         self.assertIn('title', description['property'])

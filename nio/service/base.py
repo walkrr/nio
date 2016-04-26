@@ -24,8 +24,8 @@ class BlockExecution(PropertyHolder):
     This information is parsed/used by the Router which is able then, based on
     the sending block, to forward signals to its receivers
     """
-    name = StringProperty()
-    receivers = Property()
+    name = StringProperty(title="Name")
+    receivers = Property(title="Receivers")
 
 
 class BlockMapping(PropertyHolder):
@@ -35,8 +35,8 @@ class BlockMapping(PropertyHolder):
     Allows a mapping of a given block based on another block
     This information is parsed/used internally by the core system
     """
-    name = StringProperty()
-    mapping = StringProperty()
+    name = StringProperty(title="Name")
+    mapping = StringProperty(title="Mapping")
 
 
 @DependsOn("nio.modules.persistence", "1.0.0")
@@ -57,21 +57,21 @@ class Service(PropertyHolder, CommandHolder, Runner):
     """
 
     version = VersionProperty(version='1.0.0')
-    type = StringProperty(visible=False, readonly=True)
-    name = StringProperty()
+    type = StringProperty(title="Type", visible=False, readonly=True)
+    name = StringProperty(title="Name")
 
     # indicates whether service is to be started when nio starts
-    auto_start = BoolProperty(default=False)
+    auto_start = BoolProperty(title="Auto Start", default=False)
     # indicates the logging level
-    log_level = SelectProperty(LogLevel, default="NOTSET")
+    log_level = SelectProperty(LogLevel, title="Log Level", default="NOTSET")
 
     # properties defining the service execution
-    execution = ListProperty(BlockExecution, default=[])
-    mappings = ListProperty(BlockMapping, default=[])
+    execution = ListProperty(BlockExecution, title="Execution", default=[])
+    mappings = ListProperty(BlockMapping, title="Mappings", default=[])
 
     # System Metadata that can be used by API clients, which is serialized
     # along with any other service properties
-    sys_metadata = StringProperty(visible=True, default="")
+    sys_metadata = StringProperty(title="Metadata", visible=True, default="")
 
     def __init__(self, status_change_callback=None):
         """ Create a new service instance.
