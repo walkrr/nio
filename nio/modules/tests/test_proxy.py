@@ -44,6 +44,11 @@ class ProxyInterface(ModuleProxy):
         """ A classmethod that will not be overridden by the implementation """
         return "INTERFACE"
 
+    @classmethod
+    def change_my_class_variable(cls, change_to, use_cls):
+        """Change the class var to a value using different class references"""
+        raise NotImplementedError
+
 
 class ProxyImplementation(object):
 
@@ -259,7 +264,7 @@ class TestNoProxy(NIOTestCaseNoModules):
         self.assertEqual(ProxyImplementation.interface_class_variable, 10)
 
         # Before proxying, update the class variable
-        with self.assertRaises(AttributeError):
+        with self.assertRaises(NotImplementedError):
             # Doesn't exist on the interface yet, hasn't been proxied
             ProxyInterface.change_my_class_variable(5, True)
 
@@ -282,8 +287,6 @@ class TestNoProxy(NIOTestCaseNoModules):
         # interface or any instantiated instances of the interface.
         # This is because the cls reference comes from the implementation and
         # thus points to the implementation class
-        # Note that this call is a little strange since the method is never
-        # actually defined on the interface
         ProxyInterface.change_my_class_variable(35, True)
         self.assertEqual(ProxyInterface.interface_class_variable, 15)
         self.assertEqual(instantiated.interface_class_variable, 15)
@@ -299,11 +302,6 @@ class TestNoProxy(NIOTestCaseNoModules):
         self.assertEqual(instantiated.interface_class_variable, 45)
         self.assertEqual(ProxyImplementation.interface_class_variable, 35)
 
-        # In all likelihood, we will only be making a call to this function
-        # using the implementation class, since that is the only place it is
-        # defined. In other words, block developers won't be counting on this
-        # method existing, so it's safe to assume the only call will be in the
-        # module implementation itself.
         # Calling with the implementation and cls will naturally not change the
         # interface or instantiated references
         ProxyImplementation.change_my_class_variable(55, True)
