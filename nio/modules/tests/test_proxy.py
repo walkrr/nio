@@ -160,6 +160,9 @@ class TestNoProxy(NIOTestCaseNoModules):
         if ProxyInterface.proxied:
             ProxyInterface.unproxy()
         ProxyInterface._impl_class = None
+        # Reset class level variables
+        ProxyInterface.interface_class_variable = 5
+        ProxyImplementation.interface_class_variable = 10
         super().tearDown()
 
     def test_no_proxy(self):
@@ -209,3 +212,19 @@ class TestNoProxy(NIOTestCaseNoModules):
         ProxyInterface.proxy(ProxyImplementation)
         with self.assertRaises(ProxyAlreadyProxied):
             ProxyInterface.proxy(ProxyImplementation)
+
+    def test_change_class_var(self):
+        """We should be able to change class variables after proxying"""
+        # Start off with the variable from the interface
+        self.assertEqual(ProxyInterface.interface_class_variable, 5)
+        self.assertEqual(ProxyImplementation.interface_class_variable, 10)
+        ProxyInterface.proxy(ProxyImplementation)
+        # After proxying, the variable should come from the implementation
+        proxied = ProxyInterface()
+        self.assertEqual(proxied.interface_class_variable, 10)
+        # Updating the implementation class variable should have no effect
+        ProxyImplementation.interface_class_variable = 15
+        self.assertEqual(proxied.interface_class_variable, 10)
+        # We must use the interface to change the class variable after proxying
+        ProxyInterface.interface_class_variable = 20
+        self.assertEqual(proxied.interface_class_variable, 20)
