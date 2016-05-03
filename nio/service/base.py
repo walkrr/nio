@@ -8,7 +8,6 @@ from nio.properties import PropertyHolder, VersionProperty, \
     BoolProperty, ListProperty, StringProperty, Property, SelectProperty
 from nio.util.logging import get_nio_logger
 from nio.util.logging.levels import LogLevel
-from nio.modules.persistence import Persistence
 from nio.modules.security.task import SecureTask
 from nio.util.runner import Runner, RunnerStatus
 
@@ -146,9 +145,6 @@ class Service(PropertyHolder, CommandHolder, Runner):
         # and properties setting
         self.logger = get_nio_logger("service")
         self.logger.setLevel(self.log_level())
-
-        # configure the Persistence module with the service name
-        Persistence.configure(self.name())
 
         # instantiate block router
         self.logger.debug("Instantiating block router: {0}.{1}".

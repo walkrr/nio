@@ -20,9 +20,6 @@ class Persistence(ModuleProxy):
 
     """
 
-    # Note: We don't proxy a constructor, the ModuleProxy __init__ will handle
-    # the mapping to the proper class for us, so just call super
-
     def __init__(self, name):
         """ Create a Persistence object for a given name """
         super().__init__(name)
@@ -79,35 +76,3 @@ class Persistence(ModuleProxy):
         restarts.
         """
         raise NotImplementedError()
-
-    @classmethod
-    def setup(cls, configuration):
-        """ Class method to initialize the Persistence class with a config.
-
-        This method will be called after the ModuleProxy is initialized.
-
-        Args:
-            configuration (dict): The dictionary that
-                module_init was called with
-
-        Returns:
-            None
-        """
-        raise NotImplementedError()
-
-    @classmethod
-    def configure(cls, service_name):
-        """ Class method to configure the Persistence class with a service
-
-        This allows us to have a service-by-service namespace for
-        persisted block data.
-
-        Args:
-            service_name (str): The name of the service constituting this
-                                process.
-
-        Returns:
-            None
-
-        """
-        pass
