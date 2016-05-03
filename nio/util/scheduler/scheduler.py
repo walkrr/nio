@@ -8,25 +8,8 @@ class Scheduler(object):
     """Singleton class to maintain and interact with an underlying Scheduler"""
 
     _scheduler_thread = None
-    logger = None
-
     _sched_min_delta = 0.1
     _sched_resolution = 0.1
-
-    @classmethod
-    def get_logger(cls):
-        """ Get class level logger
-
-        If no logger has been created for class, a new logger is instantiated
-        and a reference is saved for future access.
-
-        Returns:
-            logger (NIOLoggerAdapter) A NIO logger adapter instance
-
-        """
-        if cls.logger is None:
-            cls.logger = get_nio_logger("NIOScheduler")
-        return cls.logger
 
     @classmethod
     def configure(cls, context):
@@ -72,7 +55,7 @@ class Scheduler(object):
             None
 
         """
-        cls.get_logger().debug("Un-scheduling %s" % job)
+        get_nio_logger("NIOScheduler").debug("Un-scheduling %s" % job)
         cls._scheduler_thread.scheduler.cancel(job)
 
     @classmethod
@@ -85,10 +68,10 @@ class Scheduler(object):
     def start(cls):
         try:
             if cls._scheduler_thread is None:
-                cls.get_logger().info("Starting custom Scheduler")
+                get_nio_logger("NIOScheduler").info("Starting custom Scheduler")
                 cls._scheduler_thread = SchedulerThread(SchedulerHelper(
                     resolution=cls._sched_resolution,
                     min_delta=cls._sched_min_delta))
                 cls._scheduler_thread.start()
         except Exception:  # pragma: no cover (exception from ap)
-            cls.get_logger().exception("Scheduler failed to start")
+            get_nio_logger("NIOScheduler").exception("Scheduler failed to start")
