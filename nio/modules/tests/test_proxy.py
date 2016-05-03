@@ -75,6 +75,19 @@ class ProxyImplementation(object):
     def my_overridden_classmethod(cls):
         return "IMPLEMENTATION"
 
+    @classmethod
+    def change_my_class_variable(cls, change_to, use_cls):
+        """Change the class var to a value using different class references.
+
+        If use_cls is True, the variable will be assigned using the cls
+        reference. If False, it will be assigned using ProxyInterface reference
+        directly.
+        """
+        if use_cls:
+            cls.interface_class_variable = change_to
+        else:
+            ProxyInterface.interface_class_variable = change_to
+
 
 class TestProxy(NIOTestCaseNoModules):
 
@@ -213,7 +226,7 @@ class TestNoProxy(NIOTestCaseNoModules):
         with self.assertRaises(ProxyAlreadyProxied):
             ProxyInterface.proxy(ProxyImplementation)
 
-    def test_change_class_var(self):
+    def test_change_class_var_directly(self):
         """We should be able to change class variables after proxying"""
         # Start off with the variable from the interface
         self.assertEqual(ProxyInterface.interface_class_variable, 5)
@@ -228,3 +241,80 @@ class TestNoProxy(NIOTestCaseNoModules):
         # We must use the interface to change the class variable after proxying
         ProxyInterface.interface_class_variable = 20
         self.assertEqual(proxied.interface_class_variable, 20)
+
+    def test_change_class_var_with_method(self):
+        """Test behavior when updating a class variable with a classmethod.
+
+        Adjusting class variables using the cls reference of class methods
+        behaves a little strangely after proxying. This test is meant to
+        describe the behavior, even if it is not ideal.
+
+        The tests make use of a classmethod that is ONLY defined on the
+        implementation and not the interface. That method will change the
+        class variable using either the cls reference or the ProxyInterface
+        class name directly.
+        """
+        # Both references start off as their original defaults
+        self.assertEqual(ProxyInterface.interface_class_variable, 5)
+        self.assertEqual(ProxyImplementation.interface_class_variable, 10)
+
+        # Before proxying, update the class variable
+        with self.assertRaises(AttributeError):
+            # Doesn't exist on the interface yet, hasn't been proxied
+            ProxyInterface.change_my_class_variable(5, True)
+
+        # Changing on the implementation with cls only changes the impl
+        ProxyImplementation.change_my_class_variable(15, True)
+        self.assertEqual(ProxyInterface.interface_class_variable, 5)
+        self.assertEqual(ProxyImplementation.interface_class_variable, 15)
+
+        # Changing on the implementation without cls only changes the interface
+        ProxyImplementation.change_my_class_variable(25, False)
+        self.assertEqual(ProxyInterface.interface_class_variable, 25)
+        self.assertEqual(ProxyImplementation.interface_class_variable, 15)
+
+        # Now proxy, the behavior changes after this point
+        # The interface will assume the value of the implementation (15)
+        ProxyInterface.proxy(ProxyImplementation)
+        instantiated = ProxyInterface()
+
+        # Changing on the interface with cls will NOT change the
+        # interface or any instantiated instances of the interface.
+        # This is because the cls reference comes from the implementation and
+        # thus points to the implementation class
+        # Note that this call is a little strange since the method is never
+        # actually defined on the interface
+        ProxyInterface.change_my_class_variable(35, True)
+        self.assertEqual(ProxyInterface.interface_class_variable, 15)
+        self.assertEqual(instantiated.interface_class_variable, 15)
+        self.assertEqual(ProxyImplementation.interface_class_variable, 35)
+
+        # When using the interface to change a variable, the interface class
+        # must be used directly, NOT the cls reference. Note that this does not
+        # change the implementation class this time though. That tends to be ok
+        # at this point though, since we should be using the interface after
+        # the implementation has been proxied.
+        ProxyInterface.change_my_class_variable(45, False)
+        self.assertEqual(ProxyInterface.interface_class_variable, 45)
+        self.assertEqual(instantiated.interface_class_variable, 45)
+        self.assertEqual(ProxyImplementation.interface_class_variable, 35)
+
+        # In all likelihood, we will only be making a call to this function
+        # using the implementation class, since that is the only place it is
+        # defined. In other words, block developers won't be counting on this
+        # method existing, so it's safe to assume the only call will be in the
+        # module implementation itself.
+        # Calling with the implementation and cls will naturally not change the
+        # interface or instantiated references
+        ProxyImplementation.change_my_class_variable(55, True)
+        self.assertEqual(ProxyInterface.interface_class_variable, 45)
+        self.assertEqual(instantiated.interface_class_variable, 45)
+        self.assertEqual(ProxyImplementation.interface_class_variable, 55)
+
+        # If we wish to actually affect the interface and instantiated
+        # references, we will need to change the variable using the
+        # ProxyInterface class name directly
+        ProxyImplementation.change_my_class_variable(65, False)
+        self.assertEqual(ProxyInterface.interface_class_variable, 65)
+        self.assertEqual(instantiated.interface_class_variable, 65)
+        self.assertEqual(ProxyImplementation.interface_class_variable, 55)
