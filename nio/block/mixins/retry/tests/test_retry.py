@@ -8,14 +8,16 @@ from nio.block.mixins.retry.strategy import BackoffStrategy
 class SimpleBackoffStrategy(BackoffStrategy):
     """ A backoff strategy that always retries immediately """
 
-    def next_retry(self):
+    def should_retry(self):
         return True
+
+    def wait_for_retry(self):
+        pass
 
 
 class RetryingBlock(Retry, Block):
 
-    def configure(self, context):
-        super().configure(context)
+    def setup_backoff_strategy(self):
         self.use_backoff_strategy(SimpleBackoffStrategy)
 
 
@@ -40,7 +42,7 @@ class TestRetry(NIOBlockTestCase):
         # Target func will always fail
         target_func = MagicMock(side_effect=Exception)
         # Our backoff strategy will give up on the 3rd try
-        block._backoff_strategy.next_retry = MagicMock(
+        block._backoff_strategy.should_retry = MagicMock(
             side_effect=[True, True, False])
 
         # Assert that our function raises its exception and that the mixin
@@ -60,26 +62,6 @@ class TestRetry(NIOBlockTestCase):
         # Assert that our before retry got called 2 times, one for each retry
         block.execute_with_retry(target_func)
         self.assertEqual(block.before_retry.call_count, 2)
-
-    def test_no_strategy(self):
-        """Test that a block that doesn't specify a strategy still works.
-
-        We don't expect this to retry at all, but nothing should fail
-        """
-        class NoStrategy(Retry, Block):
-            pass
-
-        block = NoStrategy()
-        self.configure_block(block, {})
-        # Target func will fail twice, then return a number, not that we ever
-        # expect to get there in this test
-        target_func = MagicMock(side_effect=[Exception, Exception, 5])
-
-        # Assert that our before retry got called 2 times, one for each retry
-        with self.assertRaises(Exception):
-            block.execute_with_retry(target_func)
-        # We shouldn't have retried at all since we didn't specify a strategy
-        self.assertEqual(target_func.call_count, 1)
 
     def test_bad_strategy(self):
         """Test that an exception is raised with a non-BackoffStrategy """

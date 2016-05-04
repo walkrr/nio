@@ -1,8 +1,39 @@
+from enum import Enum
+from nio.properties import PropertyHolder, ObjectProperty, BoolProperty, \
+    IntProperty, SelectProperty, FloatProperty
 from nio.block.mixins.retry.strategy import BackoffStrategy
+from nio.block.mixins.retry.strategies import LinearBackoff, ExponentialBackoff
+
+
+class RetryStrategies(Enum):
+    linear = LinearBackoff
+    exponential = ExponentialBackoff
+
+
+class RetryOptions(PropertyHolder):
+    """ Options the block can be configured with to control how it retries.
+
+    The properties will be passed to the backoff strategy's constructor.
+    """
+
+    strategy = SelectProperty(RetryStrategies, title="Strategy to Use",
+                              default=RetryStrategies.linear, allow_expr=False)
+    max_retry = IntProperty(title="Max Retry Wait Time", default=300,
+                            allow_expr=False)
+    multiplier = FloatProperty(title="Retry Multiplier", default=1,
+                               allow_expr=False)
+    indefinite = BoolProperty(title="Continue Indefinitely?", default=False,
+                              allow_expr=False)
+
+    def get_options_dict(self):
+        return {
+            "max_retry": self.max_retry(),
+            "multiplier": self.multiplier(),
+            "indefinite": self.indefinite()
+        }
 
 
 class Retry(object):
-
     """ A block mixin that provides retry functionality.
 
     By including this mixin, your block will have access to a method that can
@@ -10,27 +41,49 @@ class Retry(object):
     of failing but can then work upon retrying. Example use cases are database
     queries or other requests over a network.
 
-    The block developer should select a retry backoff strategy from the
-    pre-built strategies in nio.block.mixins.retry.strategies or can define
-    their own according to the BackoffStrategy spec
+    When this mixin is added to a block, some hidden retry configuration
+    options will be added to the block. These options allow the block
+    configurer to determine how retries should occur, including what strategy
+    should be used.
+
+    Block developers can implement their own backoff strategies and employ
+    those instead by overriding the setup_backoff_strategy method.
 
     How to use this mixin:
-        1. In your block's configure method, define your backoff strategy using
-        the use_backoff_strategy method.
+        1. Configure your block by selecting a backoff strategy as well as
+        providing some options to determine how long it will wait between
+        retries.
+
         2. Call execute_with_retry with the function that you want to execute.
         If the target function raises an exception, it will retry until it
         either succeeds or the backoff strategy has decided it should stop
         retrying. If that occurs, execute_with_retry will raise the exception
         that the target function raised originally.
+
         3. Optionally, override before_retry to write custom code that will be
         performed before attempting a retry.
     """
 
-    def __init__(self):
-        super().__init__()
-        # Use the placeholder backoff strategy in case the block developer
-        # doesn't define one. Note, this strategy will never retry
-        self._backoff_strategy = BackoffStrategy(logger=self.logger)
+    retry_options = ObjectProperty(RetryOptions, title="Retry Options",
+                                   visible=False, default=RetryOptions())
+
+    def configure(self, context):
+        """ This implementation will use the configured backoff strategy """
+        super().configure(context)
+        self.setup_backoff_strategy()
+
+    def setup_backoff_strategy(self):
+        """ Define which backoff strategy the block should use.
+
+        This implementation will use the selected backoff strategy from the
+        configured retry options and pass other configured options as kwargs.
+
+        Block developers can override this function to use a custom backoff
+        strategy.
+        """
+        self.use_backoff_strategy(
+            self.retry_options().strategy().value,
+            **(self.retry_options().get_options_dict()))
 
     def execute_with_retry(self, execute_method, *args, **kwargs):
         """ Execute a method and retry if it raises an exception
@@ -63,7 +116,7 @@ class Retry(object):
                     "Retryable execution on method {} failed".format(
                         execute_method_name, exc_info=True))
                 self._backoff_strategy.request_failed(exc)
-                should_retry = self._backoff_strategy.next_retry()
+                should_retry = self._backoff_strategy.should_retry()
                 if not should_retry:
                     # Backoff strategy has said we're done retrying,
                     # so re-raise the exception
@@ -72,9 +125,10 @@ class Retry(object):
                             execute_method_name))
                     raise
                 else:
-                    # Backoff strategy has done its waiting and has instructed
-                    # us to retry again. Execute any pre-work before looping
-                    # and executing the method again
+                    # Backoff strategy has instructed us to retry again. First
+                    # let the strategy do any waiting, then execute any
+                    # pre-work before looping and executing the method again
+                    self._backoff_strategy.wait_for_retry()
                     self.before_retry(*args, **kwargs)
 
     def use_backoff_strategy(self, strategy, *args, **kwargs):
