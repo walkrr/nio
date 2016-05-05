@@ -18,7 +18,7 @@ class RetryOptions(PropertyHolder):
 
     strategy = SelectProperty(RetryStrategies, title="Strategy to Use",
                               default=RetryStrategies.linear, allow_expr=False)
-    max_retry = IntProperty(title="Max Retry Wait Time", default=300,
+    max_retry = IntProperty(title="Max Number of Retries", default=5,
                             allow_expr=False)
     multiplier = FloatProperty(title="Retry Multiplier", default=1,
                                allow_expr=False)
@@ -65,7 +65,7 @@ class Retry(object):
     """
 
     retry_options = ObjectProperty(RetryOptions, title="Retry Options",
-                                   visible=False, default=RetryOptions())
+                                   visible=True, default=RetryOptions())
 
     def configure(self, context):
         """ This implementation will use the configured backoff strategy """
