@@ -62,6 +62,27 @@ class Retry(object):
 
         3. Optionally, override before_retry to write custom code that will be
         performed before attempting a retry.
+
+    Block parameters:
+        strategy (select): A choice of pre-configured backoff strategies
+        max_retry (int): The maximum number of retries to attempt. Note that
+            this is based on retry number, not retry duration. Setting it to
+            0 means that no retries will be attempted. Setting it to a negative
+            number means that there is no maximum. Also note that this
+            property works in concert with the indefinite flag. If that flag
+            is set to True, then the retry duration for the retry number
+            specified in max_retry will be retried indefinitely.
+        multiplier (float): This property has slightly different meanings
+            based on what strategy is being used, but for the most part, it
+            allows you to control how much time will elapse between retries.
+            The higher the number, the longer amount of time that will elapse
+            between each retry attempt.
+        indefinite (bool): Set to True if you wish for the max_retry retry
+            attempt to be continued indefinitely. For example, if this is true
+            and max_retry is 5, then the 5th retry will continue to be retried
+            until the retry is successful or the block is stopped. If this
+            flag is set to False, the retry mixin will stop retrying once the
+            max_retry retry attempt is reached.
     """
 
     retry_options = ObjectProperty(RetryOptions, title="Retry Options",
