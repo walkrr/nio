@@ -370,5 +370,3 @@ class BlockRouter(Runner):
             self.status.add(RunnerStatus.error)
             self.logger.exception("{0}.process_signals failed".
                                   format(block_receiver.block.name()))
-            # let it propagate
-            raise

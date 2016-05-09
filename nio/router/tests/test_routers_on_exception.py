@@ -40,8 +40,7 @@ class BlockExecutionTest(BlockExecution):
 
 class TestThreadedRouter(NIOTestCase):
 
-    def assert_router_process_signals_exception(self, block_router,
-                                                catch_exception):
+    def assert_router_process_signals_exception(self, block_router):
 
         context = BlockContext(block_router, dict())
 
@@ -68,12 +67,7 @@ class TestThreadedRouter(NIOTestCase):
         logger_mock = Mock()
         with patch.object(block_router, "logger", new=logger_mock):
             self.assertFalse(logger_mock.exception.called)
-            if catch_exception:
-                # asserts that propagates the exception
-                with self.assertRaises(RuntimeError):
-                    sender_block.process_signals(Signal({}))
-            else:
-                sender_block.process_signals(Signal({}))
+            sender_block.process_signals(Signal({}))
 
             # asynchronous routers need time to process signals
             sleep(0.1)
@@ -90,7 +84,7 @@ class TestThreadedRouter(NIOTestCase):
 
         from nio.router.base import BlockRouter
         block_router = BlockRouter()
-        self.assert_router_process_signals_exception(block_router, True)
+        self.assert_router_process_signals_exception(block_router)
 
     def test_threaded_process_signals_exception(self):
         """Checking that the threaded version of the router logs
@@ -99,7 +93,7 @@ class TestThreadedRouter(NIOTestCase):
 
         from nio.router.threaded import ThreadedBlockRouter
         block_router = ThreadedBlockRouter()
-        self.assert_router_process_signals_exception(block_router, False)
+        self.assert_router_process_signals_exception(block_router)
 
     def test_pool_thread_process_signals_exception(self):
         """Checking that the thread pool executor version of the router logs
@@ -108,4 +102,4 @@ class TestThreadedRouter(NIOTestCase):
 
         from nio.router.thread_pool_executor import ThreadedPoolExecutorRouter
         block_router = ThreadedPoolExecutorRouter()
-        self.assert_router_process_signals_exception(block_router, False)
+        self.assert_router_process_signals_exception(block_router)
