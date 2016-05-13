@@ -350,11 +350,23 @@ class BlockRouter(Runner):
         Block developers are not required to include an input_id in their
         block's process_signals function definition. This method will
         """
-        # Check if the block has defined the input_id in its process_signals
-        if block_receiver.include_input_id:
-            # Pass the block_receiver's input_id to the process_signals method
-            block_receiver.block.process_signals(
-                signals, block_receiver.input_id)
-        else:
-            # Only send the signals to the block, no input_id
-            block_receiver.block.process_signals(signals)
+
+        # Router subclasses end up calling this method when overriding
+        # 'deliver_signals', so it is best to provide exception handling at
+        # this level, Note: a given router, for example: ThreadPoolExecutor,
+        # might not even offer a way to catch an exception, so catching
+        # exceptions at this 'root' level, for ALL routers, makes sense
+        try:
+            # Check if the block has defined the input_id in its process_signals
+            if block_receiver.include_input_id:
+                # Pass the block_receiver's input_id to the
+                # process_signals method
+                block_receiver.block.process_signals(
+                    signals, block_receiver.input_id)
+            else:
+                # Only send the signals to the block, no input_id
+                block_receiver.block.process_signals(signals)
+        except:
+            self.status.add(RunnerStatus.error)
+            self.logger.exception("{0}.process_signals failed".
+                                  format(block_receiver.block.name()))
