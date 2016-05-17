@@ -123,8 +123,11 @@ class Log2(Block):
 
 class InvalidProcessSignals(Block):
 
-    # This process signals signature is invalid and should throw an exception
+    def __init__(self):
+        super().__init__()
+        self.name = self.__class__.__name__.lower()
 
+    # This process signals signature is invalid and should throw an exception
     def process_signals(self, signals, input_id, what_am_i):
         pass
 
