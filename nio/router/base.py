@@ -135,17 +135,21 @@ class BlockRouter(Runner):
                                                      output_id)
                     self._receivers[sender_block_name].extend(parsed_receivers)
             else:
-                # receivers have the simple list format, i.e. [receivers]
-                if sender_block._default_output is None:
-                    raise InvalidBlockOutput(
-                        "Block {} does not define a default output, must "
-                        "specify outputs in execution config".format(
-                            sender_block))
-                parsed_receivers = self._process_receivers_list(
-                    block_execution.receivers(),
-                    context.blocks,
-                    sender_block._default_output.id)
-                self._receivers[sender_block_name].extend(parsed_receivers)
+                # any receivers specified?
+                if block_execution.receivers():
+                    # receivers have the 'simple list format', i.e. [receivers]
+                    # a default output is mandatory then since no output is
+                    # specified when using the 'simple list format'
+                    if sender_block._default_output is None:
+                        raise InvalidBlockOutput(
+                            "Block {} does not define a default output, must "
+                            "specify outputs in execution config".format(
+                                sender_block))
+                    parsed_receivers = self._process_receivers_list(
+                        block_execution.receivers(),
+                        context.blocks,
+                        sender_block._default_output.id)
+                    self._receivers[sender_block_name].extend(parsed_receivers)
 
     def _process_receivers_list(self, receivers, blocks, output_id):
         """ Goes through and process each receiver
