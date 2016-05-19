@@ -3,7 +3,7 @@ from nio.block.terminals import input, output, DEFAULT_TERMINAL
 from nio.block.base import Block
 from nio.block.context import BlockContext
 from nio.router.base import BlockRouter, BlockReceiverData, \
-    InvalidProcessSignalsSignature
+    InvalidProcessSignalsSignature, InvalidBlockOutput
 from nio.router.context import RouterContext
 from nio.service.base import BlockExecution
 from nio.testing.test_case import NIOTestCaseNoModules
@@ -235,6 +235,65 @@ class TestInputOutput(NIOTestCaseNoModules):
         log2.signal_cache.remove(signals)
 
         block_router.do_stop()
+
+    def test_two_outputs_none_specified(self):
+        """ This test verifies that it is possible to configure a router
+        that uses a simple list receiver specification for a sending block
+        with no default output when such receiver list is empty
+        """
+        block_router = BlockRouter()
+        context = BlockContext(block_router, dict())
+
+        # create blocks
+        two_outputs = Two_Outputs()
+        two_outputs.configure(context)
+        log1 = Log1()
+        log1.configure(context)
+
+        # create context initialization data
+        blocks = dict(log1=log1,
+                      two_outputs=two_outputs)
+
+        execution = [
+            BlockExecutionTest(name="two_outputs",
+                               receivers=[])]
+
+        router_context = RouterContext(execution, blocks,
+                                       settings={"clone_signals": False})
+
+        # make sure configure does not raise exception
+        block_router.do_configure(router_context)
+
+    def test_two_outputs_list_specified(self):
+        """ This test verifies that router fails to configure when block uses
+        a simple list receiver specification for a sending block
+        with no default output and receiver list is not empty
+        """
+        block_router = BlockRouter()
+        context = BlockContext(block_router, dict())
+
+        # create blocks
+        two_outputs = Two_Outputs()
+        two_outputs.configure(context)
+        log1 = Log1()
+        log1.configure(context)
+
+        # create context initialization data
+        blocks = dict(log1=log1,
+                      two_outputs=two_outputs)
+
+        execution = [
+            BlockExecutionTest(name="two_outputs",
+                               receivers=["log1"])]
+
+        router_context = RouterContext(execution, blocks,
+                                       settings={"clone_signals": False})
+
+        # it raises exception since Block defines its own outputs but no default
+        # (when specifying receivers using list format, the block output
+        # is mandatory)
+        with self.assertRaises(InvalidBlockOutput):
+            block_router.do_configure(router_context)
 
     def test_three_outputs_mix_inputs(self):
         block_router = BlockRouter()
