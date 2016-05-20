@@ -29,6 +29,13 @@ class TestVersioning(NIOTestCase):
 
     def test_version_comparisons(self):
 
+        # assert that alpha, beta and release candidates versions are allowed
+        self.assertTrue(validate_version("1.0.0b6", "1.0.0b5"))
+        self.assertTrue(validate_version("1.0.0rc2", "1.0.0rc1"))
+        self.assertTrue(validate_version("1.0.0rc1", "1.0.0b1"))
+        self.assertTrue(validate_version("1.0.0b1", "1.0.0a1"))
+        self.assertTrue(validate_version("1.0.0a2", "1.0.0a1"))
+
         # assert that an item with version 0.1.0 is not valid when
         # 1.0.0 is called for
         self.assertFalse(validate_version("0.1.0", "1.0.0"))

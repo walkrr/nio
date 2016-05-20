@@ -38,9 +38,7 @@ class BlockMapping(PropertyHolder):
     mapping = StringProperty(title="Mapping")
 
 
-@DependsOn("nio.modules.persistence", "0.1.0")
-@DependsOn("nio.modules.scheduler", "0.1.0")
-@DependsOn("nio.modules.security", "0.1.0")
+@DependsOn("nio", "2.0.0b1")
 @command('status', method="full_status")
 @command('heartbeat')
 @command('runproperties')
