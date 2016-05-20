@@ -38,9 +38,9 @@ class BlockMapping(PropertyHolder):
     mapping = StringProperty(title="Mapping")
 
 
-@DependsOn("nio.modules.persistence", "1.0.0")
-@DependsOn("nio.modules.scheduler", "1.0.0")
-@DependsOn("nio.modules.security", "1.0.0")
+@DependsOn("nio.modules.persistence", "0.1.0")
+@DependsOn("nio.modules.scheduler", "0.1.0")
+@DependsOn("nio.modules.security", "0.1.0")
 @command('status', method="full_status")
 @command('heartbeat')
 @command('runproperties')
@@ -55,7 +55,7 @@ class Service(PropertyHolder, CommandHolder, Runner):
     by calling 'configure' and 'start'
     """
 
-    version = VersionProperty(version='1.0.0')
+    version = VersionProperty(version='0.1.0')
     type = StringProperty(title="Type", visible=False, readonly=True)
     name = StringProperty(title="Name")
 
