@@ -70,7 +70,7 @@ def validate_version(component_version, dependency_version):
         return True
 
     return compare_versions(component_version,
-                            dependency_version).value >= \
+                            dependency_version).value > \
         VersionCheckResult.older.value
 
 
