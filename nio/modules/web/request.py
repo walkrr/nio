@@ -1,25 +1,15 @@
-class Request(object):
+from nio.modules.proxy import ModuleProxy
 
-    """ Encapsulates web request information
 
-    Create a Request instance to include web request parameters
+class Request(ModuleProxy):
+
+    """ A class encapsulating HTTP request information.
+
+    Your module implementation will proxy this class with its own
+    implementation details. An instance of a request will be passed to
+    web handlers.
 
     """
-
-    def __init__(self, body, params, headers):
-        """ Create a new Request instance.
-
-        Args:
-            body: request body
-            params: request params
-            headers: request headers
-
-        """
-        self._identifier = params.get('identifier')
-        self._body = body
-        self._params = params
-
-        self._headers = headers
 
     def get_body(self):
         """ Retrieves request body
@@ -28,7 +18,7 @@ class Request(object):
             Request body
 
         """
-        return self._body
+        raise NotImplementedError()
 
     def get_identifier(self):
         """ Retrieves request identifier
@@ -37,7 +27,7 @@ class Request(object):
             Request identifier
 
         """
-        return self._identifier
+        raise NotImplementedError()
 
     def get_params(self):
         """ Retrieves request params
@@ -46,7 +36,7 @@ class Request(object):
             Request params
 
         """
-        return self._params
+        raise NotImplementedError()
 
     def get_header(self, header, default=None):
         """ Retrieves request headers
@@ -55,4 +45,4 @@ class Request(object):
             Request headers
 
         """
-        return self._headers.get(header, default)
+        raise NotImplementedError()

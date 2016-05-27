@@ -1,9 +1,11 @@
+from nio.testing.modules.web.server import TestingWebServer
 
-class WebEngine():
+
+class TestingWebEngine(object):
 
     @classmethod
     def get(cls, port, host, config=None):
-        pass
+        return TestingWebServer()
 
     @classmethod
     def remove_server(cls, server):
@@ -11,7 +13,7 @@ class WebEngine():
 
     @classmethod
     def get_servers(cls):
-        pass
+        return []
 
     @classmethod
     def configure(cls, configuration):

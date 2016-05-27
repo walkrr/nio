@@ -74,7 +74,7 @@ class NIOWebTestCase(NIOTestCase):
                                    config if config is not None else {})
         self.servers.append(web_server)
         if auto_start:
-            web_server.start()
+            web_server.start(config)
         return web_server
 
     def remove_server(self, server):
