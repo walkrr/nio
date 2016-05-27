@@ -140,7 +140,7 @@ class FlagsEnum(object):
         change_occurred = False
         # set all flags but intended flag to False
         for key in self._flags.keys():
-            if self._flags[key] and key is not flag.name:
+            if self._flags[key] and key != flag.name:
                 self._flags[key] = False
                 change_occurred = True
 
