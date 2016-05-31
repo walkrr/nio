@@ -76,6 +76,13 @@ class TestBaseBlock(NIOTestCaseNoModules):
     def test_notify_signals(self):
         """Test the block can notify signals properly"""
         blk = Block()
+        block_name = 'block1'
+        service_name = 'service1'
+        blk.configure(BlockContext(
+            BlockRouter(),
+            {"name": block_name},
+            service_name=service_name))
+
         my_sigs = [Signal({"key": "val"})]
         with patch.object(blk, '_block_router') as router_patch:
             blk.notify_signals(my_sigs)

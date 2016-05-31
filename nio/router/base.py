@@ -328,9 +328,9 @@ class BlockRouter(Runner):
                               " notification from block: {0}".
                               format(block.name()))
         else:
-            self.logger.warning("Block Router is not started, discarding "
-                                "signal notification from block: {0}".
-                                format(block.name()))
+            self.logger.warning("Block Router is not started, status is: {0}, "
+                                "discarding signal notification from block: {1}"
+                                .format(self.status, block.name()))
             raise BlockRouterNotStarted()
 
     def deliver_signals(self, block_receiver, signals):

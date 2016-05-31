@@ -13,7 +13,7 @@ from nio.properties import PropertyHolder, StringProperty, \
     VersionProperty, SelectProperty
 from nio.util.logging import get_nio_logger
 from nio.util.logging.levels import LogLevel
-from nio.util.runner import Runner
+from nio.util.runner import Runner, RunnerStatus
 from nio.signal.status import BlockStatusSignal
 from nio.signal.base import Signal
 
@@ -129,6 +129,11 @@ class Base(PropertyHolder, CommandHolder, Runner):
 
         if isinstance(signals, dict):
             raise TypeError("Signals cannot be a dictionary")
+
+        if self.status != RunnerStatus.started:
+            self.logger.warning("Block: {0} is not started, status is: {1}, "
+                                "and is attempting to notify signals".
+                                format(self.name(), self.status))
 
         # if a single Signal is being notified, make it a list
         if isinstance(signals, Signal):
