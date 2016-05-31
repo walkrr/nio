@@ -14,8 +14,6 @@ functionality for different types of data.
 from nio.util.logging import get_nio_logger
 from nio.util.class_attributes import ClassAttributes
 
-_signal_logger = get_nio_logger('Signal')
-
 
 class Signal(object):
 
@@ -64,9 +62,10 @@ class Signal(object):
 
             # If we made it here something was wrong with the key/val,
             # otherwise we would have "continued" through the loop
-            _signal_logger.warning(
-                "Key: {} with value: {} could not be made part of the "
-                "signal".format(key, val), exc_info=True)
+            message = "Key: {} with value: {} could not be made part of the "\
+                      "signal".format(key, val)
+            get_nio_logger('Signal').warning(message, exc_info=True)
+            raise ValueError(message)
 
     def to_dict(self, include_hidden=False, with_type=False):
         """ Create a dictionary representation of this signal.

@@ -72,17 +72,17 @@ class TestSignal(NIOTestCase):
 
     def test_to_dict_with_errors(self):
         """ Ensure that invalid object attributes are not set on the signal """
-        sig = Signal({
-            '': 'empty string',
-            None: 'none key',
-            False: 'false key',
-            "allowed": "allowed_value",
-            1: "one"})
-        self.assertFalse(hasattr(sig, ""))
-        self.assertFalse(hasattr(sig, "None"))
-        self.assertFalse(hasattr(sig, "False"))
+        with self.assertRaises(ValueError):
+            Signal({'': 'empty string'})
+        with self.assertRaises(ValueError):
+            Signal({None: 'none key'})
+        with self.assertRaises(ValueError):
+            Signal({False: 'false key'})
+        with self.assertRaises(ValueError):
+            Signal({1: "one"})
+
+        sig = Signal({"allowed": "allowed_value"})
         self.assertTrue(hasattr(sig, "allowed"))
-        self.assertFalse(hasattr(sig, "1"))
 
     def test_to_dict_with_hidden(self):
         """ Ensure that hidden attributes can be accessed via to_dict """
