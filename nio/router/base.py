@@ -320,9 +320,9 @@ class BlockRouter(Runner):
                     self.deliver_signals(receiver_data, signals_to_send)
 
         elif self.status.is_set(RunnerStatus.stopped):
-            self.logger.info("Block Router is stopped, discarding signal"
-                             " notification from block: {0}".
-                             format(block.name()))
+            self.logger.warning("Block Router is stopped, discarding signal"
+                                " notification from block: {0}".
+                                format(block.name()))
         elif self.status.is_set(RunnerStatus.stopping):
             self.logger.debug("Block Router is stopping, discarding signal"
                               " notification from block: {0}".
