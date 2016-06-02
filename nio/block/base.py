@@ -13,7 +13,7 @@ from nio.properties import PropertyHolder, StringProperty, \
     VersionProperty, SelectProperty
 from nio.util.logging import get_nio_logger
 from nio.util.logging.levels import LogLevel
-from nio.util.runner import Runner, RunnerStatus
+from nio.util.runner import Runner
 from nio.signal.status import BlockStatusSignal
 from nio.signal.base import Signal
 
