@@ -196,3 +196,33 @@ class TestGroupBy(NIOBlockTestCase):
         with self.assertRaises(NotImplementedError):
             block.process_signals([Signal])
         block.stop()
+
+    def test_groups(self):
+        """ Test that 'groups' command return groups as they are added """
+        block = GroupingBlock()
+        self.configure_block(block, {
+            "group_by": "{{ $group }}"
+        })
+
+        block_groups = block.groups()
+        self.assertEqual(len(block_groups), 0)
+
+        # Notify 3 signals into the block
+        block.process_signals([
+            Signal({"group": 1, "value": 1}),
+            Signal({"group": 2, "value": 1}),
+            Signal({"group": 1, "value": 2})
+        ])
+
+        # verify created groups
+        expected_groups = {1, 2}
+        block_groups = block.groups()
+        self.assertEqual(expected_groups, block_groups)
+
+        block.process_signals([
+            Signal({"group": 3, "value": 3})
+        ])
+
+        expected_groups = {1, 2, 3}
+        block_groups = block.groups()
+        self.assertEqual(expected_groups, block_groups)

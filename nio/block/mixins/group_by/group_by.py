@@ -2,9 +2,12 @@ from copy import copy
 from collections import defaultdict, Hashable
 from nio.properties import Property
 from nio.util.ensure_types import ensure_list
+from nio.command import command
+from nio.command.holder import CommandHolder
 
 
-class GroupBy(object):
+@command("groups")
+class GroupBy(CommandHolder):
 
     """ Use this base class to extend block functionality to groups of signals
 
@@ -137,3 +140,6 @@ class GroupBy(object):
             signal_groups[key].append(s)
 
         return signal_groups
+
+    def groups(self):
+        return self._groups
