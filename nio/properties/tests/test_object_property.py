@@ -13,11 +13,21 @@ class ContainerClass(PropertyHolder):
         ContainedClass, title="property", default=ContainedClass())
 
 
+class ContainerClassNoDefault(PropertyHolder):
+    property = ObjectProperty(ContainedClass, title="property")
+
+
 class TestObjectProperty(NIOTestCaseNoModules):
 
     def test_default(self):
         """Test default behavior of object property."""
         container = ContainerClass()
+        self.assertIsNotNone(container.property)
+        self.assertEqual(type(container.property()), ContainedClass)
+
+        # make sure a default is auto-provided when not specified for
+        # object type properties
+        container = ContainerClassNoDefault()
         self.assertIsNotNone(container.property)
         self.assertEqual(type(container.property()), ContainedClass)
 

@@ -25,6 +25,12 @@ class ObjectProperty(BaseProperty):
                 "Specified object type {} is not a PropertyHolder".format(
                     obj_type.__class__))
         kwargs['obj_type'] = obj_type
+
+        # if no default was specified in the definition, make the default to be
+        # an [obj_type] instance
+        if 'default' not in kwargs:
+            kwargs['default'] = obj_type()
+
         super().__init__(ObjectType, **kwargs)
         self.description.update(self._get_description(**kwargs))
 
