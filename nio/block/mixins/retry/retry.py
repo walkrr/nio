@@ -1,4 +1,5 @@
 from enum import Enum
+from threading import Event
 from nio.properties import PropertyHolder, ObjectProperty, BoolProperty, \
     IntProperty, SelectProperty, FloatProperty
 from nio.block.mixins.retry.strategy import BackoffStrategy
@@ -114,6 +115,7 @@ class Retry(object):
             execute_method (callable): A function to attempt to execute. The
                 function may be called multiple times if retries occur.
             args/kwargs: Optional arguments to pass to the execute method
+            stop_retry_event (Event): Event that stops retrying-loop when set
 
         Returns:
             The result of execute_method upon success.
@@ -122,6 +124,9 @@ class Retry(object):
             Exception: The exception that execute_method raised when the
                 backoff strategy decided to stop retrying.
         """
+        # verify incoming event type if set
+        if stop_retry_event and not isinstance(stop_retry_event, Event):
+            raise TypeError("stop_retry_event must be an instance of Event")
         # Save a stringified version of the method's name
         # If it doesn't define __name__, use however we should stringify
         execute_method_name = getattr(
