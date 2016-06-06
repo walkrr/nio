@@ -106,7 +106,8 @@ class Retry(object):
             self.retry_options().strategy().value,
             **(self.retry_options().get_options_dict()))
 
-    def execute_with_retry(self, execute_method, *args, **kwargs):
+    def execute_with_retry(self, execute_method, *args, stop_retry_event=None,
+                           **kwargs):
         """ Execute a method and retry if it raises an exception
 
         Args:
@@ -125,7 +126,7 @@ class Retry(object):
         # If it doesn't define __name__, use however we should stringify
         execute_method_name = getattr(
             execute_method, '__name__', str(execute_method))
-        while True:
+        while not stop_retry_event or not stop_retry_event.is_set():
             try:
                 result = execute_method(*args, **kwargs)
                 # If we got here, the request succeeded, let the backoff
