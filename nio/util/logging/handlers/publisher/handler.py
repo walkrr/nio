@@ -23,20 +23,16 @@ class PublisherHandler(logging.Handler):
 
     """
 
-    def __init__(self, topics={"type": ["logging"]},
-                 publisher_ready_event=None):
+    def __init__(self, topics={"type": ["logging"]}):
         """  Create a new PublisherHandler instance.
 
         Args:
             topics (dict): topics to use when publishing log messages
-            publisher_ready_event (Event): event to signal when publisher is
-                ready
-
         """
         super().__init__()
 
         # Initialize unique proxy for all publisher handlers.
-        PublisherProxy.init(topics, publisher_ready_event)
+        PublisherProxy.init(topics)
 
     def emit(self, record):
         """ Publish the log record on the opened publisher

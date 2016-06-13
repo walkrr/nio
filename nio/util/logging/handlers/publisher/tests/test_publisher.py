@@ -1,5 +1,4 @@
 import logging
-from threading import Event
 
 from nio.modules.communication.subscriber import Subscriber
 from nio.util.logging.handlers.publisher.cache_filter import CacheFilter
@@ -24,10 +23,7 @@ class TestPublisherBase(NIOTestCase):
         self._publisher_logger = logging.getLogger("service_name")
 
         publisher_topics = {"type": "logging"}
-        publisher_ready_event = Event()
-        self._handler = \
-            PublisherHandler(topics=publisher_topics,
-                             publisher_ready_event=publisher_ready_event)
+        self._handler = PublisherHandler(topics=publisher_topics)
 
         self._handler.setLevel(logging.INFO)
         self._handler.addFilter(NIOFilter())
@@ -40,9 +36,6 @@ class TestPublisherBase(NIOTestCase):
         # the handler will initialize the PublisherProxy which should be
         # done before the modules are ready
         super().setUp()
-
-        # wait a generous 3 seconds for publisher to be ready
-        self.assertTrue(publisher_ready_event.wait(3))
 
         # Set up a test-wide handler for messages delivered through the
         # publisher
