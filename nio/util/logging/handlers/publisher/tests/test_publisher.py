@@ -1,4 +1,6 @@
 import logging
+from threading import Event
+
 from nio.modules.communication.subscriber import Subscriber
 from nio.util.logging.handlers.publisher.cache_filter import CacheFilter
 from nio.util.logging.handlers.publisher.handler import PublisherHandler
@@ -20,7 +22,13 @@ class TestPublisherBase(NIOTestCase):
         self._received_messages = []
         # Set up our publisher logger with the proper filters and handlers
         self._publisher_logger = logging.getLogger("service_name")
-        self._handler = PublisherHandler()
+
+        publisher_topics = {"type": "logging"}
+        publisher_ready_event = Event()
+        self._handler = \
+            PublisherHandler(topics=publisher_topics,
+                             publisher_ready_event=publisher_ready_event)
+
         self._handler.setLevel(logging.INFO)
         self._handler.addFilter(NIOFilter())
         if self.add_cache_filter():
@@ -33,9 +41,13 @@ class TestPublisherBase(NIOTestCase):
         # done before the modules are ready
         super().setUp()
 
+        # wait a generous 3 seconds for publisher to be ready
+        self.assertTrue(publisher_ready_event.wait(3))
+
         # Set up a test-wide handler for messages delivered through the
         # publisher
-        self._subscriber = Subscriber(self._on_logger_signal, type=["logging"])
+        self._subscriber = Subscriber(self._on_logger_signal,
+                                      **publisher_topics)
         self._subscriber.open()
 
     def tearDown(self):
