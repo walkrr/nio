@@ -16,10 +16,6 @@ class WebEngine(ModuleProxy):
 
         Returns:
             The server if it already exists, or a new instantiated server
-
-        Raises:
-            TypeError if there port is None
-
         """
         raise NotImplementedError()
 
@@ -29,32 +25,7 @@ class WebEngine(ModuleProxy):
 
         Args:
             server (WebServer): Server to remove
-
         """
-        raise NotImplementedError()
-
-    @staticmethod
-    def get_servers():
-        """ Provides a list of running web servers """
-        raise NotImplementedError()
-
-    @staticmethod
-    def configure(configuration):
-        """ Configure Web Engine
-
-        Args:
-            configuration: Engine configuration
-        """
-        raise NotImplementedError()
-
-    @staticmethod
-    def get_name():
-        """ Provides engine name """
-        raise NotImplementedError()
-
-    @staticmethod
-    def get_version():
-        """ Provides engine version """
         raise NotImplementedError()
 
     @staticmethod

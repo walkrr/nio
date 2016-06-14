@@ -43,8 +43,6 @@ class NIOWebTestCase(NIOTestCase):
 
     def setUp(self):
         super().setUp()
-        # Check Servers were removed between tests
-        self.assertEqual(0, len(WebEngine.get_servers()))
         self.servers = []
         setattr(threading.current_thread(), "user", User("tester"))
 
@@ -52,7 +50,6 @@ class NIOWebTestCase(NIOTestCase):
         delattr(threading.current_thread(), "user")
         for server in list(self.servers):
             self.remove_server(server)
-        self.assertEqual(0, len(WebEngine.get_servers()))
         super().tearDown()
 
     def start_engine(self, callback=None):

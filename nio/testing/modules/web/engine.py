@@ -12,25 +12,6 @@ class TestingWebEngine(object):
         pass
 
     @staticmethod
-    def get_servers():
-        return []
-
-    @staticmethod
-    def configure(configuration):
-        """ Configure Web Server """
-        pass
-
-    @staticmethod
-    def get_name():
-        """ Returns server name """
-        pass
-
-    @staticmethod
-    def get_version():
-        """ Returns web server version """
-        pass
-
-    @staticmethod
     def start(callback=None):
         """ Starts Web Server using configured params """
         pass
