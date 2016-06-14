@@ -23,16 +23,24 @@ class PublisherHandler(logging.Handler):
 
     """
 
-    def __init__(self, topics={"type": ["logging"]}):
+    def __init__(self, topics={"type": ["logging"]},
+                 max_publisher_ready_time=5,
+                 publisher_ready_wait_interval_time=0.1):
         """  Create a new PublisherHandler instance.
 
         Args:
             topics (dict): topics to use when publishing log messages
+            max_publisher_ready_time (float): maximum time to wait for publisher
+                to be ready
+            publisher_ready_wait_interval_time (float): interval in seconds to
+                use when waiting for publisher to be ready
         """
         super().__init__()
 
         # Initialize unique proxy for all publisher handlers.
-        PublisherProxy.init(topics)
+        PublisherProxy.init(topics,
+                            max_publisher_ready_time,
+                            publisher_ready_wait_interval_time)
 
     def emit(self, record):
         """ Publish the log record on the opened publisher

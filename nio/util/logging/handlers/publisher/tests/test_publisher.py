@@ -44,6 +44,7 @@ class TestPublisherBase(NIOTestCase):
         self._subscriber.open()
 
     def tearDown(self):
+        self._subscriber.close()
         self._publisher_logger.removeHandler(self._handler)
         self._handler.close()
         self._received_messages = []
