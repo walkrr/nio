@@ -2,9 +2,11 @@
    NIO web support base class
 
 """
+import threading
 import requests
 import json
 from nio.testing.test_case import NIOTestCase
+from nio.modules.security.user import User
 from nio.modules.web import WebEngine
 
 
@@ -44,8 +46,10 @@ class NIOWebTestCase(NIOTestCase):
         # Check Servers were removed between tests
         self.assertEqual(0, len(WebEngine.get_servers()))
         self.servers = []
+        setattr(threading.current_thread(), "user", User("tester"))
 
     def tearDown(self):
+        delattr(threading.current_thread(), "user")
         for server in list(self.servers):
             self.remove_server(server)
         self.assertEqual(0, len(WebEngine.get_servers()))
