@@ -3,8 +3,8 @@ from nio.modules.proxy import ModuleProxy
 
 class WebEngine(ModuleProxy):
 
-    @classmethod
-    def get(cls, port, host, configuration=None):
+    @staticmethod
+    def get(port, host, configuration=None):
         """ Instantiates a web server
 
         Args:
@@ -23,8 +23,8 @@ class WebEngine(ModuleProxy):
         """
         raise NotImplementedError()
 
-    @classmethod
-    def remove_server(cls, server):
+    @staticmethod
+    def remove_server(server):
         """ Stops and remove a server
 
         Args:
@@ -33,13 +33,13 @@ class WebEngine(ModuleProxy):
         """
         raise NotImplementedError()
 
-    @classmethod
-    def get_servers(cls):
+    @staticmethod
+    def get_servers():
         """ Provides a list of running web servers """
         raise NotImplementedError()
 
-    @classmethod
-    def configure(cls, configuration):
+    @staticmethod
+    def configure(configuration):
         """ Configure Web Engine
 
         Args:
@@ -47,18 +47,18 @@ class WebEngine(ModuleProxy):
         """
         raise NotImplementedError()
 
-    @classmethod
-    def get_name(cls):
+    @staticmethod
+    def get_name():
         """ Provides engine name """
         raise NotImplementedError()
 
-    @classmethod
-    def get_version(cls):
+    @staticmethod
+    def get_version():
         """ Provides engine version """
         raise NotImplementedError()
 
-    @classmethod
-    def start(cls, callback=None):
+    @staticmethod
+    def start(callback=None):
         """ Starts Web engine
 
         Starts a web engine based on previously set configuration
@@ -69,13 +69,13 @@ class WebEngine(ModuleProxy):
         """
         raise NotImplementedError()
 
-    @classmethod
-    def stop(cls):
+    @staticmethod
+    def stop():
         """ Stops engine and running Web Servers """
         raise NotImplementedError()
 
-    @classmethod
-    def block(cls):
+    @staticmethod
+    def block():
         """ Blocks the Web engine
 
         This method is normally called from the main thread to block

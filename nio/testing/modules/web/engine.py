@@ -3,44 +3,44 @@ from nio.testing.modules.web.server import TestingWebServer
 
 class TestingWebEngine(object):
 
-    @classmethod
-    def get(cls, port, host, config=None):
+    @staticmethod
+    def get(port, host, config=None):
         return TestingWebServer()
 
-    @classmethod
-    def remove_server(cls, server):
+    @staticmethod
+    def remove_server(server):
         pass
 
-    @classmethod
-    def get_servers(cls):
+    @staticmethod
+    def get_servers():
         return []
 
-    @classmethod
-    def configure(cls, configuration):
+    @staticmethod
+    def configure(configuration):
         """ Configure Web Server """
         pass
 
-    @classmethod
-    def get_name(cls):
+    @staticmethod
+    def get_name():
         """ Returns server name """
         pass
 
-    @classmethod
-    def get_version(cls):
+    @staticmethod
+    def get_version():
         """ Returns web server version """
         pass
 
-    @classmethod
-    def start(cls, callback=None):
+    @staticmethod
+    def start(callback=None):
         """ Starts Web Server using configured params """
         pass
 
-    @classmethod
-    def stop(cls):
+    @staticmethod
+    def stop():
         """ Stops running Web Servers """
         pass
 
-    @classmethod
-    def block(cls):
+    @staticmethod
+    def block():
         """ Blocks the Web Server until further request arrives """
         pass
