@@ -4,6 +4,7 @@ from nio.modules.communication.subscriber import Subscriber
 from nio.util.logging.handlers.publisher.cache_filter import CacheFilter
 from nio.util.logging.handlers.publisher.handler import PublisherHandler
 from nio.util.logging.filter import NIOFilter
+from nio.util.logging.handlers.publisher.proxy import PublisherProxy
 
 from nio.testing.test_case import NIOTestCase
 
@@ -61,6 +62,10 @@ class TestPublisherBase(NIOTestCase):
 class TestPublisher(TestPublisherBase):
 
     def test_log_to_publisher(self):
+
+        # wait for publisher to be ready
+        self.assertTrue(PublisherProxy._publisher_ready_event.wait(1))
+
         """ Asserts that logged messages at different levels are handled """
         debug_messages = ["debug message1", "debug message2"]
         warning_messages = ["warning message1", "warning message2"]

@@ -2,14 +2,12 @@ from threading import RLock, Event
 from time import sleep
 from datetime import datetime, timedelta
 
-from nio.modules.module import ModuleNotInitialized
 from nio.modules.communication.publisher import Publisher
 from nio.util.threading import spawn
 
 
 class PublisherNotReadyException(Exception):
-    """ Exception raised when publisher could not be ready within the
-    given amount of time configured
+    """ Exception raised when publisher is not ready within specified time
     """
     pass
 
@@ -54,19 +52,27 @@ class PublisherProxy(object):
     def publish(cls, signals):
         """ Publishes logging signals.
 
-        This method ensures that publisher is ready to send signals, it
-        might happen that a call to publish 'logging' signals might come before
-        publisher is ready since logging is initialized before communication
+        This method publishes the signal when publisher has been setup
+        successfully.
 
+        It might happen that a call to publish 'logging' signals comes before
+        publisher is ready, this is due to the logging module being initialized
+        before communication module, in which case the signals are ignored or
+        not published
+
+        Note: establishing a mechanism waiting for publisher to be ready during
+        this 'publish' call has its own drawbacks due to the fact that the
+        original logging instructions might hold back the execution that allows
+        a publisher to be ready in the first place (see _create_publisher)
 
         Args:
             signals: signals to publish
 
         """
         # publish when all conditions are met
-        cls._ensure_publisher_ready()
-        with cls._publisher_lock:
-            cls._publisher.send(signals)
+        if cls._publisher_ready_event.is_set():
+            with cls._publisher_lock:
+                cls._publisher.send(signals)
 
     @classmethod
     def close(cls):
@@ -84,18 +90,11 @@ class PublisherProxy(object):
         cls._initialized = False
 
     @classmethod
-    def _ensure_publisher_ready(cls):
-        """ Ensures publisher is ready before any publishing takes place
-        """
-        if not cls._publisher_ready_event.is_set():
-            if not cls._publisher_ready_event.wait(
-                    cls._max_publisher_ready_time):
-                raise PublisherNotReadyException()
-
-    @classmethod
     def _create_publisher(cls):
-        """ Keeps on trying to create publisher, which will happen
-        successfully once communication module is initialized
+        """ Attempts to create publisher.
+
+        Keeps on trying to create publisher, which will happen successfully
+        once communication module is initialized
         """
         end_time = datetime.now() + timedelta(
             seconds=cls._max_publisher_ready_time)
@@ -104,7 +103,7 @@ class PublisherProxy(object):
                 cls._publisher = Publisher(**cls._topics)
                 cls._publisher.open()
                 cls._publisher_ready_event.set()
-            except (NotImplementedError, ModuleNotInitialized):
+            except:
                 if datetime.now() >= end_time:
                     raise PublisherNotReadyException(
                         "Maximum time for publisher to be ready elapsed")

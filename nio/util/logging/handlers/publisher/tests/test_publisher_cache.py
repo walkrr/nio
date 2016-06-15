@@ -1,3 +1,4 @@
+from nio.util.logging.handlers.publisher.proxy import PublisherProxy
 from nio.util.logging.handlers.publisher.tests.test_publisher \
     import TestPublisherBase
 
@@ -9,6 +10,10 @@ class TestPublisherCache(TestPublisherBase):
 
     def test_log_to_publisher_cache(self):
         """ Asserts that a CacheFilter can filter out repeated log messages """
+
+        # wait for publisher to be ready
+        self.assertTrue(PublisherProxy._publisher_ready_event.wait(1))
+
         msg1 = "warning message1 cached"
         msg2 = "warning message2 cached"
         warning_messages = [msg1, msg1, msg1, msg2]

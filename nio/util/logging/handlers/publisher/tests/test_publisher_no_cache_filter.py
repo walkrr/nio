@@ -1,3 +1,4 @@
+from nio.util.logging.handlers.publisher.proxy import PublisherProxy
 from nio.util.logging.handlers.publisher.tests.test_publisher \
     import TestPublisherBase
 
@@ -10,6 +11,9 @@ class TestPublisherNoCacheFilter(TestPublisherBase):
     def test_log_to_publisher_no_cache_filter(self):
         """ Asserts that when cache filter is not added, no caching takes place
         """
+        # wait for publisher to be ready
+        self.assertTrue(PublisherProxy._publisher_ready_event.wait(1))
+
         msg1 = "warning message1 nocache"
         msg2 = "warning message2 nocache"
         warning_messages = [msg1, msg1, msg1, msg2]
