@@ -71,7 +71,7 @@ class NIOWebTestCase(NIOTestCase):
             auto_start (bool): if True server is started
 
         """
-        web_server = WebEngine.get(port, host,
+        web_server = WebEngine.add_server(port, host,
                                    config if config is not None else {})
         self.servers.append(web_server)
         if auto_start:

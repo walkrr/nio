@@ -4,8 +4,8 @@ from nio.modules.proxy import ModuleProxy
 class WebEngine(ModuleProxy):
 
     @staticmethod
-    def get(port, host, configuration=None):
-        """ Instantiates a web server
+    def add_server(port, host, configuration=None):
+        """ Creates and returns a web server
 
         Args:
             port (int): Port listening for requests

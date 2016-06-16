@@ -4,7 +4,7 @@ from nio.testing.modules.web.server import TestingWebServer
 class TestingWebEngine(object):
 
     @staticmethod
-    def get(port, host, config=None):
+    def add_server(port, host, config=None):
         return TestingWebServer()
 
     @staticmethod
