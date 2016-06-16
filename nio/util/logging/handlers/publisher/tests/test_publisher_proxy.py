@@ -10,23 +10,24 @@ class TestPublisherProxy(NIOTestCase):
     def get_test_modules(self):
         return super().get_test_modules() | {'communication'}
 
-    @patch('nio.util.logging.handlers.publisher.proxy.Publisher',
-           side_effect=NotImplementedError())
-    def test_publisher_create_failure(self, publisher):
-        """ Asserts that signal does not get published when ready time is 0
+    def test_publisher_create_failure(self):
+        """ Asserts that ready event is not set when Publisher cannot be created
         """
         topics = {"type": "logging"}
         # set no waiting for publisher to be ready
         max_publisher_ready_time = 0
         publisher_ready_wait_interval_time = 0.1
 
-        PublisherProxy.init(topics,
-                            max_publisher_ready_time,
-                            publisher_ready_wait_interval_time)
+        with patch('nio.util.logging.handlers.publisher.proxy.Publisher',
+                   side_effect=NotImplementedError()):
+            PublisherProxy.init(topics,
+                                max_publisher_ready_time,
+                                publisher_ready_wait_interval_time)
 
-        self.assertFalse(PublisherProxy._publisher_ready_event.is_set())
-        # assert that when a Publisher can't be created, the event remains unset
-        self.assertFalse(PublisherProxy._publisher_ready_event.wait(0.1))
+            self.assertFalse(PublisherProxy._publisher_ready_event.is_set())
+            # assert that when a Publisher can't be created, the event
+            # remains unset
+            self.assertFalse(PublisherProxy._publisher_ready_event.wait(0.1))
 
         PublisherProxy.close()
 
