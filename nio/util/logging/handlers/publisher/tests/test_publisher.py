@@ -1,8 +1,10 @@
 import logging
+
 from nio.modules.communication.subscriber import Subscriber
 from nio.util.logging.handlers.publisher.cache_filter import CacheFilter
 from nio.util.logging.handlers.publisher.handler import PublisherHandler
 from nio.util.logging.filter import NIOFilter
+from nio.util.logging.handlers.publisher.proxy import PublisherProxy
 
 from nio.testing.test_case import NIOTestCase
 
@@ -20,7 +22,10 @@ class TestPublisherBase(NIOTestCase):
         self._received_messages = []
         # Set up our publisher logger with the proper filters and handlers
         self._publisher_logger = logging.getLogger("service_name")
-        self._handler = PublisherHandler()
+
+        publisher_topics = {"type": "logging"}
+        self._handler = PublisherHandler(topics=publisher_topics)
+
         self._handler.setLevel(logging.INFO)
         self._handler.addFilter(NIOFilter())
         if self.add_cache_filter():
@@ -35,10 +40,12 @@ class TestPublisherBase(NIOTestCase):
 
         # Set up a test-wide handler for messages delivered through the
         # publisher
-        self._subscriber = Subscriber(self._on_logger_signal, type=["logging"])
+        self._subscriber = Subscriber(self._on_logger_signal,
+                                      **publisher_topics)
         self._subscriber.open()
 
     def tearDown(self):
+        self._subscriber.close()
         self._publisher_logger.removeHandler(self._handler)
         self._handler.close()
         self._received_messages = []
@@ -55,6 +62,10 @@ class TestPublisherBase(NIOTestCase):
 class TestPublisher(TestPublisherBase):
 
     def test_log_to_publisher(self):
+
+        # wait for publisher to be ready
+        self.assertTrue(PublisherProxy._publisher_ready_event.wait(1))
+
         """ Asserts that logged messages at different levels are handled """
         debug_messages = ["debug message1", "debug message2"]
         warning_messages = ["warning message1", "warning message2"]

@@ -49,6 +49,7 @@ class PubSubManager(object):
         for publisher_callbacks in cls.publishers.values():
             if subscriber in publisher_callbacks:
                 publisher_callbacks.remove(subscriber)
+        cls.subscribers.remove(subscriber)
 
     @classmethod
     def send(cls, publisher, signals):
