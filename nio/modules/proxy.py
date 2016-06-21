@@ -86,7 +86,9 @@ class ModuleProxy(object):
             # do not allow creation of not-proxied instances, since allowing
             # such creation yields to unexpected behaviour when after proxying
             # class a proxied method on the instance is invoked.
-            raise ProxyNotProxied
+            raise ProxyNotProxied(
+                "An instance of '{0}' class cannot be created, class has not "
+                "been proxied".format(self.__class__.__name__))
 
     @classmethod
     def proxy(cls, class_to_proxy):
