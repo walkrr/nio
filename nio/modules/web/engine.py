@@ -3,13 +3,14 @@ from nio.modules.proxy import ModuleProxy
 
 class WebEngine(ModuleProxy):
 
-    @staticmethod
-    def add_server(port, host, configuration=None):
+    @classmethod
+    def add_server(cls, port, host=None, configuration=None):
         """ Creates and returns a web server
 
         Args:
             port (int): Port listening for requests
-            host (str): Web server host address.
+            host (str): Web server host address. Should default to the current
+                host of the server.
             configuration (dict): Contains additional server configuration,
                 might contain additional ssl settings such as:
                 ssl_certificate, ssl_private_key, ssl_certificate_chain
@@ -19,8 +20,8 @@ class WebEngine(ModuleProxy):
         """
         raise NotImplementedError()
 
-    @staticmethod
-    def remove_server(server):
+    @classmethod
+    def remove_server(cls, server):
         """ Stops and remove a server
 
         Args:
@@ -28,8 +29,8 @@ class WebEngine(ModuleProxy):
         """
         raise NotImplementedError()
 
-    @staticmethod
-    def start(callback=None):
+    @classmethod
+    def start(cls, callback=None):
         """ Starts Web engine
 
         Starts a web engine based on previously set configuration
@@ -40,13 +41,13 @@ class WebEngine(ModuleProxy):
         """
         raise NotImplementedError()
 
-    @staticmethod
-    def stop():
+    @classmethod
+    def stop(cls):
         """ Stops engine and running Web Servers """
         raise NotImplementedError()
 
-    @staticmethod
-    def block():
+    @classmethod
+    def block(cls):
         """ Blocks the Web engine
 
         This method is normally called from the main thread to block
