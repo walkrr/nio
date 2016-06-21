@@ -1,4 +1,4 @@
-
+from nio.modules.proxy import ProxyNotProxied
 from nio.util.cache import Cache
 
 
@@ -46,7 +46,7 @@ class LogCache(object):
         # record is always added or updated in cache under given key
         try:
             self._cache.add(key, record)
-        except NotImplementedError:
+        except ProxyNotProxied:
             # catch any potential errors arising from the fact that
             # logging module starts before any other, i.e., scheduling
             pass

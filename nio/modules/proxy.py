@@ -80,8 +80,15 @@ class ModuleProxy(object):
         __init__ method of the proxy implementation will NOT be proxied to the
         interface.
         """
-        if isclass(self._impl_class):
+        if self.proxied and isclass(self._impl_class):
             self._impl_class.__init__(self, *args, **kwargs)
+        else:
+            # do not allow creation of not-proxied instances, since allowing
+            # such creation yields to unexpected behaviour when after proxying
+            # class a proxied method on the instance is invoked.
+            raise ProxyNotProxied(
+                "An instance of '{0}' class cannot be created, class has not "
+                "been proxied".format(self.__class__.__name__))
 
     @classmethod
     def proxy(cls, class_to_proxy):

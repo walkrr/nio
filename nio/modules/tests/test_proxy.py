@@ -184,16 +184,9 @@ class TestNoProxy(NIOTestCaseNoModules):
         super().tearDown()
 
     def test_no_proxy(self):
-        """Nothing gets called without proxying"""
-        # Manually set the implementation class so we can call the constructor
-        ProxyInterface._impl_class = ProxyImplementation
-        not_proxied = ProxyInterface()
-        with self.assertRaises(NotImplementedError):
-            not_proxied.method_a()
-        with self.assertRaises(NotImplementedError):
-            not_proxied._protected_proxy_method()
-        with self.assertRaises(AttributeError):
-            not_proxied.own_method()
+        """No instance creation is allowed without proxying"""
+        with self.assertRaises(ProxyNotProxied):
+            ProxyInterface()
 
     def test_init_called(self):
         """Make sure the implementation's constructor is called"""
