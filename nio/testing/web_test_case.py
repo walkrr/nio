@@ -52,14 +52,9 @@ class NIOWebTestCase(NIOTestCase):
             self.remove_server(server)
         super().tearDown()
 
-    def start_engine(self, callback=None):
-        """ Starts the web engine
-
-        Args:
-            callback: optional engine entry point
-
-        """
-        WebEngine.start(callback)
+    def start_engine(self):
+        """ Starts the web engine """
+        WebEngine.start()
 
     def add_server(self, port, config=None, host="127.0.0.1", auto_start=True):
         """ Adds and starts a web server (if auto_start is True)
@@ -72,7 +67,7 @@ class NIOWebTestCase(NIOTestCase):
 
         """
         web_server = WebEngine.add_server(port, host,
-                                   config if config is not None else {})
+                                          config if config is not None else {})
         self.servers.append(web_server)
         if auto_start:
             web_server.start(config)

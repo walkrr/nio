@@ -12,7 +12,7 @@ class TestingWebEngine(object):
         pass
 
     @classmethod
-    def start(cls, callback=None):
+    def start(cls):
         """ Starts Web Server using configured params """
         pass
 

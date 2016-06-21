@@ -34,14 +34,10 @@ class WebEngine(ModuleProxy):
         raise NotImplementedError()
 
     @classmethod
-    def start(cls, callback=None):
+    def start(cls):
         """ Starts Web engine
 
         Starts a web engine based on previously set configuration
-
-        Args:
-            callback: optional engine entry point
-
         """
         raise NotImplementedError()
 
