@@ -1,3 +1,8 @@
+class ServerAlreadyExists(Exception):
+    """ Raised when trying to add a server that already exists """
+    pass
+
+
 class HTTPError(Exception):
 
     def __init__(self, status=500, message=None):

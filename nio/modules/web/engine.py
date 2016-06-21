@@ -16,7 +16,11 @@ class WebEngine(ModuleProxy):
                 ssl_certificate, ssl_private_key, ssl_certificate_chain
 
         Returns:
-            The server if it already exists, or a new instantiated server
+            The newly created WebServer
+
+        Raises:
+            ServerAlreadyExists: if trying to add a server that has already
+                been created on that host/port combination.
         """
         raise NotImplementedError()
 
