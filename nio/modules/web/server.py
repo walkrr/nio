@@ -1,7 +1,15 @@
-class WebServer(object):
-    """ Web Server
+from nio.modules.proxy import ModuleProxy
 
-    Serves HTTP requests given a host, port, and additional configuration
+
+class WebServer(ModuleProxy):
+
+    """ A Web Server class
+
+    A web server is created by a web engine and can be started, stopped, and
+    maintains a list of handlers (WebHandler) that it can receive requests
+    on.
+
+    This will likely be implemented in the web module implementation.
 
     """
 

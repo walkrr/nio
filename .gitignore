@@ -18,7 +18,7 @@ test_results.xml
 *.log
 dist
 build
-src/nio.egg-info
+nio.egg-info
 
 # Documentation
 docs/build

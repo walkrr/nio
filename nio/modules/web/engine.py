@@ -4,22 +4,23 @@ from nio.modules.proxy import ModuleProxy
 class WebEngine(ModuleProxy):
 
     @classmethod
-    def get(cls, port, host, configuration=None):
-        """ Instantiates a web server
+    def add_server(cls, port, host=None, configuration=None):
+        """ Creates and returns a web server
 
         Args:
             port (int): Port listening for requests
-            host (str): Web server host address.
+            host (str): Web server host address. Should default to the current
+                host of the server.
             configuration (dict): Contains additional server configuration,
                 might contain additional ssl settings such as:
                 ssl_certificate, ssl_private_key, ssl_certificate_chain
 
         Returns:
-            The server if it already exists, or a new instantiated server
+            The newly created WebServer
 
         Raises:
-            TypeError if there port is None
-
+            ServerAlreadyExists: if trying to add a server that has already
+                been created on that host/port combination.
         """
         raise NotImplementedError()
 
@@ -29,43 +30,14 @@ class WebEngine(ModuleProxy):
 
         Args:
             server (WebServer): Server to remove
-
         """
         raise NotImplementedError()
 
     @classmethod
-    def get_servers(cls):
-        """ Provides a list of running web servers """
-        raise NotImplementedError()
-
-    @classmethod
-    def configure(cls, configuration):
-        """ Configure Web Engine
-
-        Args:
-            configuration: Engine configuration
-        """
-        raise NotImplementedError()
-
-    @classmethod
-    def get_name(cls):
-        """ Provides engine name """
-        raise NotImplementedError()
-
-    @classmethod
-    def get_version(cls):
-        """ Provides engine version """
-        raise NotImplementedError()
-
-    @classmethod
-    def start(cls, callback=None):
+    def start(cls):
         """ Starts Web engine
 
         Starts a web engine based on previously set configuration
-
-        Args:
-            callback: optional engine entry point
-
         """
         raise NotImplementedError()
 

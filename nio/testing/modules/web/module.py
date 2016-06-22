@@ -1,4 +1,6 @@
-from nio.testing.modules.web.engine import WebEngine
+from nio.testing.modules.web.engine import TestingWebEngine
+from nio.testing.modules.web.server import TestingWebServer
+from nio.testing.modules.web.http import TestingRequest, TestingResponse
 from nio.modules.web.module import WebModule
 
 
@@ -12,7 +14,10 @@ class TestingWebModule(WebModule):
 
     def initialize(self, context):
         super().initialize(context)
-        self.proxy_web_class(WebEngine)
+        self.proxy_web_engine_class(TestingWebEngine)
+        self.proxy_web_server_class(TestingWebServer)
+        self.proxy_request_class(TestingRequest)
+        self.proxy_response_class(TestingResponse)
 
     def finalize(self):
         super().finalize()

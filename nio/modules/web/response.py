@@ -1,8 +1,13 @@
-class Response(object):
+from nio.modules.proxy import ModuleProxy
 
-    """ Encapsulates web response information
 
-    Create a Response instance to include web response information
+class Response(ModuleProxy):
+
+    """ A class encapsulating HTTP response information.
+
+    Your module implementation will proxy this class with its own
+    implementation details. An instance of a response will be passed to
+    web handlers.
 
     """
 

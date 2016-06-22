@@ -2,9 +2,11 @@
    NIO web support base class
 
 """
+import threading
 import requests
 import json
 from nio.testing.test_case import NIOTestCase
+from nio.modules.security.user import User
 from nio.modules.web import WebEngine
 
 
@@ -41,24 +43,18 @@ class NIOWebTestCase(NIOTestCase):
 
     def setUp(self):
         super().setUp()
-        # Check Servers were removed between tests
-        self.assertEqual(0, len(WebEngine.get_servers()))
         self.servers = []
+        setattr(threading.current_thread(), "user", User("tester"))
 
     def tearDown(self):
+        delattr(threading.current_thread(), "user")
         for server in list(self.servers):
             self.remove_server(server)
-        self.assertEqual(0, len(WebEngine.get_servers()))
         super().tearDown()
 
-    def start_engine(self, callback=None):
-        """ Starts the web engine
-
-        Args:
-            callback: optional engine entry point
-
-        """
-        WebEngine.start(callback)
+    def start_engine(self):
+        """ Starts the web engine """
+        WebEngine.start()
 
     def add_server(self, port, config=None, host="127.0.0.1", auto_start=True):
         """ Adds and starts a web server (if auto_start is True)
@@ -70,11 +66,11 @@ class NIOWebTestCase(NIOTestCase):
             auto_start (bool): if True server is started
 
         """
-        web_server = WebEngine.get(port, host,
-                                   config if config is not None else {})
+        web_server = WebEngine.add_server(port, host,
+                                          config if config is not None else {})
         self.servers.append(web_server)
         if auto_start:
-            web_server.start()
+            web_server.start(config)
         return web_server
 
     def remove_server(self, server):
