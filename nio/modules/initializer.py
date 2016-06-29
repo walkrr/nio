@@ -17,7 +17,6 @@ class ModuleInitializer(object):
 
     def __init__(self):
         super().__init__()
-        self.logger = get_nio_logger('ModuleInitializer')
         self._registered_modules = []
         self._initialized_modules = []
 
@@ -69,7 +68,7 @@ class ModuleInitializer(object):
                 try:
                     module.finalize()
                 except ProxyNotProxied:
-                    self.logger.warning(
+                    get_nio_logger('ModuleInitializer').warning(
                         "Ignoring ProxyNotProxied while finalizing {}".format(
                             module.__class__.__name__))
             else:
@@ -80,7 +79,7 @@ class ModuleInitializer(object):
         try:
             module.initialize(context)
         except ProxyAlreadyProxied:
-            self.logger.warning(
+            get_nio_logger('ModuleInitializer').warning(
                 "Interface implemented by module '{}' is already proxied".
                     format(module.__class__.__name__))
             if safe:
@@ -89,8 +88,8 @@ class ModuleInitializer(object):
             else:
                 raise
 
-        self.logger.info("Module {} is initialized".
-                         format(module.__class__.__name__))
+        get_nio_logger('ModuleInitializer').info(
+            "Module {} is initialized".format(module.__class__.__name__))
 
         # Add this module to the list of modules that have been proxied
         self._initialized_modules.append(module)
