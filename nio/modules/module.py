@@ -3,6 +3,13 @@ from sys import maxsize
 from nio.modules.context import ModuleContext
 
 
+class ModuleNotInitialized(Exception):
+    """ Exception to be raised when accessing a module that has not been
+    initialized
+    """
+    pass
+
+
 class Module(object):
 
     """ A base class for defining a module interface or implementation """
