@@ -4,8 +4,11 @@ from nio.modules.context import ModuleContext
 
 
 class ModuleNotInitialized(Exception):
-    """ Exception to be raised when accessing a module that has not been
-    initialized
+    """ Exception raised when module that has not been initialized
+
+    Due to the asynchronous nature of some components in the system,
+    a module might be accessed even when it has not been fully
+    initialized, this exception should be raised for such cases.
     """
     pass
 
