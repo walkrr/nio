@@ -1,3 +1,4 @@
+from nio.modules.module import ModuleNotInitialized
 from nio.modules.proxy import ProxyNotProxied
 from nio.util.cache import Cache
 
@@ -24,7 +25,10 @@ class LogCache(object):
         self._cache = Cache(expire_interval)
 
     def process_record(self, record):
-        """ Processes a record determining if it is present and add to cache
+        """ Processes a record against cache
+
+        A record gets added to the cache when a record from same source code
+        line containing the same message does not already exists in the cache
 
         Args:
             record: log record as incoming from logging module
@@ -33,22 +37,19 @@ class LogCache(object):
             True: if record is present in cache
         """
 
-        present = False
-
-        # determine key and attempt to get record
-        key = "{0}-{1}".format(record.filename, record.lineno)
-        log_record = self._cache.get(key)
-
+        # determine key, which includes a hashed msg, and attempt to get record
+        key = "{}-{}-{}".format(record.filename, record.lineno,
+                                hash(record.msg))
         # determine if item with same message is present
-        if log_record and log_record.msg == record.msg:
-            present = True
+        if self._cache.get(key):
+            return True
 
         # record is always added or updated in cache under given key
         try:
             self._cache.add(key, record)
-        except ProxyNotProxied:
+        except (ProxyNotProxied, ModuleNotInitialized):
             # catch any potential errors arising from the fact that
             # logging module starts before any other, i.e., scheduling
             pass
 
-        return present
+        return False

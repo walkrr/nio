@@ -1,4 +1,6 @@
+from nio.modules.module import ModuleNotInitialized
 from nio.util.logging import get_nio_logger
+from nio.util.runner import RunnerStatus
 from nio.util.scheduler.scheduler_helper import SchedulerHelper
 from nio.util.scheduler.scheduler_thread import SchedulerThread
 
@@ -10,12 +12,15 @@ class Scheduler(object):
     _scheduler_thread = None
     _sched_min_delta = 0.1
     _sched_resolution = 0.1
+    _status = None
 
     @classmethod
     def configure(cls, context):
+        cls._status = RunnerStatus.configuring
         # Load in the minimum delta and resolution from the config
         cls._sched_min_delta = context.min_interval
         cls._sched_resolution = context.resolution
+        cls._status = RunnerStatus.configured
 
     @classmethod
     def schedule_task(cls, target, delta, repeatable, *args, **kwargs):
@@ -36,8 +41,8 @@ class Scheduler(object):
             job (Job): The Job object.
 
         """
-        if cls._scheduler_thread is None:
-            cls.start()
+        if cls._status != RunnerStatus.started:
+            raise ModuleNotInitialized("Scheduler module is not started")
 
         return cls._scheduler_thread.scheduler.add(target, delta, repeatable,
                                                    *args, **kwargs)
@@ -59,19 +64,31 @@ class Scheduler(object):
         cls._scheduler_thread.scheduler.cancel(job)
 
     @classmethod
-    def shutdown(cls):
-        if cls._scheduler_thread:
-            cls._scheduler_thread.stop()
-        cls._scheduler_thread = None
+    def stop(cls):
+        cls._status = RunnerStatus.stopping
+        try:
+            if cls._scheduler_thread:
+                cls._scheduler_thread.stop()
+        except:
+            get_nio_logger("NIOScheduler").debug("Exception while stopping",
+                                                 exc_info=True)
+        finally:
+            cls._scheduler_thread = None
+            cls._status = RunnerStatus.stopped
 
     @classmethod
     def start(cls):
+        cls._status = RunnerStatus.starting
+        get_nio_logger("NIOScheduler").info("Starting custom scheduler")
         try:
-            if cls._scheduler_thread is None:
-                get_nio_logger("NIOScheduler").info("Starting custom Scheduler")
-                cls._scheduler_thread = SchedulerThread(SchedulerHelper(
-                    resolution=cls._sched_resolution,
-                    min_delta=cls._sched_min_delta))
-                cls._scheduler_thread.start()
+            cls._scheduler_thread = SchedulerThread(SchedulerHelper(
+                resolution=cls._sched_resolution,
+                min_delta=cls._sched_min_delta))
+            cls._scheduler_thread.start()
+            cls._status = RunnerStatus.started
+            get_nio_logger("NIOScheduler").info("Scheduler started")
         except Exception:  # pragma: no cover (exception from ap)
-            get_nio_logger("NIOScheduler").exception("Scheduler failed to start")
+            get_nio_logger("NIOScheduler").exception(
+                "Scheduler failed to start")
+            cls._status = RunnerStatus.error
+            raise

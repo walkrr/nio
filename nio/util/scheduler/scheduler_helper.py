@@ -46,12 +46,13 @@ class SchedulerHelper(object):
                 event = None
                 with self._queue_lock:
                     queue_length = len(self._queue)
-                    self.logger.debug('Queue contains: {0} tasks'.
-                                      format(queue_length))
 
                     if queue_length:
                         # have access to first in time to execute event
                         event = heapq.heappop(self._queue)
+                # keep logging stmt out of the lock
+                self.logger.debug('Queue contains: {0} tasks'.
+                                  format(queue_length))
 
                 if not event:
                     sleep(self._resolution)

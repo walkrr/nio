@@ -14,7 +14,7 @@ class TestingSchedulerModule(SchedulerModule):
         Scheduler.start()
 
     def finalize(self):
-        Scheduler.shutdown()
+        Scheduler.stop()
         super().finalize()
 
     def prepare_core_context(self):
