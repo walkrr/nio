@@ -3,6 +3,8 @@ from time import sleep
 from datetime import datetime, timedelta
 
 from nio.modules.communication.publisher import Publisher
+from nio.modules.module import ModuleNotInitialized
+from nio.modules.proxy import ProxyNotProxied
 from nio.util.threading import spawn
 
 
@@ -103,7 +105,7 @@ class PublisherProxy(object):
                 cls._publisher = Publisher(**cls._topics)
                 cls._publisher.open()
                 cls._publisher_ready_event.set()
-            except:
+            except (ProxyNotProxied, ModuleNotInitialized):
                 if datetime.now() >= end_time:
                     raise PublisherNotReadyException(
                         "Maximum time for publisher to be ready elapsed")

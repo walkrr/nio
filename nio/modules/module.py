@@ -3,6 +3,16 @@ from sys import maxsize
 from nio.modules.context import ModuleContext
 
 
+class ModuleNotInitialized(Exception):
+    """ Exception raised when module that has not been initialized
+
+    Due to the asynchronous nature of some components in the system,
+    a module might be accessed even when it has not been fully
+    initialized, this exception should be raised for such cases.
+    """
+    pass
+
+
 class Module(object):
 
     """ A base class for defining a module interface or implementation """
