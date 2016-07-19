@@ -1,5 +1,5 @@
 from nio.modules.settings import Settings
-from nio.testing.test_case import NIOTestCase
+from nio.testing import NIOTestCase
 
 
 class TestSetSettings(NIOTestCase):
