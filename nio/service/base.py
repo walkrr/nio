@@ -3,6 +3,7 @@ from nio.block.context import BlockContext
 from nio.command import command
 from nio.command.holder import CommandHolder
 from nio import discoverable
+from nio.util.threading import spawn
 from nio.util.versioning.dependency import DependsOn
 from nio.properties import PropertyHolder, VersionProperty, \
     BoolProperty, ListProperty, StringProperty, Property, SelectProperty
@@ -91,6 +92,9 @@ class Service(PropertyHolder, CommandHolder, Runner):
         self._blocks = {}
         self.mappings = []
 
+        self._blocks_async_start = False
+        self._blocks_async_stop = True
+
     def start(self):
         """Overrideable method to be called when the service starts.
 
@@ -105,7 +109,10 @@ class Service(PropertyHolder, CommandHolder, Runner):
             self._block_router.do_start()
 
         for block in self._blocks.values():
-            block.do_start()
+            if self._blocks_async_start:
+                spawn(block.do_start)
+            else:
+                block.do_start()
 
     def stop(self):
         """Overrideable method to be called when the service stops.
@@ -117,10 +124,13 @@ class Service(PropertyHolder, CommandHolder, Runner):
         if self._block_router:
             # 'alert' block controller that service will be
             # 'stopped' shortly
-            self._block_router.status.set(RunnerStatus.stopping)
+            self._block_router.status = RunnerStatus.stopping
 
         for block in self._blocks.values():
-            block.do_stop()
+            if self._blocks_async_stop:
+                spawn(block.do_stop)
+            else:
+                block.do_stop()
 
         if self._block_router:
             self._block_router.do_stop()
@@ -153,7 +163,6 @@ class Service(PropertyHolder, CommandHolder, Runner):
         # create and configure blocks
         for block_definition in context.blocks:
             block_context = self._create_block_context(
-                block_definition['type'],
                 block_definition['properties'],
                 context)
             block = self._create_and_configure_block(
@@ -168,9 +177,10 @@ class Service(PropertyHolder, CommandHolder, Runner):
                                        context.mgmt_signal_handler)
         self._block_router.do_configure(router_context)
         self.mgmt_signal_handler = context.mgmt_signal_handler
+        self._blocks_async_start = context.blocks_async_start
+        self._blocks_async_stop = context.blocks_async_stop
 
-    def _create_block_context(self, block_type, block_properties,
-                              service_context):
+    def _create_block_context(self, block_properties, service_context):
         """Populates block context to pass to the block's configure method"""
         return BlockContext(
             self._block_router,
