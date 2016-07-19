@@ -39,10 +39,20 @@ class Request(ModuleProxy):
         raise NotImplementedError()
 
     def get_header(self, header, default=None):
+        """ Retrieves a request header
+
+        Returns:
+            Request header
+
+        """
+        return self.get_headers().get(header, default)
+
+    def get_headers(self):
         """ Retrieves request headers
 
         Returns:
-            Request headers
+            Request headers as a dictionary of the form
+            {"[header_name]":"[header_value]"}
 
         """
         raise NotImplementedError()
