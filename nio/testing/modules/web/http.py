@@ -9,8 +9,8 @@ class TestingRequest(object):
     def get_params(self):
         return {}
 
-    def get_header(self, header, default=None):
-        return None
+    def get_headers(self):
+        return {}
 
 
 class TestingResponse(object):
