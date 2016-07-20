@@ -108,10 +108,10 @@ class Service(PropertyHolder, CommandHolder, Runner):
         if self._block_router:
             self._block_router.do_start()
 
-        for block in self._blocks.values():
-            if self._blocks_async_start:
-                spawn(block.do_start)
-            else:
+        if self._blocks_async_start:
+            self._execute_on_blocks_async("do_start")
+        else:
+            for block in self._blocks.values():
                 block.do_start()
 
     def stop(self):
@@ -127,7 +127,7 @@ class Service(PropertyHolder, CommandHolder, Runner):
             self._block_router.status = RunnerStatus.stopping
 
         if self._blocks_async_stop:
-            self._stop_blocks_async()
+            self._execute_on_blocks_async("do_stop")
         else:
             for block in self._blocks.values():
                 block.do_stop()
@@ -135,8 +135,8 @@ class Service(PropertyHolder, CommandHolder, Runner):
         if self._block_router:
             self._block_router.do_stop()
 
-    def _stop_blocks_async(self):
-        """ Stop blocks in an async manner
+    def _execute_on_blocks_async(self, method):
+        """ Performs given method on all blocks in an async manner
 
         A join operation is performed for each spawned thread, that way we
         can assure that each block gets a chance to execute fully before
@@ -147,10 +147,13 @@ class Service(PropertyHolder, CommandHolder, Runner):
         that this or a method in the stack hierarchy leading to this method be
         spawned itself.
 
+        Args:
+            method (str): method to execute on blocks
+
         """
         threads = []
         for block in self._blocks.values():
-            threads.append(spawn(block.do_stop))
+            threads.append(spawn(getattr(block, method)))
 
         for thread in threads:
             thread.join()
