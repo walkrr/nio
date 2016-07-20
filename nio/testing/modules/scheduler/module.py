@@ -10,11 +10,11 @@ class TestingSchedulerModule(SchedulerModule):
         super().initialize(context)
         self.proxy_job_class(Job)
 
-        Scheduler.configure(context)
-        Scheduler.start()
+        Scheduler.instance().do_configure(context)
+        Scheduler.instance().do_start()
 
     def finalize(self):
-        Scheduler.stop()
+        Scheduler.instance().do_stop()
         super().finalize()
 
     def prepare_core_context(self):
