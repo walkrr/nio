@@ -126,14 +126,34 @@ class Service(PropertyHolder, CommandHolder, Runner):
             # 'stopped' shortly
             self._block_router.status = RunnerStatus.stopping
 
-        for block in self._blocks.values():
-            if self._blocks_async_stop:
-                spawn(block.do_stop)
-            else:
+        if self._blocks_async_stop:
+            self._stop_blocks_async()
+        else:
+            for block in self._blocks.values():
                 block.do_stop()
 
         if self._block_router:
             self._block_router.do_stop()
+
+    def _stop_blocks_async(self):
+        """ Stop blocks in an async manner
+
+        A join operation is performed for each spawned thread, that way we
+        can assure that each block gets a chance to execute fully before
+        leaving this method.
+
+        Since created threads are not exposed to caller, and there is a
+        potential for a spawned thread to be non-responsive, it is recommended
+        that this or a method in the stack hierarchy leading to this method be
+        spawned itself.
+
+        """
+        threads = []
+        for block in self._blocks.values():
+            threads.append(spawn(block.do_stop))
+
+        for thread in threads:
+            thread.join()
 
     def configure(self, context):
         """Configure the service based on the context
