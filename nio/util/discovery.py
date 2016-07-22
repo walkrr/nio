@@ -1,19 +1,18 @@
-""" Discoverable decorator
+""" discoverable and not_discoverable decorators
 
-Classes marked as Discoverable allow the system to identify them and register
-them. While any class can technically be marked discoverable, n.io will tend
-to only care about blocks, services, or components that are discoverable.
+Classes marked as `discoverable` allow the system to identify them and register
+them, while marking a class as  `not_discoverable` produces the opposite effect
 
-Note: A class being marked discoverable will not mark its subclasses as
-discoverable. Each subclass must be explicitly marked with the discoverable
-decorator.
+Note: A class being marked `discoverable` will not mark its subclasses as
+`discoverable`. Each subclass must be explicitly marked with the `discoverable`
+decorator, the same applies for `not_discoverable`
 
-To mark a class as discoverable, use the parameter-less decorator
-`discoverable`::
+To mark a class as not_discoverable, use the parameter-less decorator
+`not_discoverable`::
 
-    from nio import discoverable, Block
+    from nio import not_discoverable, Block
 
-    @discoverable
+    @not_discoverable
     class MyBlock(Block):
         pass
 
@@ -23,7 +22,7 @@ To mark a class as discoverable, use the parameter-less decorator
 def discoverable(_class):
     """The decorator method to be called on the class object.
 
-    This method will set the proper discoverable type to the class. It
+    This method will set the proper `discoverable` type to the class. It
     should return the class passed in, according to the decorator spec.
     """
 
@@ -33,7 +32,20 @@ def discoverable(_class):
     return _class
 
 
-def is_class_discoverable(_class):
+def not_discoverable(_class):
+    """The decorator method to be called on the class object.
+
+    This method will set the proper `not discoverable` type to the class. It
+    should return the class passed in, according to the decorator spec.
+    """
+
+    # Set the attribute to the class name, to prevent subclasses from also
+    # being not discoverable.
+    setattr(_class, _get_discoverable_attribute(_class), False)
+    return _class
+
+
+def is_class_discoverable(_class, default_discoverability=False):
     """ Returns true if the class is marked discoverable
 
     Note: discoverability does not extend to subclasses. Each subclass must
@@ -41,11 +53,14 @@ def is_class_discoverable(_class):
 
     Args:
         _class (class): The class in question, should be a class object
+        default_discoverability: when attribute is not specified, this value
+            will be provided.
 
     Returns:
         bool: True if the class is discoverable
     """
-    return bool(getattr(_class, _get_discoverable_attribute(_class), False))
+    return bool(getattr(_class, _get_discoverable_attribute(_class),
+                        default_discoverability))
 
 
 def _get_discoverable_attribute(_class):
