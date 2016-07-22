@@ -17,7 +17,7 @@ class TestSchedulerCleanUp(NIOTestCase):
         when a repeatable task is cancelled
         """
 
-        scheduler = Scheduler.instance()._scheduler_thread._scheduler
+        scheduler = Scheduler._scheduler_thread._scheduler
         self.assertEqual(len(scheduler._events), 0)
         num_tasks = 2
         for i in range(num_tasks):
@@ -57,7 +57,7 @@ class TestSchedulerCleanUp(NIOTestCase):
     def test_scheduler_cancel_from_callback(self):
         """ Asserts that scheduler accepts callbacks that cancel jobs.  """
 
-        scheduler = Scheduler.instance()._scheduler_thread._scheduler
+        scheduler = Scheduler._scheduler_thread._scheduler
 
         jobs = []
         num_jobs = 20

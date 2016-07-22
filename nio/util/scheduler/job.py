@@ -4,8 +4,8 @@ from nio.util.scheduler.scheduler import Scheduler
 class Job(object):
 
     def __init__(self, target, delta, repeatable, *args, **kwargs):
-        self._job = Scheduler.instance().schedule_task(
+        self._job = Scheduler.schedule_task(
             target, delta, repeatable, *args, **kwargs)
 
     def cancel(self):
-        Scheduler.instance().unschedule(self._job)
+        Scheduler.unschedule(self._job)
