@@ -44,7 +44,7 @@ class TestCache(NIOTestCase):
         self.assertTrue(log_cache.process_record(record2))
 
     def test_cache_same_line(self):
-        """ Asserts that cache from same line removes/updates elements """
+        """ Asserts that records from same line are cached when msg differs """
         log_cache = LogCache(expire_interval=0.1)
 
         record1 = self._get_log_record("1")
@@ -52,14 +52,13 @@ class TestCache(NIOTestCase):
         self.assertFalse(log_cache.process_record(record1))
         self.assertFalse(log_cache.process_record(record2))
 
-        # they are not present because the message changes every time
-        self.assertFalse(log_cache.process_record(record1))
-        self.assertFalse(log_cache.process_record(record2))
-
-        # assert that when message doesn't change, it is present
+        # they are present because time has not expired
+        self.assertTrue(log_cache.process_record(record1))
         self.assertTrue(log_cache.process_record(record2))
-        # give it time, and assert that it is gone
+
+        # give it time, and assert that they are gone
         sleep(0.11)
+        self.assertFalse(log_cache.process_record(record1))
         self.assertFalse(log_cache.process_record(record2))
 
     def _get_log_record(self, msg):

@@ -1,24 +1,23 @@
-from nio.util.logging import get_nio_logger
+from nio.modules.module import ModuleNotInitialized
+from nio.util.runner import RunnerStatus, Runner
 from nio.util.scheduler.scheduler_helper import SchedulerHelper
 from nio.util.scheduler.scheduler_thread import SchedulerThread
 
 
-class Scheduler(object):
+class SchedulerRunner(Runner):
 
-    """Singleton class to maintain and interact with an underlying Scheduler"""
+    def __init__(self):
+        super().__init__()
+        self._scheduler_thread = None
+        self._sched_min_delta = 0.1
+        self._sched_resolution = 0.1
 
-    _scheduler_thread = None
-    _sched_min_delta = 0.1
-    _sched_resolution = 0.1
-
-    @classmethod
-    def configure(cls, context):
+    def configure(self, context):
         # Load in the minimum delta and resolution from the config
-        cls._sched_min_delta = context.min_interval
-        cls._sched_resolution = context.resolution
+        self._sched_min_delta = context.min_interval
+        self._sched_resolution = context.resolution
 
-    @classmethod
-    def schedule_task(cls, target, delta, repeatable, *args, **kwargs):
+    def schedule_task(self, target, delta, repeatable, *args, **kwargs):
         """ Add the given task to the Scheduler.
 
         Args:
@@ -36,17 +35,17 @@ class Scheduler(object):
             job (Job): The Job object.
 
         """
-        if cls._scheduler_thread is None:
-            cls.start()
+        if self.status != RunnerStatus.started:
+            raise ModuleNotInitialized("Scheduler module is not started")
 
-        return cls._scheduler_thread.scheduler.add(target, delta, repeatable,
-                                                   *args, **kwargs)
+        return self._scheduler_thread.scheduler.add(
+            target, delta, repeatable, *args, **kwargs)
 
-    @classmethod
-    def unschedule(cls, job):
+    def unschedule(self, job):
         """Remove a job from the scheduler.
 
-        If the given job is not currently scheduled, this method has no effect.
+        If the given job is not currently scheduled, this method
+        has no effect.
 
         Args:
             job (APScheduler Job): The job to remove.
@@ -55,23 +54,21 @@ class Scheduler(object):
             None
 
         """
-        get_nio_logger("NIOScheduler").debug("Un-scheduling %s" % job)
-        cls._scheduler_thread.scheduler.cancel(job)
+        self.logger.debug("Un-scheduling %s" % job)
+        self._scheduler_thread.scheduler.cancel(job)
 
-    @classmethod
-    def shutdown(cls):
-        if cls._scheduler_thread:
-            cls._scheduler_thread.stop()
-        cls._scheduler_thread = None
-
-    @classmethod
-    def start(cls):
+    def stop(self):
         try:
-            if cls._scheduler_thread is None:
-                get_nio_logger("NIOScheduler").info("Starting custom Scheduler")
-                cls._scheduler_thread = SchedulerThread(SchedulerHelper(
-                    resolution=cls._sched_resolution,
-                    min_delta=cls._sched_min_delta))
-                cls._scheduler_thread.start()
-        except Exception:  # pragma: no cover (exception from ap)
-            get_nio_logger("NIOScheduler").exception("Scheduler failed to start")
+            if self._scheduler_thread:
+                self._scheduler_thread.stop()
+        finally:
+            self._scheduler_thread = None
+
+    def start(self):
+        self._scheduler_thread = SchedulerThread(SchedulerHelper(
+            resolution=self._sched_resolution,
+            min_delta=self._sched_min_delta))
+        self._scheduler_thread.start()
+
+# Singleton reference to a scheduler
+Scheduler = SchedulerRunner()

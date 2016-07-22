@@ -36,9 +36,8 @@ class TestPublisherCache(TestPublisherBase):
 
         # reset received messages
         self._received_messages = []
-        warning_messages = [msg1, msg2, msg1, msg2]
-        # it will filter nothing, since there is no consecutive messages
-        # with same text
+        warning_messages = [msg1, msg2]
+        # assert that both messages from same line make it
         for message in warning_messages:
             self._publisher_logger.warning(message)
 
