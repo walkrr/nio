@@ -30,9 +30,9 @@ class Runner(object):
         super().__init__(*args, **kwargs)
         self._status = FlagsEnum(RunnerStatus,
                                  status_change_callback=status_change_callback)
-        self.status.set(RunnerStatus.created)
         # This can be overridden in subclasses if desired
         self.logger = get_nio_logger(self.__class__.__name__)
+        self.status = RunnerStatus.created
 
     def configure(self, context):
         """Overrideable method to be called when the runnable is configured
@@ -74,10 +74,10 @@ class Runner(object):
             context: specific information needed for runnable's configuration
 
         """
-        self.status.set(RunnerStatus.configuring)
+        self.status = RunnerStatus.configuring
         try:
             self.configure(context)
-            self.status.set(RunnerStatus.configured)
+            self.status = RunnerStatus.configured
         except Exception:
             self.logger.exception("Failed to configure")
             self.status.add(RunnerStatus.error)
@@ -89,10 +89,10 @@ class Runner(object):
         Ensures status is correctly set based on the outcome of the operation
 
         """
-        self.status.set(RunnerStatus.starting)
+        self.status = RunnerStatus.starting
         try:
             self.start()
-            self.status.set(RunnerStatus.started)
+            self.status = RunnerStatus.started
         except Exception:
             self.logger.exception("Failed to start")
             self.status.add(RunnerStatus.error)
@@ -109,10 +109,10 @@ class Runner(object):
             self.logger.info("Already stopping or stopped")
             return
 
-        self.status.set(RunnerStatus.stopping)
+        self.status = RunnerStatus.stopping
         try:
             self.stop()
-            self.status.set(RunnerStatus.stopped)
+            self.status = RunnerStatus.stopped
         except Exception:
             self.logger.exception("Failed to stop")
             self.status.add(RunnerStatus.error)
