@@ -5,8 +5,8 @@ class Publisher(object):
 
     """ A version of a Publisher useful for unit-testing """
 
-    def __init__(self, context=None, **topics):
-        self.topics = topics
+    def __init__(self, topic=None, **kwargs):
+        self.topic = topic
 
     def open(self):
         """ Opens publishing channel

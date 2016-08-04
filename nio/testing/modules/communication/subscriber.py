@@ -5,9 +5,9 @@ class Subscriber(object):
 
     """ A version of a Subscriber useful for unit-testing """
 
-    def __init__(self, handler, matching_provider=None, **topics):
+    def __init__(self, handler, topic=None, **kwargs):
         self.handler = handler
-        self.topics = topics
+        self.topic = topic
 
     def open(self):
         """ Subscribes handler to matching publishers
