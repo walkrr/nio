@@ -38,7 +38,7 @@ class BlockRouterForTesting(BlockRouter):
         """ Receives block signals.
 
          Keeps track of the signal count per block and per output id
-         Forwards notification to test_case's 'signals_notified' method
+         Forwards notification to test_case's '_internal_signals_notified'
 
         Args:
             block (Block): notifier block
@@ -53,7 +53,7 @@ class BlockRouterForTesting(BlockRouter):
             self._block_signal_counts.get(block) or defaultdict(int)
         self._block_signal_counts[block][output_id] += len(signals)
 
-        self._test_case.signals_notified(block, signals, output_id)
+        self._test_case._internal_signals_notified(block, signals, output_id)
 
     def notify_management_signal(self, block, signal):
         """ Receives management signal.
@@ -117,6 +117,9 @@ class NIOBlockTestCase(NIOTestCase):
         super().__init__(methodName)
         self._router = BlockRouterForTesting()
         self.last_notified = defaultdict(list)
+        # support internal test case control over signal notifications
+        self._last_signals_notified = defaultdict(list)
+        self._last_output_notified = None
 
     def setUp(self):
         super().setUp()
@@ -141,8 +144,50 @@ class NIOBlockTestCase(NIOTestCase):
             'TestSuite',
             ''))
 
+    def last_signal_notified(self, output_id=None):
+        """ Provides last signal notified
+
+        If no signal has been notified on specified output, the last output
+        notified on is used.
+
+        If output_id is specified, it must be valid
+
+        Args:
+            output_id (str): output identifier
+
+        Returns:
+            last signal notified
+
+        Raises:
+            ValueError if output_id is invalid
+        """
+        # if output_id is specified, it must be valid.
+        if output_id is not None and \
+           output_id not in self._last_signals_notified:
+            raise ValueError("Invalid output id specified")
+
+        # if a valid output_id is not provided, use last output notified on.
+        if output_id not in self._last_signals_notified:
+            output_id = self._last_output_notified
+
+        return self._last_signals_notified[output_id][-1]
+
+    def _internal_signals_notified(self, block, signals, output_id):
+        """ Receives internal block signals notification
+
+        Calls overrideable public method 'signals_notified' and updates
+        internal members that support block unit testing.
+
+        """
+        self._last_signals_notified[output_id] = signals
+        self._last_output_notified = output_id
+
+        self.signals_notified(block, signals, output_id)
+
     def signals_notified(self, block, signals, output_id):
         """ Receives block signals notification
+
+        This method can be overriden by block developer
 
         Args:
             block (Block): notifying block
