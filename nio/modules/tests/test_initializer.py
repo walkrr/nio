@@ -52,7 +52,7 @@ class TestModuleInitializer(NIOTestCaseNoModules):
             # Don't want an init call after registering
             self.assertEqual(init_call.call_count, 0)
             initializer.initialize()
-            init_call.assert_called_once()
+            self.assertEqual(init_call.call_count, 1)
         with patch.object(impl, 'finalize') as finalize_call:
             initializer.finalize()
             finalize_call.assert_called_once_with()
