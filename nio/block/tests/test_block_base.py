@@ -93,7 +93,7 @@ class TestBaseBlock(NIOTestCaseNoModules):
         with patch.object(blk, '_block_router') as router_patch:
             signals = [Signal(), Signal()]
             blk.notify_signals(signals, "default")
-            router_patch.notify_signals.assert_called_one_with(
+            router_patch.notify_signals.assert_called_once_with(
                 blk, signals, "default")
 
         # test that sending signals as a set is allowed
@@ -102,7 +102,7 @@ class TestBaseBlock(NIOTestCaseNoModules):
             signals.add(Signal())
             signals.add(Signal())
             blk.notify_signals(signals, "default")
-            router_patch.notify_signals.assert_called_one_with(
+            router_patch.notify_signals.assert_called_once_with(
                 blk, signals, "default")
 
         # test that a Signal as a non-iterable is accepted and
@@ -110,7 +110,7 @@ class TestBaseBlock(NIOTestCaseNoModules):
         with patch.object(blk, '_block_router') as router_patch:
             single_signal = Signal()
             blk.notify_signals(single_signal, "default")
-            router_patch.notify_signals.assert_called_one_with(
+            router_patch.notify_signals.assert_called_once_with(
                 blk, [single_signal], "default")
 
         # test that a dictionary, empty or not, is not accepted and

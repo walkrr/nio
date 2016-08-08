@@ -1,6 +1,7 @@
 # Python 3 caching
 __pycache__
 *.pyc
+.cache
 
 # Unit test stuff
 test_results.xml
