@@ -22,28 +22,21 @@ class ReceiverBlock(Block):
 
     def __init__(self):
         super().__init__()
-        self.name = self.__class__.__name__.lower()
-        self.signal_cache = []
+        # Keep track of how many signals we have processed
+        self.signals_processed = 0
 
     def process_signals(self, signals, input_id='default'):
-        self.signal_cache.extend(signals)
+        self.signals_processed += len(signals)
 
 
-class NotifierBlock(Block):
-
-    def __init__(self):
-        super().__init__()
-        self.times_rcvd = 0
-
-    def process_signals(self, signals, input_id='default'):
-        self.times_rcvd += 1
-
-
-blocks = [{"type": ReceiverBlock,
-           "properties": {'name': 'receiverblock'}},
-          {"type": SenderBlock,
+# We have one sender block sending to two receiver blocks.
+# In some of the tests, one of the recevier blocks (the notifier) will notify
+# some management signals to the router
+blocks = [{"type": SenderBlock,
            "properties": {'name': 'senderblock'}},
-          {"type": NotifierBlock,
+          {"type": ReceiverBlock,
+           "properties": {'name': 'receiverblock'}},
+          {"type": ReceiverBlock,
            "properties": {'name': 'notifierblock'}}]
 
 execution = [BlockExecution()]
@@ -115,9 +108,8 @@ class TestNotifyManagementSignals(NIOTestCaseNoModules):
 
         service._blocks['senderblock'].process_signals(signals)
 
-        self.assertEqual(
-            len(service._blocks['receiverblock'].signal_cache), 4)
-        self.assertEqual(service._blocks['notifierblock'].times_rcvd, 1)
+        self.assertEqual(service._blocks['receiverblock'].signals_processed, 4)
+        self.assertEqual(service._blocks['notifierblock'].signals_processed, 4)
 
         error_signal = BlockStatusSignal(RunnerStatus.error, 'Broken')
         notifier_block = service._blocks['notifierblock']
@@ -129,9 +121,8 @@ class TestNotifyManagementSignals(NIOTestCaseNoModules):
 
         # We expect our non-error block to get the next 4 signals,
         # but our error status block (the notifier) will not
-        self.assertEqual(
-            len(service._blocks['receiverblock'].signal_cache), 8)
-        self.assertEqual(service._blocks['notifierblock'].times_rcvd, 1)
+        self.assertEqual(service._blocks['receiverblock'].signals_processed, 8)
+        self.assertEqual(service._blocks['notifierblock'].signals_processed, 4)
 
         service.do_stop()
 
@@ -153,5 +144,6 @@ class TestNotifyManagementSignals(NIOTestCaseNoModules):
                    Signal({"4": 4})]
 
         service._blocks['senderblock'].process_signals(signals)
-        self.assertEqual(service._blocks['notifierblock'].times_rcvd, 1)
+        self.assertEqual(service._blocks['receiverblock'].signals_processed, 4)
+        self.assertEqual(service._blocks['notifierblock'].signals_processed, 4)
         service.do_stop()
