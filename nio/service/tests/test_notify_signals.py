@@ -1,7 +1,6 @@
 from nio.util.runner import RunnerStatus
 from nio.block.base import Block
 from nio.router.base import BlockRouter
-from nio.router.threaded import ThreadedBlockRouter
 from nio.testing.test_case import NIOTestCaseNoModules
 from nio.service.base import Service, BlockExecution
 from nio.service.context import ServiceContext
@@ -73,43 +72,6 @@ class TestNotifySignals(NIOTestCaseNoModules):
     """ These tests mainly prove that the Service handles well the
     mappings specified and that the signals make it all the way through
     """
-
-    def test_threaded_process_notify(self):
-        """Test signals notified are sent to receiver blocks asynchronously"""
-        context = ServiceContext(properties,
-                                 blocks,
-                                 # Use a threaded router this time
-                                 ThreadedBlockRouter,
-                                 router_settings={"clone_signals": False})
-
-        service = Service()
-        service.do_configure(context)
-
-        self.assertEqual(service.status, RunnerStatus.configured)
-
-        service.do_start()
-
-        signals = [Signal({"1": 1}),
-                   Signal({"2": 2}),
-                   Signal({"3": 3}),
-                   Signal({"4": 4})]
-
-        service._blocks['senderblock'].process_signals(signals)
-
-        self.assertIsNotNone(
-            service._blocks['receiverblock1'].signal_cache)
-        self.assertIsNotNone(
-            service._blocks['receiverblock2'].signal_cache)
-        self.assertIsNone(service._blocks['receiverblock'].signal_cache)
-
-        self.assertEqual(service._blocks['receiverblock1'].signal_cache,
-                         signals)
-        self.assertEqual(service._blocks['receiverblock2'].signal_cache,
-                         signals)
-
-        self.assertIsInstance(service._block_router,
-                              BlockRouter)
-        service.do_stop()
 
     def test_notify_status_change(self):
         """Test block statuses get updated on management signal notification"""
