@@ -1,4 +1,4 @@
-from fnmatch import fnmatchcase
+from nio.modules.communication.matching import matches
 
 
 class PubSubManager(object):
@@ -68,4 +68,4 @@ class PubSubManager(object):
         Returns:
             True if they match, False otherwise
         """
-        return fnmatchcase(pub_topic, sub_topic)
+        return matches(sub_topic, pub_topic)
