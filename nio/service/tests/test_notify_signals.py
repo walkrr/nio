@@ -74,39 +74,6 @@ class TestNotifySignals(NIOTestCaseNoModules):
     mappings specified and that the signals make it all the way through
     """
 
-    def test_process_notify(self):
-        """Test signals notified are sent to receiver blocks"""
-        context = ServiceContext(properties,
-                                 blocks,
-                                 BlockRouter,
-                                 router_settings={"clone_signals": False})
-
-        service = Service()
-        service.do_configure(context)
-
-        self.assertEqual(service.status, RunnerStatus.configured)
-
-        service.do_start()
-
-        signals = [Signal({"1": 1}),
-                   Signal({"2": 2}),
-                   Signal({"3": 3}),
-                   Signal({"4": 4})]
-
-        service._blocks['senderblock'].process_signals(signals)
-
-        self.assertIsNotNone(
-            service._blocks['receiverblock1'].signal_cache)
-        self.assertIsNotNone(
-            service._blocks['receiverblock2'].signal_cache)
-        self.assertIsNone(service._blocks['receiverblock'].signal_cache)
-
-        self.assertEqual(service._blocks['receiverblock1'].signal_cache,
-                         signals)
-        self.assertEqual(service._blocks['receiverblock2'].signal_cache,
-                         signals)
-        service.do_stop()
-
     def test_threaded_process_notify(self):
         """Test signals notified are sent to receiver blocks asynchronously"""
         context = ServiceContext(properties,
