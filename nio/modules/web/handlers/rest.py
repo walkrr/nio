@@ -85,7 +85,10 @@ class RESTHandler(WebHandler):
         raise NotImplementedError()
 
     def on_options(self, request, response):
-        """ Allows the client to respond to OPTIONS requests
+        """ Options request handler, respond 200 by default
+
+        We respond 200 by default for default CORS response. You are allowed
+        to override with your own implementation.
 
         Args:
             request: web request
@@ -95,4 +98,6 @@ class RESTHandler(WebHandler):
             Web result
 
         """
-        raise NotImplementedError()
+
+        response.set_status(200)
+        response.set_body("")
