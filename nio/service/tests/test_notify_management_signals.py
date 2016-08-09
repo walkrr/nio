@@ -23,10 +23,10 @@ class ReceiverBlock(Block):
     def __init__(self):
         super().__init__()
         self.name = self.__class__.__name__.lower()
-        self.signal_cache = None
+        self.signal_cache = []
 
     def process_signals(self, signals, input_id='default'):
-        self.signal_cache = signals
+        self.signal_cache.extend(signals)
 
 
 class NotifierBlock(Block):
@@ -41,10 +41,6 @@ class NotifierBlock(Block):
 
 blocks = [{"type": ReceiverBlock,
            "properties": {'name': 'receiverblock'}},
-          {"type": ReceiverBlock,
-           "properties": {'name': 'receiverblock1'}},
-          {"type": ReceiverBlock,
-           "properties": {'name': 'receiverblock2'}},
           {"type": SenderBlock,
            "properties": {'name': 'senderblock'}},
           {"type": NotifierBlock,
@@ -52,22 +48,15 @@ blocks = [{"type": ReceiverBlock,
 
 execution = [BlockExecution()]
 execution[0].name = "senderblock"
-execution[0].receivers = ["receiverblock1",
-                          "receiverblock2",
-                          "notifierblock"]
-
-mappings = [{"name": "receiverblock1",
-             "mapping": "receiverblock"},
-            {"name": "receiverblock2",
-             "mapping": "receiverblock"}]
+execution[0].receivers = ["receiverblock", "notifierblock"]
 
 properties = {"name": "ServiceTestInstance",
               "auto_start": False,
               "execution": execution,
-              "mappings": mappings}
+              "mappings": []}
 
 
-class TestNotifySignals(NIOTestCaseNoModules):
+class TestNotifyManagementSignals(NIOTestCaseNoModules):
 
     """ These tests mainly prove that the Service handles well the
     mappings specified and that the signals make it all the way through
@@ -76,10 +65,8 @@ class TestNotifySignals(NIOTestCaseNoModules):
     def test_notify_status_change(self):
         """Test block statuses get updated on management signal notification"""
         context = ServiceContext(properties, blocks, BlockRouter)
-
         service = Service()
         service.do_configure(context)
-
         self.assertEqual(service._blocks['notifierblock'].status,
                          RunnerStatus.configured)
         service.do_start()
@@ -94,14 +81,11 @@ class TestNotifySignals(NIOTestCaseNoModules):
 
     def test_bad_signals_no_effect(self):
         """Test nothing happens when non management signals are notified"""
-        context = ServiceContext(properties,
-                                 blocks,
-                                 BlockRouter)
-
+        context = ServiceContext(properties, blocks, BlockRouter)
         service = Service()
         service.do_configure(context)
-
         service.do_start()
+
         signal = ManagementSignal()
         notifier_block = service._blocks['notifierblock']
         notifier_block.notify_management_signal(signal)
@@ -122,7 +106,6 @@ class TestNotifySignals(NIOTestCaseNoModules):
         context = ServiceContext(properties, blocks, BlockRouter)
         service = Service()
         service.do_configure(context)
-
         service.do_start()
 
         signals = [Signal({"1": 1}),
@@ -133,17 +116,21 @@ class TestNotifySignals(NIOTestCaseNoModules):
         service._blocks['senderblock'].process_signals(signals)
 
         self.assertEqual(
-            len(service._blocks['receiverblock1'].signal_cache), 4)
+            len(service._blocks['receiverblock'].signal_cache), 4)
         self.assertEqual(service._blocks['notifierblock'].times_rcvd, 1)
 
         error_signal = BlockStatusSignal(RunnerStatus.error, 'Broken')
         notifier_block = service._blocks['notifierblock']
         notifier_block.notify_management_signal(error_signal)
+        self.assertTrue(service._blocks['notifierblock']._status.
+                        is_set(RunnerStatus.error))
 
         service._blocks['senderblock'].process_signals(signals)
 
+        # We expect our non-error block to get the next 4 signals,
+        # but our error status block (the notifier) will not
         self.assertEqual(
-            len(service._blocks['receiverblock1'].signal_cache), 4)
+            len(service._blocks['receiverblock'].signal_cache), 8)
         self.assertEqual(service._blocks['notifierblock'].times_rcvd, 1)
 
         service.do_stop()
@@ -156,7 +143,7 @@ class TestNotifySignals(NIOTestCaseNoModules):
 
         service.do_start()
 
-        warning = StatusSignal(RunnerStatus.warning, 'It just broke...')
+        warning = StatusSignal(RunnerStatus.warning, 'Maybe broken?')
         notifier_block = service._blocks['notifierblock']
         notifier_block.notify_management_signal(warning)
 
