@@ -92,3 +92,48 @@ class TestBlockTestCase(NIOBlockTestCase):
         self.configure_block(b1, {})
         b1.notify_signals([Signal()], "invalid_output")
         self.assert_num_signals_notified(1, b1, "invalid_output")
+
+    def test_last_signal_notified(self):
+        """ Tests last_signal_notified functionality
+        """
+        b1 = Block()
+        self.configure_block(b1, {})
+
+        # notify signals on default output
+        default_output_signal1 = Signal({"name": "default_s1"})
+        default_output_signal2 = Signal({"name": "default_s2"})
+        b1.notify_signals([default_output_signal1, default_output_signal2])
+
+        # notify signals on named outputs
+        output1_signal1 = Signal({"name": "o1_s1"})
+        output1_signal2 = Signal({"name": "o1_s2"})
+        b1.notify_signals([output1_signal1, output1_signal2], "output1")
+
+        output2_signal1 = Signal({"name": "o2_s1"})
+        output2_signal2 = Signal({"name": "o2_s2"})
+        b1.notify_signals([output2_signal1, output2_signal2], "output2")
+
+        # assert which signal is returned when output is not specified
+        self.assertEqual(self.last_signal_notified(), output2_signal2)
+
+        # assert last signal for specified outputs
+        self.assertEqual(self.last_signal_notified("output1"), output1_signal2)
+        self.assertEqual(self.last_signal_notified("output2"), output2_signal2)
+        self.assertEqual(
+            self.last_signal_notified(DEFAULT_TERMINAL), default_output_signal2)
+
+        # notify and assert that signal changed when no output is specified
+        b1.notify_signals([default_output_signal1, default_output_signal2])
+        self.assertEqual(self.last_signal_notified(), default_output_signal2)
+
+        # assert that last signal for specified outputs remains the same
+        self.assertEqual(self.last_signal_notified("output1"), output1_signal2)
+        self.assertEqual(self.last_signal_notified("output2"), output2_signal2)
+        self.assertEqual(
+            self.last_signal_notified(DEFAULT_TERMINAL), default_output_signal2)
+
+        # assert that when output is specified, it must be valid when getting
+        # last signal from it
+        with self.assertRaises(ValueError):
+            self.assertEqual(self.last_signal_notified("INVALID_OUTPUT"),
+                             default_output_signal2)
