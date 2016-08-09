@@ -167,7 +167,7 @@ class NIOBlockTestCase(NIOTestCase):
             raise ValueError("Invalid output id specified")
 
         # if a valid output_id is not provided, use last output notified on.
-        if output_id not in self._last_signals_notified:
+        if output_id is None:
             output_id = self._last_output_notified
 
         return self._last_signals_notified[output_id][-1]
