@@ -79,7 +79,7 @@ class TestSpawn(NIOTestCaseNoModules):
         """
         thread = spawn(self.throw_exception, "arg1", kwarg1="2")
         # allow time for thread to execute
-        sleep(0.1)
+        sleep(0.01)
         self.assertTrue(self._exception_thrown)
         self.assertIsNotNone(thread.nio_exception)
 
