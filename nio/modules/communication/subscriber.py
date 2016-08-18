@@ -5,7 +5,7 @@ class Subscriber(ModuleProxy):
 
     """ An interface for a generic Subscriber in the communication module """
 
-    def __init__(self, handler, matching_provider=None, **topics):
+    def __init__(self, handler, topic=None, **kwargs):
         """ Create a new subscriber instance.
 
         Args:
@@ -14,13 +14,11 @@ class Subscriber(ModuleProxy):
 
                 def process_signals(self, signals)
 
-            matching_provider: Matching provider which could optionally be
-                specified to override system-wide setting.
+            topic (str): Defines the kind of information to subscribe to.
 
-            topics: Key value pairs defining the kind of information to be
-                subscribed to.
+            kwargs: Key value argument pairs, used for backwards compatibility.
         """
-        super().__init__(handler, matching_provider, **topics)
+        super().__init__(handler, topic=topic, **kwargs)
 
     def open(self):
         """ Open a subscriber

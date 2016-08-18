@@ -23,19 +23,19 @@ class PublisherProxy(object):
     # many loggers get initialized however, only once the proxy is initialized
     _initialized = False
     # publishing criteria
-    _topics = {}
+    _topic = "nio_logging"
     # Maximum time to wait for Publisher to be ready
     _max_publisher_ready_time = 5
     # Interval between sleeps waiting for Publisher to be ready
     _publisher_ready_wait_interval_time = 0.1
 
     @classmethod
-    def init(cls, topics,
+    def init(cls, topic,
              max_publisher_ready_time, publisher_ready_wait_interval_time):
         """ Initializes the proxy
 
         Args:
-            topics (dict): topics to use when publishing signals
+            topic (str): topic to use when publishing log messages
             max_publisher_ready_time (float): maximum time to wait for publisher
                 to be ready
             publisher_ready_wait_interval_time (float): interval in seconds to
@@ -43,7 +43,7 @@ class PublisherProxy(object):
         """
         if not cls._initialized:
             # proxy initialization happens only once
-            cls._topics = topics
+            cls._topic = topic
             cls._max_publisher_ready_time = max_publisher_ready_time
             cls._publisher_ready_wait_interval_time = \
                 publisher_ready_wait_interval_time
@@ -102,7 +102,7 @@ class PublisherProxy(object):
             seconds=cls._max_publisher_ready_time)
         while not cls._publisher_ready_event.is_set():
             try:
-                cls._publisher = Publisher(**cls._topics)
+                cls._publisher = Publisher(topic=cls._topic)
                 cls._publisher.open()
                 cls._publisher_ready_event.set()
             except (ProxyNotProxied, ModuleNotInitialized):

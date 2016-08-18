@@ -15,9 +15,9 @@ class TestHandler(NIOTestCase):
         self._received_messages = []
         # Set up our publisher handler with the proper filters and handlers
 
-        publisher_topics = {"type": "logging"}
+        publisher_topic = "nio_logging"
         self._handler = PublisherHandler(
-            topics=publisher_topics, publisher_ready_wait_interval_time=0.01)
+            topic=publisher_topic, publisher_ready_wait_interval_time=0.01)
 
         # Want to create our PublisherHandler before we call super setup,
         # the handler will initialize the PublisherProxy which should be
@@ -27,7 +27,7 @@ class TestHandler(NIOTestCase):
         # Set up a test-wide handler for messages delivered through the
         # publisher
         self._subscriber = Subscriber(self._on_logger_signal,
-                                      **publisher_topics)
+                                      topic=publisher_topic)
         self._subscriber.open()
 
     def tearDown(self):

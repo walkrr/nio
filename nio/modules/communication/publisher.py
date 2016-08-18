@@ -10,7 +10,7 @@ class Publisher(ModuleProxy):
 
     """ An interface for a generic Publisher in the communication module """
 
-    def __init__(self, context=None, **topics):
+    def __init__(self, topic=None, **kwargs):
         """ Create a new publisher instance.
 
         Args:
@@ -20,10 +20,11 @@ class Publisher(ModuleProxy):
                 It can be used to customize a publisher by overriding settings
                 such as 'heartbeat_interval' and 'heartbeat_check_interval'.
 
-            topics: Key value pairs defining the kind of information to be
-                published.
+            topic (str): Defines the kind of information to publish.
+
+            kwargs: Key value argument pairs, used for backwards compatibility.
         """
-        super().__init__(context, **topics)
+        super().__init__(topic=topic, **kwargs)
 
     def open(self):
         """ Opens publishing channel

@@ -1,4 +1,4 @@
-from nio.modules.communication.matching.default import DefaultMatching
+from nio.modules.communication.matching import matches
 
 
 class PubSubManager(object):
@@ -16,13 +16,13 @@ class PubSubManager(object):
     def add_publisher(cls, publisher):
         """ Add a publisher to this manager.
 
-        This will register the topics of the publisher with any matching
+        This will register the topic of the publisher with any matching
         Subscribers so that they will get called when data is published on
         this publisher.
         """
         cls.publishers[publisher] = []
         for subscriber in cls.subscribers:
-            if DefaultMatching.matches(subscriber.topics, publisher.topics):
+            if cls._matches(subscriber.topic, publisher.topic):
                 cls.publishers[publisher].append(subscriber)
 
     @classmethod
@@ -36,11 +36,11 @@ class PubSubManager(object):
         """ Add a subscriber to this manager and subscribe to relevant data.
 
         This will add this subscriber's callback to any registered publishers
-        whose topics match.
+        whose topic match.
         """
         cls.subscribers.append(subscriber)
         for publisher in cls.publishers.keys():
-            if DefaultMatching.matches(subscriber.topics, publisher.topics):
+            if cls._matches(subscriber.topic, publisher.topic):
                 cls.publishers[publisher].append(subscriber)
 
     @classmethod
@@ -56,3 +56,16 @@ class PubSubManager(object):
         """ Send data from a publisher to any subscribed callbacks """
         for subscriber in cls.publishers[publisher]:
             subscriber.handler(signals)
+
+    @classmethod
+    def _matches(cls, sub_topic, pub_topic):
+        """ Use a simple matching algorithm imitating wildcards on a path
+
+        Args:
+            sub_topic (str): sub_topic to match can contain wildcards (*)
+            pub_topic (str): publisher topic
+
+        Returns:
+            True if they match, False otherwise
+        """
+        return matches(sub_topic, pub_topic)
