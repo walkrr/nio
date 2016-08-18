@@ -1,14 +1,14 @@
 import functools
 import re
 
-from nio.modules.communication.topic import LEVEL_ALLOWED_CHARACTERS, \
-    InvalidTopic
+from nio.modules.communication.topic import LEVEL_ALLOWED_CHARACTERS
+
 
 # defines level separator
 LEVEL_SEPARATOR = re.escape(".")
 
 
-def add_regex_ending(regex):
+def _add_regex_ending(regex):
     """ Utility function to add a regular expression ending
 
     Args:
@@ -20,7 +20,7 @@ def add_regex_ending(regex):
     return regex + "\Z"
 
 
-def translate_to_regex(pattern):
+def _translate_to_regex(pattern):
     """ Translate a topic pattern to regular expression
 
     Algorithm:
@@ -37,7 +37,12 @@ def translate_to_regex(pattern):
         pattern (str): pattern to translate
 
     Returns:
-        regular expression
+        A regular expression that will match all valid publishers.
+        Note that in order to simplify the level matching, this regex expects
+        every level of the topic tree to end with a level separator (.).
+        This includes the lowest level of the tree. In other words, make sure
+        your publisher topic strings also end with a . before matching them to
+        this regular expression.
     """
     sub_patterns = pattern.split('.')
     for i in range(len(sub_patterns)):
@@ -56,7 +61,7 @@ def translate_to_regex(pattern):
         else:
             sub_patterns[i] = "{}{}".format(sub_patterns[i], LEVEL_SEPARATOR)
 
-    return add_regex_ending(''.join(sub_patterns))
+    return _add_regex_ending(''.join(sub_patterns))
 
 
 @functools.lru_cache()
@@ -70,14 +75,14 @@ def _compile_pattern(pattern):
         list of match objects
 
     """
-    expression = translate_to_regex(pattern)
+    expression = _translate_to_regex(pattern)
     return re.compile(expression).match
-
 
 def matches(sub_topic, pub_topic):
     """ Finds out if there is a match between publisher and subscriber
 
     Assumes that both topics have been validated using 'is_topic_valid'
+    Note: Validation is expected to take place within module's implementation.
 
     Args:
         sub_topic (str): Subscriber topic (can contain wildcards)
@@ -86,9 +91,6 @@ def matches(sub_topic, pub_topic):
     Return:
         True if they match, False otherwise
     """
-    if pub_topic.endswith("."):
-        raise InvalidTopic("Publisher cannot end with a level separator")
-
     # Add a trailing dot to the publisher topic to match the entire level
     # in the regex
     pub_topic += "."

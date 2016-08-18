@@ -35,6 +35,8 @@ class TestTopic(NIOTestCase):
         self.assertTrue(is_topic_valid("*.*.**"))
 
         # assert invalid topics
+        self.assertFalse(is_topic_valid("dot_at_the_end_is_not_allowed."))
+        self.assertFalse(is_topic_valid("a.dot_at_the_end_is_not_allowed."))
         self.assertFalse(is_topic_valid("**."))
         self.assertFalse(is_topic_valid("*."))
         self.assertFalse(is_topic_valid("a."))
