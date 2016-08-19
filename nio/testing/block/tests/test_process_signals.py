@@ -15,24 +15,15 @@ class ParentTestBlock(Block):
         self._signals_processed[input_id].extend(signals)
 
 
-@input("input1")
-@input("input2")
-class BlockWithInputs(ParentTestBlock):
-    pass
+class TestProcessSignalsDefaultTerminal(NIOBlockTestCase):
 
-
-@input("input1", default=True)
-@input("input2")
-class BlockWithDefaultInputSpecified(ParentTestBlock):
-    pass
-
-
-class TestProcessSignals(NIOBlockTestCase):
+    @property
+    def block_type(self):
+        return ParentTestBlock
 
     def test_process_signals_default_terminal(self):
         """ Tests process_signals when no explicit input is defined
         """
-        self.block_type = ParentTestBlock
         self.configure_block({})
 
         # process signals on default input
@@ -51,10 +42,21 @@ class TestProcessSignals(NIOBlockTestCase):
                          default_input_signals)
         self.assertNotIn("input1", self.block._signals_processed)
 
+
+@input("input1")
+@input("input2")
+class BlockWithInputs(ParentTestBlock):
+    pass
+
+
+class TestBlockWithInputs(NIOBlockTestCase):
+    @property
+    def block_type(self):
+        return BlockWithInputs
+
     def test_process_signals_no_default(self):
         """ Tests process_signals when inputs are defined but no default
         """
-        self.block_type = BlockWithInputs
         self.configure_block({})
 
         # process signals on default input
@@ -77,10 +79,22 @@ class TestProcessSignals(NIOBlockTestCase):
         self.assertEqual(self.block._signals_processed["input2"],
                          input2_signals)
 
+
+@input("input1", default=True)
+@input("input2")
+class BlockWithDefaultInputSpecified(ParentTestBlock):
+    pass
+
+
+class TestBlockWithDefaultInputSpecified(NIOBlockTestCase):
+
+    @property
+    def block_type(self):
+        return BlockWithDefaultInputSpecified
+
     def test_process_signals_on_default(self):
         """ Tests process_signals when there is a default explicit input
         """
-        self.block_type = BlockWithDefaultInputSpecified
         self.configure_block({})
 
         # process signals on default input

@@ -38,17 +38,6 @@ class NIOBlockTestCase(NIOTestCase):
         """
         return self._block_type
 
-    @block_type.setter
-    def block_type(self, block_type):
-        """ Provides block instance in use during test
-
-        Returns:
-            Block instance
-        """
-        self._block_type = block_type
-        # when block type is changed enforce a new block creation
-        self._block = None
-
     def on_signals_notified(self, signals, output_id):
         """ Receives block signals notification
 
@@ -163,12 +152,44 @@ class NIOBlockTestCase(NIOTestCase):
 
         self.block.process_signals(signals, input_id)
 
-    def signals_notified(self, output_id=None):
+    def signals_notified(self, output_id=None, combine_lists=True):
         """ Allows access to signals notified within test
 
-        If no signal has been notified on specified output, the last output
-        notified on is used.
+        If no output is specified, then the last output notified on is used.
+        If output_id is specified, it then must be valid
 
+        Args:
+            output_id (str): output identifier
+            combine_lists (bool): if True (default), all lists are combined
+                into one, otherwise, a list of signal lists is returned in
+                the order in which signals were notified
+
+        Returns:
+            signals notified
+
+        Raises:
+            ValueError if output_id is invalid
+        """
+        # if output_id is specified, it must be valid.
+        if output_id is not None and \
+           output_id not in self._signals_notified:
+            raise ValueError("Invalid output id specified")
+
+        # if output_id is not provided, use last output notified on.
+        output_id = output_id or self._last_output_notified
+
+        if combine_lists:
+            result = []
+            for signals in self._signals_notified[output_id]:
+                result.extend(signals)
+            return result
+        else:
+            return self._signals_notified[output_id]
+
+    def last_signals_notified(self, output_id=None):
+        """ Allows access to last signals notified within test
+
+        If no output is specified, then the last output notified on is used.
         If output_id is specified, it then must be valid
 
         Args:
@@ -182,21 +203,18 @@ class NIOBlockTestCase(NIOTestCase):
         """
         # if output_id is specified, it must be valid.
         if output_id is not None and \
-           output_id not in self._last_signals_notified:
+           output_id not in self._signals_notified:
             raise ValueError("Invalid output id specified")
 
-        # if a valid output_id is not provided, use last output notified on.
-        if output_id is None:
-            output_id = self._last_output_notified
+        # if output_id is not provided, use last output notified on.
+        output_id = output_id or self._last_output_notified
 
-        return self._signals_notified[output_id]
+        return self._signals_notified[output_id][-1]
 
     def last_signal_notified(self, output_id=None):
         """ Provides last signal notified
 
-        If no signal has been notified on specified output, the last output
-        notified on is used.
-
+        If no output is specified, then the last output notified on is used.
         If output_id is specified, it then must be valid
 
         Args:
@@ -213,22 +231,21 @@ class NIOBlockTestCase(NIOTestCase):
            output_id not in self._last_signals_notified:
             raise ValueError("Invalid output id specified")
 
-        # if a valid output_id is not provided, use last output notified on.
-        if output_id is None:
-            output_id = self._last_output_notified
+        # if output_id is not provided, use last output notified on.
+        output_id = output_id or self._last_output_notified
 
         return self._last_signals_notified[output_id][-1]
 
     def assert_num_signals_notified(self, num, output_id=None):
         """ Assert that the number of signals notified is a certain number.
 
+        If no output is specified, then the last output notified on is used.
+
         Args:
             num (int): number to check against
             output_id: The output id of the block to consider.
         """
-        if output_id is None:
-            output_id = self._get_default_output_id()
-        self.assertEqual(len(self._signals_notified[output_id]), num)
+        self.assertEqual(len(self.signals_notified(output_id)), num)
 
     def assert_num_mgmt_signals_notified(self, num):
         """ Assert the number of management signals notified is a number.
@@ -258,7 +275,7 @@ class NIOBlockTestCase(NIOTestCase):
 
         self.assertEqual(block, self.block)
 
-        self._signals_notified[output_id].extend(signals)
+        self._signals_notified[output_id].append(signals)
         self._last_signals_notified[output_id] = signals
         self._last_output_notified = output_id
 

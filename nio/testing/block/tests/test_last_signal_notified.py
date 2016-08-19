@@ -4,24 +4,15 @@ from nio.signal.base import Signal
 from nio.testing.block import NIOBlockTestCase
 
 
-@output("output1")
-@output("output2")
-class BlockWithOutputs(Block):
-    pass
+class TestBlockWithNoOutputs(NIOBlockTestCase):
 
-
-@output("output1", default=True)
-@output("output2")
-class BlockWithDefaultOutputSpecified(Block):
-    pass
-
-
-class TestLastSignalNotified(NIOBlockTestCase):
+    @property
+    def block_type(self):
+        return Block
 
     def test_last_signal_default_terminal(self):
         """ Tests last_signal_notified when no explicit output is defined
         """
-        self.block_type = Block
         self.configure_block({})
 
         # notify signals on default output
@@ -32,15 +23,27 @@ class TestLastSignalNotified(NIOBlockTestCase):
         self.assertEqual(self.last_signal_notified(DEFAULT_TERMINAL),
                          default_output_signal2)
 
-        # notify signals on named outputs
+        # notify signals on named outputs fails since there is no named output
         attempt_named_output = Signal({"name": "o1_s1"})
         with self.assertRaises(ValueError):
             self.notify_signals([attempt_named_output], "output1")
 
-    def test_last_signal_notified(self):
+
+@output("output1")
+@output("output2")
+class BlockWithOutputs(Block):
+    pass
+
+
+class TestBlockWithOutputs(NIOBlockTestCase):
+
+    @property
+    def block_type(self):
+        return BlockWithOutputs
+
+    def test_last_signal_with_outputs(self):
         """ Tests last_signal_notified when outputs are defined but no default
         """
-        self.block_type = BlockWithOutputs
         self.configure_block({})
 
         # notify signals on default output
@@ -74,10 +77,22 @@ class TestLastSignalNotified(NIOBlockTestCase):
             self.assertEqual(self.last_signal_notified("INVALID_OUTPUT"),
                              None)
 
+
+@output("output1", default=True)
+@output("output2")
+class BlockWithDefaultOutputSpecified(Block):
+    pass
+
+
+class TestBlockWithDefaultOutputSpecified(NIOBlockTestCase):
+
+    @property
+    def block_type(self):
+        return BlockWithDefaultOutputSpecified
+
     def test_last_signal_with_default_specified(self):
         """ Tests last_signal_notified when there is a default explicit output
         """
-        self.block_type = BlockWithDefaultOutputSpecified
         self.configure_block({})
 
         # notify signals on default output
