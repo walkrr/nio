@@ -1,3 +1,5 @@
+from nio.block.terminals import Terminal
+from nio.block.terminals import TerminalType
 from nio.router.base import BlockRouter
 
 
@@ -34,7 +36,9 @@ class TestingBlockRouter(BlockRouter):
 
         """
         if output_id is None:
-            output_id = block._default_output.id
+            output_id = \
+                Terminal.get_default_terminal_on_class(block.__class__,
+                                                       TerminalType.output)
 
         self._test_case._internal_signals_notified(block, signals, output_id)
 

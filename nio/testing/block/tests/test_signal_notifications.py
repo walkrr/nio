@@ -1,4 +1,4 @@
-from nio.testing.block.test_block import _TestBlock
+from nio.testing.block.tests.block import _TestBlock
 from nio.signal.base import Signal
 from nio.signal.status import BlockStatusSignal
 from nio.util.runner import RunnerStatus

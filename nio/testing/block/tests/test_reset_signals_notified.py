@@ -1,7 +1,7 @@
 from nio.block.terminals import input, output
 from nio.signal.base import Signal
 from nio.testing.block import NIOBlockTestCase
-from nio.testing.block.test_block import _TestBlock
+from nio.testing.block.tests.block import _TestBlock
 
 
 class TestResetDefaultTerminal(NIOBlockTestCase):
