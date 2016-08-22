@@ -8,6 +8,7 @@ from nio.block.context import BlockContext
 from nio.signal.status import StatusSignal
 from nio.testing.block.router import TestingBlockRouter
 from nio.testing.test_case import NIOTestCase
+from nio.util.runner import RunnerStatus
 
 
 class NIOBlockTestCase(NIOTestCase):
@@ -24,10 +25,14 @@ class NIOBlockTestCase(NIOTestCase):
 
         # support internal test case control over signal notifications
         self._signals_notified = defaultdict(list)
-        self._last_signals_notified = defaultdict(list)
         self._last_output_notified = None
         self._management_signals_notified = []
         self._block_status = ""
+
+    def tearDown(self):
+        if self.block_type and self.block:
+            self.assertTrue(self.block.status.is_set(RunnerStatus.stopped))
+        super().tearDown()
 
     @property
     def block_type(self):
@@ -90,7 +95,7 @@ class NIOBlockTestCase(NIOTestCase):
         """
         # Blocks should always have a 'name', but we'll let it pass in tests
         block_properties["name"] = block_properties.get("name", "default")
-        self.block.configure(BlockContext(
+        self.block.do_configure(BlockContext(
             self._router,
             block_properties,
             'TestSuite',
@@ -99,31 +104,15 @@ class NIOBlockTestCase(NIOTestCase):
     def start_block(self):
         """ Starts block
         """
-        self.block.start()
+        self.assertTrue(self.block.status.is_set(RunnerStatus.configured))
+        self.block.do_start()
 
     def stop_block(self):
         """ Stops block
         """
-        self.block.stop()
-
-    def notify_signals(self, signals, output_id=None):
-        """ Invokes block's notify_signals method
-
-        If output_id is not specified, the block's default output is used
-
-        Args:
-            output_id: The identifier of the output terminal the signals are
-                being notified to.
-
-        Raises:
-            ValueError if output_id specified is invalid
-        """
-        if output_id is None:
-            output_id = self._get_default_output_id()
-        elif not self.block.is_output_valid(output_id):
-            raise ValueError("output id specified is invalid")
-
-        self.block.notify_signals(signals, output_id)
+        self.assertTrue(self.block.status.is_set(RunnerStatus.started) or
+                        self.block.status.is_set(RunnerStatus.error))
+        self.block.do_stop()
 
     def notify_management_signal(self, signal):
         """ Forwards management signal to block
@@ -145,12 +134,29 @@ class NIOBlockTestCase(NIOTestCase):
         Raises:
             ValueError if input_id specified is invalid
         """
+        self.assertTrue(self.block.status.is_set(RunnerStatus.started))
+
         if input_id is None:
             input_id = self._get_default_input_id()
         elif not self.block.is_input_valid(input_id):
             raise ValueError("input id specified is invalid")
 
         self.block.process_signals(signals, input_id)
+
+    def reset_signals_notified(self, output_id=None):
+        """ Clears signals notified list on given output id
+
+        If no output is specified, then the last output notified on is used.
+        If output_id is specified, it then must be valid
+
+        Args:
+            output_id (str): output identifier
+
+        Raises:
+            ValueError if output_id is invalid
+        """
+        output_id = self._get_signals_notified_output_id(output_id)
+        self._signals_notified[output_id] = []
 
     def signals_notified(self, output_id=None, combine_lists=True):
         """ Allows access to signals notified within test
@@ -170,13 +176,7 @@ class NIOBlockTestCase(NIOTestCase):
         Raises:
             ValueError if output_id is invalid
         """
-        # if output_id is specified, it must be valid.
-        if output_id is not None and \
-           output_id not in self._signals_notified:
-            raise ValueError("Invalid output id specified")
-
-        # if output_id is not provided, use last output notified on.
-        output_id = output_id or self._last_output_notified
+        output_id = self._get_signals_notified_output_id(output_id)
 
         if combine_lists:
             result = []
@@ -185,6 +185,35 @@ class NIOBlockTestCase(NIOTestCase):
             return result
         else:
             return self._signals_notified[output_id]
+
+    def wait_for_signals_notified(self, output_id=None, count=0,
+                                  wait_timeout_interval=1):
+        """ Wait for the specified number of signals to be notified
+
+        If no count is specified, then wait for the next signals to be
+        notified. If no signals are notified before the timeout, then fail
+        the test.
+
+        Note: 'signals_notified_event' is cleared
+
+        Either returns after successfully waiting or fails an assertion
+        """
+        if not count:
+            # Wait for next signals notified event
+            no_timeout = \
+                self.signals_notified_event.wait(wait_timeout_interval)
+        else:
+            no_timeout = True
+            # Wait for specified number of signals
+            while no_timeout and count > len(self.signals_notified(output_id)):
+                no_timeout = \
+                    self.signals_notified_event.wait(wait_timeout_interval)
+
+        # reset signal notifications
+        self.signals_notified_event.clear()
+
+        # assert that no timeout occurred
+        self.assertTrue(no_timeout)
 
     def last_signals_notified(self, output_id=None):
         """ Allows access to last signals notified within test
@@ -218,15 +247,7 @@ class NIOBlockTestCase(NIOTestCase):
         Raises:
             ValueError if output_id is invalid
         """
-        # if output_id is specified, it must be valid.
-        if output_id is not None and \
-           output_id not in self._last_signals_notified:
-            raise ValueError("Invalid output id specified")
-
-        # if output_id is not provided, use last output notified on.
-        output_id = output_id or self._last_output_notified
-
-        return self._last_signals_notified[output_id][-1]
+        return self.last_signals_notified(output_id)[-1]
 
     def assert_num_signals_notified(self, num, output_id=None):
         """ Assert that the number of signals notified is a certain number.
@@ -268,7 +289,6 @@ class NIOBlockTestCase(NIOTestCase):
         self.assertEqual(block, self.block)
 
         self._signals_notified[output_id].append(signals)
-        self._last_signals_notified[output_id] = signals
         self._last_output_notified = output_id
 
         # allow block developer to override
@@ -305,13 +325,11 @@ class NIOBlockTestCase(NIOTestCase):
                              format(self.block_type))
         return self.block._default_input.id
 
-    def _get_default_output_id(self):
-        """ Provides block's default output
+    def _get_signals_notified_output_id(self, output_id):
+        # if output_id is specified, it must be valid.
+        if output_id is not None and \
+           output_id not in self._signals_notified:
+            raise ValueError("Invalid output id specified")
 
-        Raises:
-            ValueError if block has no default output
-        """
-        if not self.block._default_output:
-            raise ValueError("Block: {} has no default output".
-                             format(self.block_type))
-        return self.block._default_output.id
+        # if output_id is not provided, use last output notified on.
+        return output_id or self._last_output_notified

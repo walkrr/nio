@@ -1,4 +1,4 @@
-from nio.block.base import Block
+from nio.testing.block.test_block import _TestBlock
 from nio.signal.base import Signal
 from nio.signal.status import BlockStatusSignal
 from nio.util.runner import RunnerStatus
@@ -11,19 +11,24 @@ class TestSignalsNotifications(NIOBlockTestCase):
     def block_type(self):
         """ Overrides block_type to use for all tests
         """
-        return Block
+        return _TestBlock
 
     def test_allows_signal_notify(self):
         """ Makes sure a test can assert how many signals were notified """
         self.configure_block({})
-        self.notify_signals([Signal(), Signal()])
+        self.start_block()
+
+        self.process_signals([Signal(), Signal()])
 
         # Assert that 2 total signals were captured
         self.assert_num_signals_notified(2)
 
+        self.stop_block()
+
     def test_allows_mgmt_signal_notify(self):
         """ Makes sure a test can assert how many mgmt signals were notified """
         self.configure_block({})
+        self.start_block()
 
         # First make sure block has no status
         self.assert_block_status('')
@@ -35,10 +40,15 @@ class TestSignalsNotifications(NIOBlockTestCase):
         # assert that 1 total signal was captured
         self.assert_num_mgmt_signals_notified(1)
 
+        self.stop_block()
+
     def test_event_notification(self):
         """ Makes sure test can can wait on 'signals_notified_event' """
         self.configure_block({})
+        self.start_block()
 
         self.assertFalse(self.signals_notified_event.is_set())
-        self.notify_signals([Signal(), Signal()])
+        self.process_signals([Signal(), Signal()])
         self.assertTrue(self.signals_notified_event.wait(0.001))
+
+        self.stop_block()

@@ -1,4 +1,4 @@
-from nio.block.base import Block
+from nio.testing.block.test_block import _TestBlock
 from nio.signal.base import Signal
 from nio.signal.status import BlockStatusSignal
 from nio.util.runner import RunnerStatus
@@ -11,7 +11,7 @@ class TestSignalOverrides(NIOBlockTestCase):
     def block_type(self):
         """ Overrides block_type to use for all tests
         """
-        return Block
+        return _TestBlock
 
     def on_signals_notified(self, signals, output_id):
         """ Override a signal notification handler """
@@ -27,16 +27,22 @@ class TestSignalOverrides(NIOBlockTestCase):
         """ Makes sure a test can override a signal handler """
         self._signals_notified_override = False
         self.configure_block({})
+        self.start_block()
 
         self.assertFalse(self._signals_notified_override)
-        self.notify_signals([Signal()])
+        self.process_signals([Signal()])
         self.assertTrue(self._signals_notified_override)
+
+        self.stop_block()
 
     def test_allows_mgmt_signal_handler_override(self):
         """ Makes sure a test can override a management signal handler """
         self._management_notified_override = False
         self.configure_block({})
+        self.start_block()
 
         self.assertFalse(self._management_notified_override)
         self.notify_management_signal(BlockStatusSignal(RunnerStatus.error))
         self.assertTrue(self._management_notified_override)
+
+        self.stop_block()

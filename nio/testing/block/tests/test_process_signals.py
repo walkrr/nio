@@ -1,6 +1,6 @@
 from collections import defaultdict
 
-from nio.block.base import Block
+from nio import Block
 from nio.block.terminals import DEFAULT_TERMINAL, input
 from nio.signal.base import Signal
 from nio.testing.block import NIOBlockTestCase
@@ -25,6 +25,7 @@ class TestProcessSignalsDefaultTerminal(NIOBlockTestCase):
         """ Tests process_signals when no explicit input is defined
         """
         self.configure_block({})
+        self.start_block()
 
         # process signals on default input
         default_input_signals = [Signal({"name": "default_s1"}),
@@ -42,6 +43,8 @@ class TestProcessSignalsDefaultTerminal(NIOBlockTestCase):
                          default_input_signals)
         self.assertNotIn("input1", self.block._signals_processed)
 
+        self.stop_block()
+
 
 @input("input1")
 @input("input2")
@@ -58,6 +61,7 @@ class TestBlockWithInputs(NIOBlockTestCase):
         """ Tests process_signals when inputs are defined but no default
         """
         self.configure_block({})
+        self.start_block()
 
         # process signals on default input
         default_input_signals = [Signal({"name": "default_s1"}),
@@ -79,6 +83,8 @@ class TestBlockWithInputs(NIOBlockTestCase):
         self.assertEqual(self.block._signals_processed["input2"],
                          input2_signals)
 
+        self.stop_block()
+
 
 @input("input1", default=True)
 @input("input2")
@@ -96,6 +102,7 @@ class TestBlockWithDefaultInputSpecified(NIOBlockTestCase):
         """ Tests process_signals when there is a default explicit input
         """
         self.configure_block({})
+        self.start_block()
 
         # process signals on default input
         default_input_signal1 = Signal({"name": "default_s1"})
@@ -128,3 +135,5 @@ class TestBlockWithDefaultInputSpecified(NIOBlockTestCase):
                       self.block._signals_processed["input2"])
         self.assertIn(input2_signal2,
                       self.block._signals_processed["input2"])
+
+        self.stop_block()
