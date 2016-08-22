@@ -8,7 +8,6 @@ from nio.block.context import BlockContext
 from nio.signal.status import StatusSignal
 from nio.testing.block.router import TestingBlockRouter
 from nio.testing.test_case import NIOTestCase
-from nio.util.runner import RunnerStatus
 
 
 class NIOBlockTestCase(NIOTestCase):
@@ -28,11 +27,7 @@ class NIOBlockTestCase(NIOTestCase):
         self._last_output_notified = None
         self._management_signals_notified = []
         self._block_status = ""
-
-    def tearDown(self):
-        if self.block_type and self.block:
-            self.assertTrue(self.block.status.is_set(RunnerStatus.stopped))
-        super().tearDown()
+        self._block_configured = False
 
     @property
     def block_type(self):
@@ -100,18 +95,16 @@ class NIOBlockTestCase(NIOTestCase):
             block_properties,
             'TestSuite',
             ''))
+        self._block_configured = True
 
     def start_block(self):
         """ Starts block
         """
-        self.assertTrue(self.block.status.is_set(RunnerStatus.configured))
         self.block.do_start()
 
     def stop_block(self):
         """ Stops block
         """
-        self.assertTrue(self.block.status.is_set(RunnerStatus.started) or
-                        self.block.status.is_set(RunnerStatus.error))
         self.block.do_stop()
 
     def notify_management_signal(self, signal):
@@ -134,7 +127,7 @@ class NIOBlockTestCase(NIOTestCase):
         Raises:
             ValueError if input_id specified is invalid
         """
-        self.assertTrue(self.block.status.is_set(RunnerStatus.started))
+        self.assertTrue(self._block_configured)
 
         if input_id is None:
             input_id = self._get_default_input_id()
