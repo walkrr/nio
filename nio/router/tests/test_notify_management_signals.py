@@ -72,23 +72,25 @@ class TestNotifyManagementSignals(NIOTestCaseNoModules):
                         is_set(RunnerStatus.error))
         service.do_stop()
 
-    def test_bad_signals_no_effect(self):
+    def test_non_management_signals_no_effect(self):
         """Test nothing happens when non management signals are notified"""
         context = ServiceContext(properties, blocks, BlockRouter)
         service = Service()
         service.do_configure(context)
         service.do_start()
 
+        # Notifying a base management signal won't change the status of
+        # the block
         signal = ManagementSignal()
         notifier_block = service._blocks['notifierblock']
         notifier_block.notify_management_signal(signal)
-
         self.assertEqual(service._blocks['notifierblock'].status,
                          RunnerStatus.started)
 
+        # Notifying a regular signal also won't change the status of
+        # the block
         signal2 = Signal()
         notifier_block.notify_management_signal(signal2)
-
         self.assertEqual(service._blocks['notifierblock'].status,
                          RunnerStatus.started)
 
