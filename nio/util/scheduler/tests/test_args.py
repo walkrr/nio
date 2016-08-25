@@ -25,6 +25,6 @@ class TestScheduler(NIOTestCase):
         """ Asserts that scheduler accepts args and kwargs """
         dummy = Dummy()
         self.job1 = Job(dummy.foo1, timedelta(milliseconds=1), False,
-                        arg1_parameter, kwarg1_parameter)
+                        arg1_parameter, kwarg1=kwarg1_parameter)
         sleep(0.05)
         self.assertEqual(dummy.foo1_called, True)

@@ -81,7 +81,5 @@ class Cache(object):
             key: item key
         """
         with self._cache_lock:
-            try:
+            if key in self._cache:
                 del self._cache[key]
-            except:
-                pass
