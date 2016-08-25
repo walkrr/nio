@@ -2,7 +2,6 @@ from threading import RLock
 
 from unittest.mock import patch
 from datetime import timedelta
-from nio.util.scheduler.scheduler_thread import SchedulerThread
 from nio.util.scheduler.scheduler_helper import SchedulerHelper
 from time import sleep
 from nio.testing.test_case import NIOTestCase
@@ -12,14 +11,12 @@ class TestSchedulerHelper(NIOTestCase):
 
     def setUp(self):
         super().setUp()
-        self._scheduler = SchedulerHelper(0.1, 0.1)
-        self._thread_scheduler = SchedulerThread(self._scheduler)
-        self._thread_scheduler.start()
+        self._scheduler = SchedulerHelper(0.01, 0.01)
+        self._scheduler.start()
         self._fired_times_lock = RLock()
 
     def tearDown(self):
-        self._thread_scheduler.stop()
-        self._thread_scheduler.join()
+        self._scheduler.stop()
         super().tearDown()
 
     def test_add_and_cancel(self):
@@ -29,7 +26,7 @@ class TestSchedulerHelper(NIOTestCase):
         more calls are issued
         """
 
-        interval = timedelta(seconds=0.2)
+        interval = timedelta(seconds=0.02)
         ev1 = self._scheduler.add(self._test_fired_times_callback,
                                   interval,
                                   repeatable=True)
@@ -67,16 +64,20 @@ class TestSchedulerHelper(NIOTestCase):
         self.fired_times = 0
         self._scheduler.add(self._test_fired_times_callback,
                             timedelta(seconds=0.0001), repeatable=True)
-        # sleep slightly more than min interval
-        sleep(0.15)
-        self.assertEquals(self.fired_times, 1)
+        # sleep more than min interval
+        sleep(0.05)
+        # with such a small timedelta (0.0001) jthe ob is expected in theory
+        # to execute 100s of times, so asserting that it fired less than 10
+        # times shows that a min_interval overwrote the timedelta
+        self.assertGreater(self.fired_times, 0)
+        self.assertLess(self.fired_times, 10)
 
     def test_min_interval_non_repeatable(self):
         """ Asserts that it is ok to pass a small time when not repeatable """
         self.fired_times = 0
         self._scheduler.add(self._test_fired_times_callback,
                             timedelta(seconds=0.0001), repeatable=False)
-        sleep(0.15)
+        sleep(0.05)
         self.assertEquals(self.fired_times, 1)
 
     @property
@@ -95,5 +96,6 @@ class TestSchedulerHelper(NIOTestCase):
                                        timedelta(seconds=0.1), repeatable=True)
         self.assertFalse(self._scheduler.cancel("invalid_id"))
 
-        with patch('heapq.heapify', side_effect=Exception()):
+        with patch('heapq.heapify',
+                   side_effect=Exception("Patch induced exception")):
             self.assertFalse(self._scheduler.cancel(event_id))

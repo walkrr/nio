@@ -2,6 +2,7 @@ from datetime import timedelta
 from time import sleep
 from nio.modules.scheduler.job import Job
 from nio.testing.test_case import NIOTestCase
+from nio.util.scheduler.scheduler import Scheduler
 
 
 class Dummy(object):
@@ -25,7 +26,10 @@ class TestScheduler(NIOTestCase):
         dummy = Dummy()
         self.job1 = Job(dummy.foo1, timedelta(milliseconds=500), False)
         self.job2 = Job(dummy.foo2, timedelta(milliseconds=100), False)
-        sleep(0.8)
+        # simulate a jump forward in time
+        Scheduler._scheduler.offset = 0.8
+        # yield to scheduler
+        sleep(0.05)
         self.assertEqual(dummy.foo1_called, True)
         self.assertEqual(dummy.foo2_called, True)
 
@@ -37,6 +41,9 @@ class TestScheduler(NIOTestCase):
         dummy = Dummy()
         self.job2 = Job(dummy.foo2, timedelta(milliseconds=100), False)
         self.job1 = Job(dummy.foo1, timedelta(milliseconds=500), False)
-        sleep(0.8)
+        # simulate a jump forward in time
+        Scheduler._scheduler.offset = 0.8
+        # yield to scheduler
+        sleep(0.05)
         self.assertEqual(dummy.foo1_called, True)
         self.assertEqual(dummy.foo2_called, True)

@@ -34,9 +34,26 @@ class SchedulerHelper(object):
         self._stop_event = Event()
         self._events = dict()
         self._events_lock = RLock()
+        self._process_events_thread = None
 
     def start(self):
-        """ Starts scheduler.
+        """ Starts scheduler asynchronously
+
+        Launches event processing in a separate thread thus giving back
+        control to caller
+        """
+        self._process_events_thread = spawn(self._process_events)
+
+    def _process_events(self):
+        """ Process scheduled events
+
+        Starts a loop that runs indefinetly until stop_event is set.
+        General characteristics:
+            Scheduler tasks are launched asynchronously thus loop is not
+                expected to be held during tasks executions
+            As long as no events are scheduled, method will sleep at resolution
+            time, when events are present, sleep time is calculated as the
+            minimum between resolution and event scheduled time.
 
         """
 
@@ -61,7 +78,8 @@ class SchedulerHelper(object):
                 # if there are events, check their time to see if
                 # it is up for firing it.
                 event_time, event_id, target, frequency, args, kwargs = event
-                now = time()
+                # get time to compare event against
+                now = self._get_time()
                 # find out if need to sleep or execute event
                 if now < event_time:
                     self.logger.debug(
@@ -119,6 +137,11 @@ class SchedulerHelper(object):
 
         """
         self._stop_event.set()
+        # do not join indefinitely, allow a reasonable time
+        self._process_events_thread.join(10*self._resolution)
+        if self._process_events_thread.is_alive():
+            self.logger.warning("Scheduler thread did not end properly, "
+                                "it timed out")
 
     def add(self, target, delta, repeatable, *args, **kwargs):
         """ Adds an event to the scheduler.
@@ -185,11 +208,17 @@ class SchedulerHelper(object):
         if event:
             try:
                 with self._queue_lock:
-                    self._queue.remove(event)
-                    heapq.heapify(self._queue)
+                    if event in self._queue:
+                        self._queue.remove(event)
+                        heapq.heapify(self._queue)
                 self.logger.debug('Success cancelling event')
                 return True
             except Exception:
                 self.logger.debug('Failure to remove event {0} from queue'
                                   ' while cancelling a job'.format(event))
         return False
+
+    def _get_time(self):
+        """ Time retrieval method to use when comparing against event time
+        """
+        return time()

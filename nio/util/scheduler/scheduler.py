@@ -1,14 +1,15 @@
 from nio.modules.module import ModuleNotInitialized
 from nio.util.runner import RunnerStatus, Runner
 from nio.util.scheduler.scheduler_helper import SchedulerHelper
-from nio.util.scheduler.scheduler_thread import SchedulerThread
 
 
 class SchedulerRunner(Runner):
 
+    _scheduler_helper_class = SchedulerHelper
+
     def __init__(self):
         super().__init__()
-        self._scheduler_thread = None
+        self._scheduler = None
         self._sched_min_delta = 0.1
         self._sched_resolution = 0.1
 
@@ -38,7 +39,7 @@ class SchedulerRunner(Runner):
         if self.status != RunnerStatus.started:
             raise ModuleNotInitialized("Scheduler module is not started")
 
-        return self._scheduler_thread.scheduler.add(
+        return self._scheduler.add(
             target, delta, repeatable, *args, **kwargs)
 
     def unschedule(self, job):
@@ -55,20 +56,15 @@ class SchedulerRunner(Runner):
 
         """
         self.logger.debug("Un-scheduling %s" % job)
-        self._scheduler_thread.scheduler.cancel(job)
+        self._scheduler.cancel(job)
 
     def stop(self):
-        try:
-            if self._scheduler_thread:
-                self._scheduler_thread.stop()
-        finally:
-            self._scheduler_thread = None
+        self._scheduler.stop()
 
     def start(self):
-        self._scheduler_thread = SchedulerThread(SchedulerHelper(
-            resolution=self._sched_resolution,
-            min_delta=self._sched_min_delta))
-        self._scheduler_thread.start()
+        self._scheduler = self._scheduler_helper_class(
+            resolution=self._sched_resolution, min_delta=self._sched_min_delta)
+        self._scheduler.start()
 
 # Singleton reference to a scheduler
 Scheduler = SchedulerRunner()
