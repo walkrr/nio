@@ -2,7 +2,7 @@ from datetime import timedelta
 from time import sleep
 from threading import RLock
 
-from nio.util.scheduler.scheduler import Scheduler
+from nio.testing.modules.scheduler.scheduler import JumpAheadScheduler
 from nio.modules.scheduler.job import Job
 from nio.util.threading import spawn
 from nio.testing.test_case import NIOTestCase
@@ -17,7 +17,7 @@ class TestSchedulerCleanUp(NIOTestCase):
         when a repeatable task is cancelled
         """
 
-        scheduler = Scheduler
+        scheduler = JumpAheadScheduler
         self.assertEqual(len(scheduler._events), 0)
         num_tasks = 2
         for i in range(num_tasks):
@@ -28,7 +28,7 @@ class TestSchedulerCleanUp(NIOTestCase):
             self.assertEqual(len(scheduler._events), num_tasks + 2)
         self.assertEqual(len(scheduler._queue), num_tasks + 2)
         # jump forward in time
-        Scheduler.offset = 0.2
+        repeatable_job.jump_ahead(0.2)
         # allow yielding to scheduler
         sleep(0.05)
         with scheduler._events_lock:
@@ -39,7 +39,7 @@ class TestSchedulerCleanUp(NIOTestCase):
             self.assertEqual(len(scheduler._queue), 2)
         # jump in time again, now longer_job must be gone since it was set to
         # execute at 0.3 seconds
-        Scheduler.offset = 0.4
+        repeatable_job.jump_ahead(0.4)
         # allow yielding to scheduler
         sleep(0.05)
         with scheduler._events_lock:
@@ -62,7 +62,7 @@ class TestSchedulerCleanUp(NIOTestCase):
     def test_scheduler_cancel_from_callback(self):
         """ Asserts that scheduler accepts callbacks that cancel jobs.  """
 
-        scheduler = Scheduler
+        scheduler = JumpAheadScheduler
 
         jobs = []
         num_jobs = 20
@@ -75,7 +75,7 @@ class TestSchedulerCleanUp(NIOTestCase):
                                 True, jobs, jobs_lock))
 
         # jump forward in time (give ample time for jobs to be cancelled)
-        Scheduler.offset = num_jobs/10
+        jobs[0].jump_ahead(num_jobs/10)
         # allow yielding to scheduler
         sleep(0.05)
 

@@ -26,7 +26,6 @@ class SchedulerRunner(Runner):
         self._events = dict()
         self._events_lock = RLock()
         self._process_events_thread = None
-        self.offset = 0
 
     def configure(self, context):
         # Load in the minimum delta and resolution from the config
@@ -37,9 +36,10 @@ class SchedulerRunner(Runner):
     def _reset_scheduler(self):
         """ Reset the scheduler to the basic state.
 
-        This will remove any time offset, clear out the queue, etc
+        This method will be called whenever the scheduler needs to be
+        restarted or start fresh. It will clear out the queue, reset the
+        stop event, etc.
         """
-        self.offset = 0
         self._queue[:] = []
         # Set and then clear the event to trigger any needed stops
         self._stop_event.set()
@@ -236,7 +236,7 @@ class SchedulerRunner(Runner):
     def _get_time(self):
         """ Time retrieval method to use when comparing against event time
         """
-        return time() + self.offset
+        return time()
 
 # Singleton reference to a scheduler
 Scheduler = SchedulerRunner()

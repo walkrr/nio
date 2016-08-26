@@ -4,7 +4,6 @@ from nio.modules.scheduler.job import Job
 from unittest.mock import MagicMock
 from datetime import timedelta
 from nio.testing.test_case import NIOTestCase
-from nio.util.scheduler.scheduler import Scheduler
 
 
 class Dummy(object):
@@ -17,6 +16,9 @@ class Dummy(object):
 
 
 class TestJob(NIOTestCase):
+
+    """ These tests assume they are being run with the TestScheduler that
+    allows jumping forward in time. """
 
     def setUp(self):
         super().setUp()
@@ -35,20 +37,25 @@ class TestJob(NIOTestCase):
         method.assert_called_once_with()
 
     def test_run_repeatedly(self):
-        self.job = Job(self.dummy.foo, timedelta(milliseconds=500), True)
-        # jump forward in time
-        Scheduler.offset = 1.5
-        # allow yielding to scheduler
+        self.job = Job(self.dummy.foo, timedelta(seconds=1), True)
+        # jump forward in time a little more than 3 seconds
+        self.job.jump_ahead(3.1)
+        # Let the scheduler loop hit once more
         sleep(0.05)
         self.assertEqual(self.dummy.foo_called, 3)
 
     def test_run_with_args(self):
-        self.job = Job(self.dummy.foo, timedelta(milliseconds=1), False, 2)
+        self.job = Job(self.dummy.foo, timedelta(seconds=1), False, 2)
+        # jump forward in time a little more than 1 second
+        self.job.jump_ahead(1.1)
         sleep(0.05)
         self.assertEqual(self.dummy.foo_called, 2)
 
     def test_run_with_kwargs(self):
-        self.job = Job(self.dummy.foo, timedelta(milliseconds=1), False, add=3)
+        self.job = Job(self.dummy.foo, timedelta(seconds=1), False, add=3)
+        # jump forward in time a little more than 1 second
+        self.job.jump_ahead(1.1)
+        # Let the scheduler loop hit once more
         sleep(0.05)
         self.assertEqual(self.dummy.foo_called, 3)
 
@@ -57,7 +64,7 @@ class TestJob(NIOTestCase):
         self.assertEqual(self.dummy.foo_called, 0)
         self.job.cancel()
         # jump forward in time
-        Scheduler.offset = 2.5
-        # allow yielding to scheduler
+        self.job.jump_ahead(2.5)
+        # Let the scheduler loop hit once more
         sleep(0.05)
         self.assertEqual(self.dummy.foo_called, 0)
