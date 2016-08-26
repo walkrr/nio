@@ -169,8 +169,6 @@ class SchedulerRunner(Runner):
                 # keep logging stmt out of the lock
                 self.logger.debug('Queue contains: {0} tasks'.
                                   format(queue_length))
-                self.logger.debug('Queue contains: {0} tasks'.
-                                  format(queue_length))
 
                 if not event:
                     sleep(self._sched_resolution)

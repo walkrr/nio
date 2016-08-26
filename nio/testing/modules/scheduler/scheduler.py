@@ -29,6 +29,9 @@ class JumpAheadSchedulerRunner(SchedulerRunner):
 
         self.offset += seconds
 
+        # TODO: Trigger the scheduler loop here to prevent having to sleep
+        # and yield so that it executes on its own
+
     def _reset_scheduler(self):
         """ Reset our offset to 0 when the scheduler is reset """
         self.offset = 0
