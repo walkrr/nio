@@ -36,7 +36,8 @@ class TestCancelRetry(NIOBlockTestCase):
 
     def test_stop_loop(self):
         """Tests that the retry mixin loop can be stopped/cancelled"""
-        block = RetryingBlock(0.01)
+        sleep_retry_time = 0.01
+        block = RetryingBlock(sleep_retry_time)
         self.configure_block(block, {})
         # Target func will fail
         target_func = MagicMock(side_effect=[Exception, Exception, Exception])
@@ -44,10 +45,11 @@ class TestCancelRetry(NIOBlockTestCase):
         stop_retry_event = Event()
         execute_thread = spawn(block.execute_with_retry, target_func,
                                stop_retry_event=stop_retry_event)
-        sleep(0.01)
+        sleep(sleep_retry_time)
         # set event that will stop retrying mechanism
         stop_retry_event.set()
-        execute_thread.join(0.01)
+        # allow double sleep retry time when joining
+        execute_thread.join(2*sleep_retry_time)
 
         # assert that thread terminated
         self.assertFalse(execute_thread.is_alive())

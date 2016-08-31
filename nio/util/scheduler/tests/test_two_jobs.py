@@ -25,7 +25,10 @@ class TestScheduler(NIOTestCase):
         dummy = Dummy()
         self.job1 = Job(dummy.foo1, timedelta(milliseconds=500), False)
         self.job2 = Job(dummy.foo2, timedelta(milliseconds=100), False)
-        sleep(0.8)
+        # simulate a jump forward in time
+        self.job1.jump_ahead(0.8)
+        # yield to scheduler
+        sleep(0.05)
         self.assertEqual(dummy.foo1_called, True)
         self.assertEqual(dummy.foo2_called, True)
 
@@ -37,6 +40,9 @@ class TestScheduler(NIOTestCase):
         dummy = Dummy()
         self.job2 = Job(dummy.foo2, timedelta(milliseconds=100), False)
         self.job1 = Job(dummy.foo1, timedelta(milliseconds=500), False)
-        sleep(0.8)
+        # simulate a jump forward in time
+        self.job1.jump_ahead(0.8)
+        # yield to scheduler
+        sleep(0.05)
         self.assertEqual(dummy.foo1_called, True)
         self.assertEqual(dummy.foo2_called, True)
