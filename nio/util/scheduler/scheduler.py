@@ -135,7 +135,7 @@ class SchedulerRunner(Runner):
     def stop(self):
         self._stop_event.set()
         # do not join indefinitely, allow a reasonable time
-        self._process_events_thread.join(10 * self._resolution)
+        self._process_events_thread.join(10 * self._sched_resolution)
         if self._process_events_thread.is_alive():
             self.logger.warning("Scheduler thread did not end properly, "
                                 "it timed out")
