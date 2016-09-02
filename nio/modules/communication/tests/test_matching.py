@@ -481,3 +481,11 @@ class TestMatching(NIOTestCase):
         self.assertFalse(matches("*.*.c.d.*", "a.b.c.d"))
         self.assertTrue(matches("*.*.c.d.*", "a.b.c.d.e"))
 
+    def test_invalid_topic_types(self):
+        # only topic type as str is accepted
+        self.assertFalse(matches("A", {}))
+        self.assertFalse(matches({}, "A"))
+        self.assertFalse(matches("A", []))
+        self.assertFalse(matches([], "A"))
+        self.assertFalse(matches("A", object()))
+        self.assertFalse(matches(object(), "A"))

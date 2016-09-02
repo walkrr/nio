@@ -1,5 +1,7 @@
 import re
 
+from nio.util.logging import get_nio_logger
+
 # defines allowed characters withing a topic level
 LEVEL_ALLOWED_CHARACTERS = "[0-9A-Za-z_\* \-]"
 # pre-compiled match for allowed characters withing a level
@@ -10,6 +12,30 @@ class InvalidTopic(Exception):
     """ Exception to be raised when a topic is invalid
     """
     pass
+
+
+def is_topic_type_valid(topic):
+    """ Finds out if a given topic type is valid
+
+    Args:
+        topic: topic with 'str' expected type
+
+    Returns:
+        True if topic type is str, False otherwise
+
+    """
+    if not isinstance(topic, str):
+        logger = get_nio_logger("Matching")
+        if isinstance(topic, dict):
+            logger.warning(
+                "Specifying topic: {} through a key-value pair is obsolete, "
+                "please use new string-like convention".format(topic))
+        else:
+            logger.warning("Publisher topic: {} is invalid".format(topic))
+
+        return False
+
+    return True
 
 
 def is_topic_valid(topic):
@@ -24,6 +50,9 @@ def is_topic_valid(topic):
     Returns:
         True if topic is valid, False otherwise
     """
+    if not is_topic_type_valid(topic):
+        return False
+
     sub_topics = topic.split('.')
     for sub_topic in sub_topics:
         # validate topic level
