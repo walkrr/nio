@@ -1,9 +1,12 @@
+from time import sleep
+
 from nio.util.scheduler.scheduler import SchedulerRunner
 
 
 class JumpAheadSchedulerRunner(SchedulerRunner):
     """ Overrides SchedulerHelper allowing simulation of forward jumps in time
     """
+    YIELD_CONTROL_SLEEP_TIME = 0.05
 
     def __init__(self):
         super().__init__()
@@ -15,8 +18,13 @@ class JumpAheadSchedulerRunner(SchedulerRunner):
 
         This will update the scheduler's offset a certain number of seconds
         in order to simulate time passing. Any scheduled jobs that should have
-        fired during the time that passed will fire when the next resolution
-        loop occurs.
+        fired during the time that passed will fire after scheduler thread
+        takes control.
+
+        Note: To facilitate the scheduler event processing thread to take
+        control a 'sleep' call is invoked at the end of this method to
+        avoid having to follow up with a 'sleep' call every time this method
+        is invoked.
 
         Args:
             seconds (float): How many seconds to simulate passing in time.
@@ -29,8 +37,11 @@ class JumpAheadSchedulerRunner(SchedulerRunner):
 
         self.offset += seconds
 
-        # TODO: Trigger the scheduler loop here to prevent having to sleep
-        # and yield so that it executes on its own
+        # wake up scheduler loop
+        self._sleep_interrupt_event.set()
+        self._sleep_interrupt_event.clear()
+        # yield control
+        sleep(JumpAheadSchedulerRunner.YIELD_CONTROL_SLEEP_TIME)
 
     def _reset_scheduler(self):
         """ Reset our offset to 0 when the scheduler is reset """

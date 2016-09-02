@@ -40,23 +40,18 @@ class TestJob(NIOTestCase):
         self.job = Job(self.dummy.foo, timedelta(seconds=1), True)
         # jump forward in time a little more than 3 seconds
         self.job.jump_ahead(3.1)
-        # Let the scheduler loop hit once more
-        sleep(0.05)
         self.assertEqual(self.dummy.foo_called, 3)
 
     def test_run_with_args(self):
         self.job = Job(self.dummy.foo, timedelta(seconds=1), False, 2)
         # jump forward in time a little more than 1 second
         self.job.jump_ahead(1.1)
-        sleep(0.05)
         self.assertEqual(self.dummy.foo_called, 2)
 
     def test_run_with_kwargs(self):
         self.job = Job(self.dummy.foo, timedelta(seconds=1), False, add=3)
         # jump forward in time a little more than 1 second
         self.job.jump_ahead(1.1)
-        # Let the scheduler loop hit once more
-        sleep(0.05)
         self.assertEqual(self.dummy.foo_called, 3)
 
     def test_cancel_job(self):
@@ -65,6 +60,4 @@ class TestJob(NIOTestCase):
         self.job.cancel()
         # jump forward in time
         self.job.jump_ahead(2.5)
-        # Let the scheduler loop hit once more
-        sleep(0.05)
         self.assertEqual(self.dummy.foo_called, 0)

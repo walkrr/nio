@@ -1,5 +1,4 @@
 from datetime import timedelta
-from time import sleep
 from threading import RLock
 
 from nio.testing.modules.scheduler.scheduler import JumpAheadScheduler
@@ -29,8 +28,6 @@ class TestSchedulerCleanUp(NIOTestCase):
         self.assertEqual(len(scheduler._queue), num_tasks + 2)
         # jump forward in time
         repeatable_job.jump_ahead(0.2)
-        # allow yielding to scheduler
-        sleep(0.05)
         with scheduler._events_lock:
             self.assertEqual(len(scheduler._events), 2)
             self.assertIn(longer_job._job, scheduler._events)
@@ -40,8 +37,6 @@ class TestSchedulerCleanUp(NIOTestCase):
         # jump in time again, now longer_job must be gone since it was set to
         # execute at 0.3 seconds
         repeatable_job.jump_ahead(0.4)
-        # allow yielding to scheduler
-        sleep(0.05)
         with scheduler._events_lock:
             self.assertEqual(len(scheduler._events), 1)
             # and must only remain, the repeatable job
@@ -76,8 +71,6 @@ class TestSchedulerCleanUp(NIOTestCase):
 
         # jump forward in time (give ample time for jobs to be cancelled)
         jobs[0].jump_ahead(num_jobs/10)
-        # allow yielding to scheduler
-        sleep(0.05)
 
         # verify that nothing remains
         with scheduler._events_lock:

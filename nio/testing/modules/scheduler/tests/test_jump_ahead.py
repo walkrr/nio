@@ -1,5 +1,4 @@
 from datetime import timedelta
-from time import sleep
 
 from nio.testing.test_case import NIOTestCase
 from nio.testing.modules.scheduler.job import JumpAheadJob
@@ -35,12 +34,10 @@ class TestJumpAheadJobs(NIOTestCase):
 
         # After 2 seconds, still not called
         job.jump_ahead(2)
-        sleep(0.05)
         self.assertEqual(self.times_called, 0)
 
         # After 4 more seconds (6 total), should be called once
         job.jump_ahead(4)
-        sleep(0.05)
         self.assertEqual(self.times_called, 1)
 
     def test_jump_repeatable(self):
@@ -56,12 +53,10 @@ class TestJumpAheadJobs(NIOTestCase):
 
         # After 6 seconds, called once
         job.jump_ahead(6)
-        sleep(0.05)
         self.assertEqual(self.times_called, 1)
 
         # After 15 more seconds (21 total), should be called 4 times
         job.jump_ahead(15)
-        sleep(0.05)
         self.assertEqual(self.times_called, 4)
 
     def test_cant_jump_backwards(self):
