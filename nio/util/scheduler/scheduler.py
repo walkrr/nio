@@ -2,7 +2,7 @@ import heapq
 from uuid import uuid4
 from datetime import timedelta
 from threading import Event, RLock
-from time import time, sleep
+from time import time
 from collections import namedtuple
 
 from nio.modules.module import ModuleNotInitialized
@@ -26,6 +26,9 @@ class SchedulerRunner(Runner):
         self._events = dict()
         self._events_lock = RLock()
         self._process_events_thread = None
+        # event used to wait for next task to execute and/or wait at scheduler
+        # resolution
+        self._sleep_interrupt_event = Event()
 
     def configure(self, context):
         # Load in the minimum delta and resolution from the config
@@ -150,9 +153,9 @@ class SchedulerRunner(Runner):
         General characteristics:
             Scheduler tasks are launched asynchronously thus loop is not
                 expected to be held during tasks executions
-            As long as no events are scheduled, method will sleep at resolution
-            time, when events are present, sleep time is calculated as the
-            minimum between resolution and event scheduled time.
+            As long as no events are scheduled, method will wait at resolution
+            time, however, when events are present the wait time is calculated
+            as the minimum between resolution and event scheduled time.
 
         """
 
@@ -171,7 +174,7 @@ class SchedulerRunner(Runner):
                                   format(queue_length))
 
                 if not event:
-                    sleep(self._sched_resolution)
+                    self._sleep_interrupt_event.wait(self._sched_resolution)
                     continue
 
                 # if there are events, check their time to see if
@@ -179,7 +182,7 @@ class SchedulerRunner(Runner):
                 event_time, event_id, target, frequency, args, kwargs = event
                 # get time to compare event against
                 now = self._get_time()
-                # find out if need to sleep or execute event
+                # find out if need to wait or execute event
                 if now < event_time:
                     self.logger.debug(
                         'Current task time has not been reached, {0} remains'.
@@ -188,10 +191,10 @@ class SchedulerRunner(Runner):
                     with self._queue_lock:
                         # push it back when event is not ready
                         heapq.heappush(self._queue, event)
-                    # do not allow big sleeps, have some control over it
+                    # do not allow big waits, have some control over it
                     # in case scheduler is stopped
                     delay = min(event_time - now, self._sched_resolution)
-                    sleep(delay)
+                    self._sleep_interrupt_event.wait(delay)
                 else:
                     # time is up, execute
                     try:
