@@ -149,90 +149,88 @@ class SchedulerRunner(Runner):
     def _process_events(self):
         """ Process scheduled events
 
-        Starts a loop that runs indefinetly until stop_event is set.
-        General characteristics:
-            Scheduler tasks are launched asynchronously thus loop is not
-                expected to be held during tasks executions
-            As long as no events are scheduled, method will wait at resolution
-            time, however, when events are present the wait time is calculated
-            as the minimum between resolution and event scheduled time.
-
+        Starts a loop that runs indefinitely until stop_event is set.
+        Uses recommended-time returned from _execute_pending_tasks to wait
+            for next pending tasks execution
+        Any exception that may arise is logged while loop continues execution
         """
 
         while not self._stop_event.is_set():
-
             try:
-                event = None
-                with self._queue_lock:
-                    queue_length = len(self._queue)
-
-                    if queue_length:
-                        # have access to first in time to execute event
-                        event = heapq.heappop(self._queue)
-                # keep logging stmt out of the lock
-                self.logger.debug('Queue contains: {0} tasks'.
-                                  format(queue_length))
-
-                if not event:
-                    self._sleep_interrupt_event.wait(self._sched_resolution)
-                    continue
-
-                # if there are events, check their time to see if
-                # it is up for firing it.
-                event_time, event_id, target, frequency, args, kwargs = event
-                # get time to compare event against
-                now = self._get_time()
-                # find out if need to wait or execute event
-                if now < event_time:
-                    self.logger.debug(
-                        'Current task time has not been reached, {0} remains'.
-                        format(event_time - now))
-
-                    with self._queue_lock:
-                        # push it back when event is not ready
-                        heapq.heappush(self._queue, event)
-                    # do not allow big waits, have some control over it
-                    # in case scheduler is stopped
-                    delay = min(event_time - now, self._sched_resolution)
-                    self._sleep_interrupt_event.wait(delay)
-                else:
-                    # time is up, execute
-                    try:
-                        self.logger.debug("Executing: {0}".format(target))
-                        # launch target task from a different thread thus
-                        # making scheduler independent from task duration
-                        spawn(target, *args, **kwargs)
-                    except Exception:
-                        self.logger.exception('Calling: {0}'.format(target))
-
-                    with self._events_lock:
-                        # before processing any further, make sure event has
-                        # not been cancelled
-                        if event_id in self._events:
-                            # is it repeatable?
-                            if frequency:
-                                # reschedule it back, adding frequency to
-                                # event time
-                                event = QueueEvent(event_time + frequency,
-                                                   event_id,
-                                                   target,
-                                                   frequency,
-                                                   args, kwargs)
-                                # housekeeping new event in
-                                with self._queue_lock:
-                                    heapq.heappush(self._queue, event)
-                                self._events[event_id] = event
-                            else:
-                                # remove event when not repeatable
-                                self._events.pop(event_id)
-                        else:
-                            self.logger.debug("Event: {0} was cancelled".
-                                              format(event_id))
-
+                next_try_time = self._execute_pending_tasks()
+                self._sleep_interrupt_event.wait(next_try_time)
             except Exception:
-                # log any exception in this big try/except
-                # and do not leave loop
+                # log any exception, do not leave loop
                 self.logger.exception('Exception caught')
+
+    def _execute_pending_tasks(self):
+        """ Executes pending tasks
+
+        This method will execute pending tasks, as soon as no task is ready for
+        execution it will return.
+
+        General characteristics:
+            Scheduler tasks are launched asynchronously
+            When not a single event is scheduled, method will return the
+            resolution time, however, when events are present the next wait
+            time is calculated as the minimum between scheduler's resolution
+            and next event scheduled time.
+
+        Returns:
+            recommended time to wait before events are next considered
+        """
+        while not self._stop_event.is_set():
+            with self._queue_lock:
+                # is queue empty?
+                if not self._queue:
+                    # amount of time recommended to wait before trying again
+                    return self._sched_resolution
+                # have access to first event in queue
+                event = heapq.heappop(self._queue)
+
+            # check event's time to see if it is up for execution.
+            event_time, event_id, target, frequency, args, kwargs = event
+            # get time to compare event against
+            now = self._get_time()
+            if now < event_time:
+                # event is in the future so push it back and recommend time
+                # to wait before trying again
+                with self._queue_lock:
+                    heapq.heappush(self._queue, event)
+                return min(event_time - now, self._sched_resolution)
+            else:
+                # time is up, execute
+                try:
+                    self.logger.debug("Executing: {0}".format(target))
+                    # launch target task from a different thread thus
+                    # making scheduler independent from task duration
+                    spawn(target, *args, **kwargs)
+                except Exception:
+                    self.logger.exception('Calling: {0}'.format(target))
+
+                with self._events_lock:
+                    # before processing any further, make sure event has
+                    # not been cancelled
+                    if event_id in self._events:
+                        # is it repeatable?
+                        if frequency:
+                            # reschedule it back, adding frequency to
+                            # event time
+                            event = QueueEvent(event_time + frequency,
+                                               event_id,
+                                               target,
+                                               frequency,
+                                               args, kwargs)
+                            # housekeeping new event in
+                            with self._queue_lock:
+                                heapq.heappush(self._queue, event)
+                            self._events[event_id] = event
+                        else:
+                            # remove event when not repeatable
+                            del self._events[event_id]
+                    else:
+                        self.logger.debug("Event: {0} was cancelled".
+                                          format(event_id))
 
     def _get_time(self):
         """ Time retrieval method to use when comparing against event time

@@ -5,6 +5,7 @@ from datetime import timedelta
 from nio.modules.context import ModuleContext
 from nio.util.scheduler.scheduler import SchedulerRunner
 from nio.testing.test_case import NIOTestCaseNoModules
+from nio.util.threading import spawn
 
 
 class TestScheduler(NIOTestCaseNoModules):
@@ -18,6 +19,7 @@ class TestScheduler(NIOTestCaseNoModules):
         self._scheduler.do_configure(ctx)
         self._scheduler.do_start()
         self._fired_times_lock = RLock()
+        self.fired_times = 0
 
     def tearDown(self):
         self._scheduler.do_stop()
@@ -33,7 +35,6 @@ class TestScheduler(NIOTestCaseNoModules):
         interval = timedelta(seconds=0.02)
         ev1 = self._scheduler.schedule_task(
             self._test_fired_times_callback, interval, repeatable=True)
-        self.fired_times = 0
 
         sleep(interval.total_seconds() + self._scheduler._sched_resolution)
         self.assertEquals(self.fired_times, 1)
@@ -64,7 +65,6 @@ class TestScheduler(NIOTestCaseNoModules):
 
     def test_min_interval(self):
         """ Asserts that a minimal interval is expected """
-        self.fired_times = 0
         self._scheduler.schedule_task(
             self._test_fired_times_callback,
             timedelta(seconds=0.0001),
@@ -79,13 +79,47 @@ class TestScheduler(NIOTestCaseNoModules):
 
     def test_min_interval_non_repeatable(self):
         """ Asserts that it is ok to pass a small time when not repeatable """
-        self.fired_times = 0
         self._scheduler.schedule_task(
             self._test_fired_times_callback,
             timedelta(seconds=0.0001),
             repeatable=False)
         sleep(0.05)
         self.assertEquals(self.fired_times, 1)
+
+    def test_execute_pending_tasks(self):
+        """ Asserts that multiple async calls to _execute_pending_tasks
+
+        Launches a number of async calls to '_execute_pending_tasks', which
+        will execute along with the '_process_events' loop, asserting that
+        results are as expected
+        """
+        delta = 0.02
+        max_interval = timedelta(seconds=delta)
+        threads = []
+        for i in range(1, 11):
+            self._scheduler.schedule_task(
+                self._test_fired_times_callback,
+                timedelta(seconds=delta * i / 10),
+                repeatable=False)
+            # launch async this method and make sure it causes no side effects
+            threads.append(spawn(self._scheduler._execute_pending_tasks))
+
+        # wait for all _execute_pending_tasks to finish
+        for thread in threads:
+            thread.join(1)
+            self.assertFalse(thread.is_alive())
+
+        sleep(max_interval.total_seconds() + self._scheduler._sched_resolution)
+
+        # assert ten tasks executed
+        self.assertEquals(self.fired_times, 10)
+
+        # assert internal collections are empty
+        self.assertEqual(len(self._scheduler._queue), 0)
+        self.assertEqual(len(self._scheduler._events), 0)
+
+        # assert loop is still going
+        self.assertFalse(self._scheduler._stop_event.is_set())
 
     @property
     def fired_times(self):
