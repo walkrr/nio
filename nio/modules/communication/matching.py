@@ -1,7 +1,8 @@
 import functools
 import re
 
-from nio.modules.communication.topic import LEVEL_ALLOWED_CHARACTERS
+from nio.modules.communication.topic import LEVEL_ALLOWED_CHARACTERS, \
+    is_topic_type_valid
 
 
 # defines level separator
@@ -78,6 +79,7 @@ def _compile_pattern(pattern):
     expression = _translate_to_regex(pattern)
     return re.compile(expression).match
 
+
 def matches(sub_topic, pub_topic):
     """ Finds out if there is a match between publisher and subscriber
 
@@ -91,6 +93,11 @@ def matches(sub_topic, pub_topic):
     Return:
         True if they match, False otherwise
     """
+    if not is_topic_type_valid(pub_topic) or \
+       not is_topic_type_valid(sub_topic):
+        # no possible match with an invalid topic
+        return False
+
     # Add a trailing dot to the publisher topic to match the entire level
     # in the regex
     pub_topic += "."
