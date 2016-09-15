@@ -6,73 +6,82 @@ class Persistence(ModuleProxy):
     """ Persistence Module
 
     This class encapsulates the user-facing interface to NIO's
-    persistence layer. Block writers use this module to save dynamic
-    data at runtime, allowing it to persist in the block instance
-    after a service/instance restart.
+    persistence layer.
 
-    Args:
-        name (str): The name of the block whose data will be persisted.
+    Block writers use this module to save dynamic data at runtime, allowing
+    it to persist in the block instance after a service/instance restart.
 
     Example:
-        self.persistence.store('foo', 'bar')
-        self.persistence.save() # saves the stored k/v store to disk
-        val = self.persistence.load('foo') # now val == 'bar'
+        self.persistence.save(item, id) # saves the item
+        item = self.persistence.load(id) # item is retrieved
 
     """
 
-    def __init__(self, name):
-        """ Create a Persistence object for a given name """
-        super().__init__(name)
-
-    def store(self, key, value):
-        """ Store a key/value datum in memory.
-
-        Args:
-            key: The key to store into
-            value: The value associated with that key
+    def __init__(self):
+        """ Create a Persistence object
         """
-        raise NotImplementedError()
+        super().__init__()
 
-    def load(self, key, default=None):
-        """ Load a value from the k/v store *currently in memory*.
+    def load(self, id, collection=None, default=None):
+        """ Load an item from the persistence store.
 
         Args:
-            key: The key to lookup in the store.
-            default:  The value to return if the key is not present
+            id (str): Specifies the identifier of the item to load.
+            collection (str): if provided, it specifies the collection the item
+                belongs to.
+            default: the value to return if the item does not exist
 
         Returns:
-            value: The value associated with that key
-
+            item: The item associated with given id
         """
         raise NotImplementedError()
 
-    def has_key(self, key):
-        """ Check whether a particular key exists in the persistence store
+    def load_collection(self, collection, default=None):
+        """ Load a collection from the persistence store.
 
         Args:
-            key: The key in question.
+            collection (str): Specifies the collection to load
+            default: the value to return if the collection does not exist
 
         Returns:
-            exists (bool)
-
+            items: The items associated with given collection
         """
         raise NotImplementedError()
 
-    def clear(self, key):
-        """ Remove the given key and associated value from the store
-
-        As above, this will not be reflected permanently until
-        Persistence.save is called.
+    def save(self, item, id, collection=None):
+        """ Save the item to the persistence store.
 
         Args:
-            key: The key pointing to the data to clear.
+            item: Item to save
+            id (str): Specifies the identifier of the item to save.
+            collection (str): if provided, it specifies the collection the item
+                belongs to.
         """
         raise NotImplementedError()
 
-    def save(self):
-        """ Save the in-memory store to persistence.
+    def save_collection(self, items, collection):
+        """ Save a collection to the persistence store.
 
-        This allows the data therein to persist between instance/service
-        restarts.
+        Args:
+            items: Items to save
+            collection (str): Specifies the collection to save
+        """
+        raise NotImplementedError()
+
+    def remove(self, id, collection=None):
+        """ Remove an item from the persistence store.
+
+        Args:
+            id (str): Specifies the identifier of the item to remove.
+            collection (str): if provided, it specifies the collection the item
+                belongs to.
+        """
+        raise NotImplementedError()
+
+    def remove_collection(self, collection):
+        """ Remove a collection from the persistence store.
+
+        Args:
+            collection (str): Specifies the collection to remove
         """
         raise NotImplementedError()

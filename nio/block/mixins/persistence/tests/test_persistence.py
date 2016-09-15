@@ -1,6 +1,7 @@
 from datetime import timedelta
 from unittest.mock import MagicMock, patch
 from nio.block.mixins.persistence.persistence import Persistence
+from nio.modules.persistence import Persistence as PersistenceModule
 from nio.block.base import Block
 from nio.testing.block_test_case import NIOBlockTestCase
 
@@ -26,39 +27,42 @@ class TestPersistence(NIOBlockTestCase):
     def test_saves_properly(self):
         """ Tests that the mixin saves the right values """
         block = PersistingBlock()
-        self.configure_block(block, {})
-        block._persistence.save = MagicMock()
+        self.configure_block(block, {"name": "test_block"})
         block.start()
-        # Stop the block to initiate the save
+        # Stop the block to initiate the save using values specified
+        # in block's constructor
         block.stop()
 
-        # Make sure we called the save function
-        block._persistence.save.assert_called_once_with()
+        item = block._persistence.load('test_block')
         # Make sure the right data was saved
-        self.assertTrue(block._persistence.has_key('_to_be_saved'))
-        self.assertTrue(block._persistence.has_key('_to_be_saved_again'))
-        self.assertEqual(len(block._persistence._values), 2)
-        self.assertEqual(block._persistence.load('_to_be_saved'), 'value')
-        self.assertEqual(block._persistence.load('_to_be_saved_again'),
-                         'another value')
+        self.assertEqual(len(item), 2)
+        self.assertEqual(item['_to_be_saved'], 'value')
+        self.assertEqual(item['_to_be_saved_again'], 'another value')
+
+        # remove persisted info.
+        PersistenceModule().remove("test_block")
 
     def test_loads_properly(self):
         """ Tests that the mixin loads into the right values """
         block = PersistingBlock()
         self.configure_block(block, {
-            'load_from_persistence': True
+            'load_from_persistence': True,
+            'name': "test_block"
         })
-        block._persistence._values = {
+        block._persistence.save({
             "_to_be_saved": "saved value 1",
             "_to_be_saved_again": "saved value 2"
-        }
+        }, "test_block")
         # Force the load now - it happened in configure too, but we hadn't
-        # mocked the saved values yet
+        # overwritten the values yet
         block._load()
 
-        # Make sure the right data was loaded into the right variables
+        # Make sure the new data was loaded into the right variables
         self.assertEqual(block._to_be_saved, 'saved value 1')
         self.assertEqual(block._to_be_saved_again, 'saved value 2')
+
+        # remove persisted info.
+        PersistenceModule().remove("test_block")
 
     def test_no_load(self):
         """ Tests that the mixin doesn't load if it's told not to """
@@ -91,15 +95,8 @@ class TestPersistence(NIOBlockTestCase):
         block._save()
         # Stop the block to initiate one more save
         block.stop()
-        # We should have had 3 saves, 2 during exeuction and 1 on the stop
+        # We should have had 3 saves, 2 during execution and 1 on the stop
         self.assertEqual(block._persistence.save.call_count, 3)
-        # Make sure the right data was saved
-        self.assertTrue(block._persistence.has_key('_to_be_saved'))
-        self.assertTrue(block._persistence.has_key('_to_be_saved_again'))
-        self.assertEqual(len(block._persistence._values), 2)
-        self.assertEqual(block._persistence.load('_to_be_saved'), 'new_value')
-        self.assertEqual(block._persistence.load('_to_be_saved_again'),
-                         'another value')
 
     def test_no_backup(self):
         """ Backup interval of 0 means no backing up """
