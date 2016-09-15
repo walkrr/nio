@@ -39,9 +39,6 @@ class TestPersistence(NIOBlockTestCase):
         self.assertEqual(item['_to_be_saved'], 'value')
         self.assertEqual(item['_to_be_saved_again'], 'another value')
 
-        # remove persisted info.
-        PersistenceModule().remove("test_block")
-
     def test_loads_properly(self):
         """ Tests that the mixin loads into the right values """
         block = PersistingBlock()
@@ -60,9 +57,6 @@ class TestPersistence(NIOBlockTestCase):
         # Make sure the new data was loaded into the right variables
         self.assertEqual(block._to_be_saved, 'saved value 1')
         self.assertEqual(block._to_be_saved_again, 'saved value 2')
-
-        # remove persisted info.
-        PersistenceModule().remove("test_block")
 
     def test_no_load(self):
         """ Tests that the mixin doesn't load if it's told not to """
@@ -105,3 +99,67 @@ class TestPersistence(NIOBlockTestCase):
             'backup_interval': {'seconds': 0}
         })
         self.assertIsNone(block._backup_job)
+
+    def test_block_loading_from_persistence(self):
+        """ Tests saving to persistence outside of block
+
+        Makes sure data that even though data was saved outside of block, it
+        can be picked up by block's persistence
+        """
+
+        # save data under 'test_block' which is the name that block will have
+        PersistenceModule().save(
+            {'_to_be_saved': 3,
+             '_to_be_saved_again': 4},
+            'test_block')
+
+        block = PersistingBlock()
+        # make block load from persistence
+        self.configure_block(block,
+                             {"name": "test_block",
+                              'load_from_persistence': True
+                              })
+        # assert that data matches what was persisted outside of block
+        self.assertEqual(block._to_be_saved, 3)
+        self.assertEqual(block._to_be_saved_again, 4)
+
+    def test_two_blocks_persistence_sharing(self):
+        """ Tests that different block instances with same name access same values
+        """
+        block1 = PersistingBlock()
+        self.configure_block(block1, {
+            'load_from_persistence': True,
+            'name': "test_block"
+        })
+        block1._to_be_saved = '1'
+        block1._to_be_saved_again = '2'
+        block1._save()
+
+        block2 = PersistingBlock()
+        self.configure_block(block2, {
+            'load_from_persistence': True,
+            'name': "test_block"
+        })
+
+        # Make sure the new data was loaded into the right variables
+        # on the new block with same name
+        self.assertEqual(block2._to_be_saved, '1')
+        self.assertEqual(block2._to_be_saved_again, '2')
+
+        # create a block with a different name and assert that it does not
+        # pickup the new values
+        block3 = PersistingBlock()
+        self.configure_block(block3, {
+            'load_from_persistence': True,
+            'name': "test_block3"
+        })
+        # Values loaded must be default ones since a block with this
+        # name is not persisted
+        self.assertEqual(block3._to_be_saved, 'value')
+        self.assertEqual(block3._to_be_saved_again, 'another value')
+
+        # assert that it did not affect values on block1 nor block2
+        self.assertEqual(block1._to_be_saved, '1')
+        self.assertEqual(block1._to_be_saved_again, '2')
+        self.assertEqual(block2._to_be_saved, '1')
+        self.assertEqual(block2._to_be_saved_again, '2')
