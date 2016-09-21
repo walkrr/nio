@@ -54,4 +54,6 @@ class Persistence(object):
 
     @classmethod
     def configure(cls, context):
-        pass
+        # clear Persistence store before each test starts
+        Store.values = {}
+        Store.collections = {}

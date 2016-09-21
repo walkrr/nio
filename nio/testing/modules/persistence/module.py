@@ -12,6 +12,7 @@ class TestingPersistenceModule(PersistenceModule):
 
     def initialize(self, context):
         super().initialize(context)
+        Persistence.configure(context)
         self.proxy_persistence_class(Persistence)
 
     def finalize(self):
