@@ -37,28 +37,38 @@ class Persistence(object):
         return []
 
     def _load(self):
-        """ Load the values from persistence """
+        """ Load the values from persistence
+
+        Item is loaded from persistence using block name, once item
+        is loaded, all persisted values are examined against loaded
+        item, if it exists, such value is then set as an attribute
+        in the block instance
+        """
         self.logger.debug("Loading from persistence")
+        # load whole item from persistence
+        item = self._persistence.load(self.name(), default={})
         for persisted_var in self.persisted_values():
-            if self._persistence.has_key(persisted_var):
-                loaded = self._persistence.load(persisted_var)
+            if persisted_var in item:
                 self.logger.debug("Loaded value {} for attribute {}".format(
-                    loaded, persisted_var))
+                    item[persisted_var], persisted_var))
                 # Set the loaded value to the attribute on this class
-                setattr(self, persisted_var, loaded)
+                setattr(self, persisted_var, item[persisted_var])
 
     def _save(self):
-        """ Save the values to persistence """
+        """ Save the values to persistence
+        """
         self.logger.debug("Saving to persistence")
-        for persisted_var in self.persisted_values():
-            self._persistence.store(
-                persisted_var, getattr(self, persisted_var))
-        self._persistence.save()
+        # generate item to be persisted by gathering all variables
+        # to be persisted into a dictionary
+        item = {persisted_var: getattr(self, persisted_var)
+                for persisted_var in self.persisted_values()}
+        # save generated dictionary under block's name
+        self._persistence.save(item, self.name())
 
     def configure(self, context):
         super().configure(context)
         # Create a persistence object using the block's name
-        self._persistence = PersistenceModule(self.name())
+        self._persistence = PersistenceModule()
         if self.load_from_persistence():
             self._load()
 

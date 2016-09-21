@@ -1,3 +1,8 @@
+class Store(object):
+    """ Global store that allows to save persisted data across instances
+    """
+    values = {}
+    collections = {}
 
 
 class Persistence(object):
@@ -9,33 +14,44 @@ class Persistence(object):
 
     In other words, this will "persist" its data only as long as the current
     environment is active. This is useful in unit-tests and in environments
-    where persistence is not desired, but is hardly useful in practice.
+    where persistence is not desired, but it is hardly useful in practice.
+
+    Persisted data is intended to remain available for all instances
     """
 
-    def __init__(self, name):
-        self._name = name
-        self._values = {}
+    def load(self, id, collection=None, default=None):
+        if collection is not None:
+            return Store.collections.get(collection, {}).get(id, default)
+        else:
+            return Store.values.get(id, default)
 
-    def store(self, key, value):
-        self._values[key] = value
+    def load_collection(self, collection, default=None):
+        return Store.collections.get(collection, default)
 
-    def load(self, key, default=None):
-        return self._values.get(key, default)
+    def save(self, item, id, collection=None):
+        if collection is not None:
+            if collection not in Store.collections:
+                Store.collections[collection] = {}
+            Store.collections[collection][id] = item
+        else:
+            Store.values[id] = item
 
-    def has_key(self, key):
-        return key in self._values
+    def save_collection(self, items, collection):
+        Store.collections[collection] = items
 
-    def clear(self, key):
-        if key in self._values:
-            del self._values[key]
+    def remove(self, id, collection=None):
+        if collection is not None:
+            if collection in Store.collections and \
+                            id in Store.collections[collection]:
+                del Store.collections[collection][id]
+        else:
+            if id in Store.values:
+                del Store.values[id]
 
-    def save(self):
-        pass
+    def remove_collection(self, collection):
+        if collection in Store.collections:
+            del Store.collections[collection]
 
     @classmethod
-    def setup(cls, configuration):
-        pass
-
-    @classmethod
-    def configure(cls, service_name):
+    def configure(cls, context):
         pass
