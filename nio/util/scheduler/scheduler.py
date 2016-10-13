@@ -90,7 +90,7 @@ class SchedulerRunner(Runner):
             frequency = 0
 
         event_id = uuid4().hex
-        event = QueueEvent(time() + delta, event_id, target, frequency,
+        event = QueueEvent(self._get_time() + delta, event_id, target, frequency,
                            args, kwargs)
 
         # add to queue
