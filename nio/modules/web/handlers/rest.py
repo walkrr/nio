@@ -12,15 +12,6 @@ class RESTHandler(WebHandler):
         """
         super().__init__(route)
 
-    def get_allowed_methods(self):
-        """ Specifies the Access-Control-Allow-Methods header for handling CORS
-
-        Returns:
-            String of allowed headers
-
-        """
-        return "GET,POST,PUT,DELETE,OPTIONS"
-
     def is_collection(self):
         """ Specifies if the request result is a collection of items
 
