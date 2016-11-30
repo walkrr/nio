@@ -9,7 +9,6 @@ from nio.properties import PropertyHolder, VersionProperty, \
     BoolProperty, ListProperty, StringProperty, Property, SelectProperty
 from nio.util.logging import get_nio_logger
 from nio.util.logging.levels import LogLevel
-from nio.modules.security.task import SecureTask
 from nio.util.runner import Runner, RunnerStatus
 
 
@@ -43,8 +42,8 @@ class BlockMapping(PropertyHolder):
 @command('status', method="full_status")
 @command('heartbeat')
 @command('runproperties')
-@command('start', tasks=[SecureTask('services.start')])
-@command('stop', tasks=[SecureTask('services.stop')])
+@command('start')
+@command('stop')
 @discoverable
 class Service(PropertyHolder, CommandHolder, Runner):
 

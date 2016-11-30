@@ -1,7 +1,5 @@
 from nio.command.params.base import Parameter
 from nio.command.params.string import StringParameter
-from nio.modules.security.authorizer import Authorizer, Unauthorized
-from nio.modules.security.task import SecureTask
 
 
 class InvalidCommandArg(Exception):
@@ -16,15 +14,6 @@ class Command(object):
 
     """Command to be used in CommandHolders (Blocks and Services).
 
-    Commands can be secured with security modules SecureTask. An executing user
-    with be authorized against the list of SecureTasks and then command will
-    only be invoked if the user has permission.
-    If ``meet_all`` is True, then the user needs to be authorized for every
-    SecureTask. If False, then the user only needs to be authorized for one.
-
-    Default security is ``SecureTask('commands.execute')``, but security can be
-    removed from a command by passing an empty list as ``tasks``.
-
     Args:
         name (str): The name of the command. Should be the same as the name of
             the corresponding method.
@@ -34,26 +23,16 @@ class Command(object):
             command. If left blank, title defaults to name.
         method (str): The name of the real method exposed by this command if
             different than name
-        tasks (list): List of SecureTask
-        meet_all (bool): True to validate all tasks are met before the command
-            can be executed
 
     """
 
-    def __init__(self, name, *params, title=None, method=None,
-                 tasks=None, meet_all=True):
+    def __init__(self, name, *params, title=None, method=None):
         self._name = name
         self._parameters = []
         for p in params:
             self._add_parameter(p)
         self._title = title or name
         self._method = method or name
-        if tasks is None:
-            # Defult security if none is specified
-            self._tasks = [SecureTask('commands.execute')]
-        else:
-            self._tasks = tasks
-        self._meet_all = meet_all
 
     @property
     def name(self):
@@ -144,17 +123,3 @@ class Command(object):
                 raise InvalidCommandArg(
                     "Invalid arguments (dict expected): {0}".format(args))
         return result, result_kwargs
-
-    def can_invoke(self, user):
-        """Check if the user specified meets the security conditions."""
-        if not self._tasks:
-            # If no SecureTasks are defined then it's not secure
-            return True
-        if user is None:
-            return False
-        try:
-            Authorizer.authorize_multiple(
-                user, *self._tasks, meet_all=self._meet_all)
-            return True
-        except Unauthorized:
-            return False
