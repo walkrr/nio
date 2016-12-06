@@ -7,26 +7,29 @@
 """
 import threading
 from nio.modules.security import Authorizer, SecureTask
+from nio.modules.security import User
 
 
 def get_user():
     """ Provides current logged in user
+
+    In the chance that no current user is available, a 'Guest' user is returned
     """
     thread = threading.current_thread()
-    return getattr(thread, "user", None)
+    return getattr(thread, "user", User())
 
 
-def ensure_access(*task_parts):
-    """ Ensures access to resource is granted
+def has_access(resource, permission):
+    """ Finds out if current user has permission to access given resource
+    """
+    return Authorizer.is_authorized(get_user(),
+                                    SecureTask(resource, permission))
 
-    Usage:
-        ensure_access("services", "Service1", "read")
-        ensure_access("services", "Service1", "write")
-        ensure_access("services", "Service1", "execute")
-        ensure_access("instance", "execute")
+
+def ensure_access(resource, permission):
+    """ Ensures that current user has permission to access given resource
 
     Raises:
-        Unauthorized: access is denied
+        Unauthorized: if the user has no permission to access given resource
     """
-    task = ".".join(task_parts)
-    Authorizer.authorize(get_user(), SecureTask(task))
+    Authorizer.authorize(get_user(), SecureTask(resource, permission))
