@@ -55,7 +55,10 @@ class PubSubManager(object):
     def send(cls, publisher, signals):
         """ Send data from a publisher to any subscribed callbacks """
         for subscriber in cls.publishers[publisher]:
-            subscriber.handler(signals)
+            try:
+                subscriber.handler(signals, publisher.topic)
+            except TypeError:
+                subscriber.handler(signals)
 
     @classmethod
     def _matches(cls, sub_topic, pub_topic):
