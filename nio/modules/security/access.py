@@ -11,12 +11,18 @@ from nio.modules.security import User
 
 
 def get_user():
-    """ Provides current logged in user
+    """ Provides current user
 
     In the chance that no current user is available, a 'Guest' user is returned
     """
     thread = threading.current_thread()
     return getattr(thread, "user", User())
+
+
+def set_user(user):
+    """ Sets current user
+    """
+    setattr(threading.current_thread(), "user", user)
 
 
 def has_access(resource, permission):

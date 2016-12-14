@@ -1,198 +1,101 @@
-"""
-permissions : {
-    # Service level permissions:
-    #  r: Can view a service.
-    #  w: Can edit a service (routing/blocks/etc...).
-    #  x: Can start/stop a service.
-    "services" : "rwx",
-
-    # Block level permissions:
-    #  r: Can view a block and it's configuration.
-    #  w: Can modify a block's configuration.
-    #  x: Can command a block.
-    "blocks": "rwx",
-
-    # Instance level permissions:
-    #  r: Can view an instance.
-    #  w: Can edit an instance (access to instance, etc...)
-    #  x: Can delete an instance.
-    "instance": "rwx"
-}
-"""
-
 from re import match
 from re import compile as re_compile
 from sre_constants import error as RegexError
 
-class PermissionsError(Exception):
-    pass
+from nio.modules.security.permissions import PermissionsError
+from nio.modules.security.permissions.line import PermissionsLine
 
-class PermissionsLine(object):
-
-    TARGETS = ["read", "write", "execute"]
-    SHORTHAND = {"r": "read", "w": "write", "x": "execute"}
-
-    def __init__(self, entry=""):
-        self._raw_perms = self._parse_entry(entry.lower())
-        self._read = "r" in self._raw_perms
-        self._write = "w" in self._raw_perms
-        self._exec = "x" in self._raw_perms
-        
-    def _parse_entry(self, entry):
-        r = str()
-        opts = set(PermissionsLine.SHORTHAND.keys())
-        for c in entry:
-           if c not in opts:
-               raise PermissionsError("Invalid permssion setting '{0}'".format(c))
-           r += c
-        return r
-
-    @property
-    def read(self):
-        return self._read
-
-    @read.setter
-    def read(self, value):
-        self._read = value
-
-    @property
-    def write(self):
-        return self._write
-
-    @write.setter
-    def write(self, value):
-        self._write = value
-
-    @property
-    def execute(self):
-        return self._exec
-
-    @execute.setter
-    def execute(self, value):
-        self._exec = value
-
-    @property
-    def serialized(self):
-        r = "r" if self.read else ""
-        r += "w" if self.write else ""
-        r += "x" if self.execute else ""
-        return r
 
 class Permissions(object):
     """
     Class which can be loaded a JSON block indicating permissions, or set
-    on the fly and serialized.
+    on the fly.
 
     ---- Loading ----
     The incoming JSON block should be formatted as:
-    {"permissions": {
-        # Base resource permissions, all of which are required.
-        "services": <permissions_string>,
-        "blocks": <permissions_string>,
-        "instance": <permissions_string>,
-
-        # Specific resource permissions, none of which are required by
-        # the permissions module, but since the permissions schema works
-        # on a whitelist theory, no entries for specific resources would
-        # equate to no access for a user.
-
-        # While * is not a valid regex in itself, we treat it as "any"
-        # for user ease of use.
-        "services.*": <permissions_string>,
-        "blocks.*": <permissions_string>,
-
-        # Specific permissions to a resource can be specified by name,
-        # keeping in mind that a wildcard permission will be "in addition
-        # to" rather than "overridden by" a specific permission.
-        "services.MyService1": <permissions_string>,
-        "blocks.MyBlock1": <permissions_string>
+    {
+        <resource1>: <permissions_string>,
+        <resource2>: <permissions_string>,
+        <resourceN>: <permissions_string>
     }
 
-    ---- Storing ----
-    Once a permission is loaded, it is stored in this class under the
-    <_perm_map> member dict with the following structure:
-    {
-        # The top level service and block permissions are pulled directly
-        # from the input JSON block and wrapped up in a PermissionsLine.
-        "services": PermissionsLine(<services_value_from_load>),
-        "blocks": PermissionsLine(<blocks_value_from_load>),
-        "instance": PermissionsLine(<instance_value_from_load>),
+    Note that each resource needs to be a valid regular expression, so that
+    later when getting a given resource permission through a 'get' operation,
+    the incoming resource can be 'matched' against the above definitions using
+    regular expression matching.
 
-        # Any specific permissions live under a different key, so that lookups
-        # can be done without iterating through a potentially massive dictionary.
-        "_services": {
-            ".*": PermissionsLine(...),
-            "MyService1": PermissionsLine(...)
-        }
-        "_blocks": {
-            ".*": PermissionsLine(...),
-            "MyBlock1": PermissionsLine(...)
-        }
+    The permissions schema works on a white-list theory, no entries for
+    specific resources would equate to no access for a user.
+
+    Specific permissions to a resource can be specified by name,
+    keeping in mind that a wildcard permission will be "in addition
+    to" rather than "overridden by" a specific permission.
+    For example:
+        "services.MyService1": <permissions_string>,
+        "blocks.*": <permissions_string>
+
+    ---- Storing / Loading ----
+    Once permissions are loaded, they are stored in this class under the
+    <_permissions> member dict with the following structure:
+    {
+        <resource1>: PermissionsLine(<resource1_value_from_load>),
+        <resource2>: PermissionsLine(<resource2_value_from_load>),
+        <resourceN>: PermissionsLine(<resourceN_value_from_load>),
     }
 
     ---- Queries ----
     Querying a permission is done via the get() member function.
-    >>> permissions.get("read", "blocks")
-    Value of _perm_map["blocks"].read
-    >>> permissions.get("read", "blocks", "MyBlock1")
-    Value of (_perm_map["_blocks"]["MyBlock1"].read ||
-              _perm_map["_blocks"][<regex_matching_"MyBlock1">].read)
+
+    ---- Setting a permission ----
+    Setting a permission can additionally be done via the set() member function.
+
     """
 
-    TARGETS = ["services", "blocks", "instance"]
-    SUBTARGETS = ["_services", "_blocks"]
+    def __init__(self, permissions=None):
+        """ Initializes a permission instance
 
-    def __init__(self, perms_block=None):
-        # Default permissions to nothing.
-        self._perm_map = {t: PermissionsLine() for t in Permissions.TARGETS}
-        for sub in Permissions.SUBTARGETS:
-            self._perm_map[sub] = dict()
-        if perms_block:
-            self.load(perms_block)
+        Args:
+            permissions (dict): Initial permissions to load
+        """
 
-    def load(self, perms_block):
+        # Default to no permissions.
+        self._permissions = {}
+
+        # Load permissions if specified
+        if permissions:
+            self.load(permissions)
+
+    def load(self, permissions):
+        """ Loads a dictionary of permissions
+
+        Args:
+            permissions (dict): permission specifications
+
+        Raises:
+            PermissionError if an invalid permission spec. is found
+        """
         # Check that the permissions block has the proper structure.
-        if not "permissions" in perms_block or\
-           not isinstance(perms_block["permissions"], dict):
-            raise PermissionsError("No valid 'permissions' block specified.")
+        if not isinstance(permissions, dict):
+            raise PermissionsError("No valid 'permissions' specified.")
 
         # For each key in the incoming block, parse the permissions out into
         # the proper structure.
-        for key, perm_str in perms_block["permissions"].items():
-            key = key.lower()
-            if key in Permissions.TARGETS:
-                self._perm_map[key] = PermissionsLine(perm_str)
-                continue
+        for regex, perm_str in permissions.items():
 
-            # If a subtarget is specified, parse out the value and target.
-            if key.count(".") != 1:
-                raise PermissionsError("Invalid permissions specifier '{0}'"\
-                                       .format(key))
-
-            # Build the subtarget key and convert the wildcard to an actual
-            # regex.
-            key, subtarget = key.split(".")
-            subtarget = ".*" if subtarget == "*" else subtarget
-            subkey = "_" + key
-            if subkey not in Permissions.SUBTARGETS:
-                raise PermissionsError("Invalid permissions specifier '{0}'"\
-                                       .format(key))               
             try:
-                re_compile(subtarget)
-                self._perm_map[subkey][subtarget] = PermissionsLine(perm_str)
+                # validate regex at this level
+                re_compile(regex)
+                self._permissions[regex] = PermissionsLine(perm_str)
             except RegexError:
-                raise PermissionsError("'{0}' is not a valid regex for "\
-                                       " matching permissions.".format(subtarget))
+                raise PermissionsError("'{0}' is not a valid regex for "
+                                       " matching permissions.".format(regex))
 
-    def get(self, perm, target, subtarget=None):
-        """
-        Return True if a service (specified by <target>) has the <perm>
-        permission, otherwise return False.
+    def get(self, resource, permission):
+        """ Finds out if resource has given permission
 
         Args:
-            - target: Specific service to request permission for, None for
-                      the generic "services" permissions.
-            - perm: The permission to check.
+            resource: Specific service to request permission for.
+            permission: The permission to check.
 
         Returns:
             True if permission is present, otherwise False.
@@ -200,60 +103,53 @@ class Permissions(object):
 
         # Ensure the permission being requested is valid, mapping to the
         # shorthand permission if necessary.
-        perm = perm.lower()
-        if perm in PermissionsLine.SHORTHAND:
-            perm = PermissionsLine.SHORTHAND[perm]
-        elif perm not in PermissionsLine.TARGETS:
-            raise PermissionsError("'{0}' is not a valid permissions specifier."\
-                                   .format(perm))
+        permission = permission.lower()
+        if permission in PermissionsLine.SHORTHAND:
+            permission = PermissionsLine.SHORTHAND[permission]
 
-        if subtarget:
-            target = "_" + target
-            if not self._perm_map.get(target):
-                raise PermissionsError("Unable to query {0}. Invalid permission"\
-                                       " specifier.".format(target))
-            for regx, perms in self._perm_map[target].items():
-                m = match(regx, subtarget)
-                if m and m.group() and getattr(perms, perm, False):
-                    return True
-            return False
+        for pattern, permissions in self._permissions.items():
+            # add a $ to match the end of the string (otherwise it would match
+            # sub-strings, i.e., "blocks" would match "blocks.MyBlock")
+            m = match("{}$".format(pattern), resource)
+            if m and getattr(permissions, permission, False):
+                return True
+        return False
 
-        return getattr(self._perm_map[target], perm, False)
+    def set(self, resource, permission, value=True):
+        """ Sets a permission on given resource
 
+        In addition to loading permissions from a dictionary during
+        creation, permissions can be set explicitly
 
-class StandardPermissions(object):
-    """ Collection class for standard permission sets. """
+        Args:
+            resource (str): Specific resource being assigned a permission.
+            permission (str): The permission to check.
+            value (bool): Permission value to use
 
-    # Give a user Read only access to everything in the instance.
-    READ_ONLY_PERMISSIONS = {
-        "permissions": {
-            "services": "r",
-            "services.*" : "r",
-            "blocks": "r",
-            "blocks.*": "r",
-            "instance": "r"
-        }
-    }
-    # Give a user full permissions across the instance.
-    ADMIN_PERMISSIONS = {
-        "permissions": {
-            "services": "rwx",
-            "services.*": "rwx",
-            "blocks": "rwx",
-            "blocks.*": "rwx",
-            "instance": "rwx"
-        }
-    }
+        Raises:
+            PermissionError if an invalid permission spec. is specified
+        """
 
-    # Give a user ability to execute and view a permission.
-    OPS_PERMISSIONS = {
-        "permissions": {
-            "services": "rx",
-            "services.*": "rx",
-            "blocks": "rx",
-            "blocks.*": "rx",
-            "instance": "rx"
-        }
-    }
+        # Make sure the value for the permission is valid (True or False only).
+        if value not in [True, False]:
+            raise PermissionsError("Unable to assign permission value '{0}'. "
+                                   "Must be True or False.".format(value))
 
-# EOF - permissions.py
+        # Ensure the permission being requested is valid, mapping to the
+        # shorthand permission if necessary.
+        permission = permission.lower()
+        if permission in PermissionsLine.SHORTHAND:
+            permission = PermissionsLine.SHORTHAND[permission]
+
+        try:
+            # make sure resource is a valid regex
+            re_compile(resource)
+        except RegexError:
+            raise PermissionsError("'{0}' is not a valid regex for "
+                                   " matching permissions.".format(resource))
+
+        if resource not in self._permissions:
+            self._permissions[resource] = PermissionsLine()
+
+        # assign actual permission
+        setattr(self._permissions[resource], permission, value)

@@ -1,7 +1,6 @@
-import threading
 from unittest.mock import patch
 
-from nio.modules.security.access import ensure_access, has_access
+from nio.modules.security.access import ensure_access, has_access, set_user
 from nio.modules.security import Authorizer
 from nio.modules.security import Unauthorized
 from nio.testing.test_case import NIOTestCase
@@ -38,7 +37,7 @@ class TestAccess(NIOTestCase):
 
         # check authorize arguments
         user = User()
-        setattr(threading.current_thread(), "user", user)
+        set_user(user)
         with patch.object(Authorizer, "authorize") as mocked_authorize:
 
             # invoke actual secure method
