@@ -3,7 +3,6 @@ from threading import RLock
 
 from nio.testing.modules.scheduler.scheduler import JumpAheadScheduler
 from nio.modules.scheduler.job import Job
-from nio.util.threading import spawn
 from nio.testing.test_case import NIOTestCase
 
 
@@ -55,7 +54,14 @@ class TestSchedulerCleanUp(NIOTestCase):
         pass
 
     def test_scheduler_cancel_from_callback(self):
-        """ Asserts that scheduler accepts callbacks that cancel jobs.  """
+        """ Asserts that scheduler accepts callbacks that cancel jobs.
+
+        Due to the nature of the scheduler, there is a chance that a job which
+        has a pending cancellation (job tasks are executed asynchronously, and
+        in this case the job task is to cancel the very same job) might get
+        rescheduled, this is allowed since the rescheduled event will not be
+        executed when its time is up since it likely was already cancelled
+        """
 
         scheduler = JumpAheadScheduler
 
@@ -67,10 +73,14 @@ class TestSchedulerCleanUp(NIOTestCase):
             with jobs_lock:
                 jobs.append(Job(self._cancelling_callback,
                                 timedelta(seconds=task_duration),
-                                True, jobs, jobs_lock))
+                                True, jobs, i, scheduler))
 
         # jump forward in time (give ample time for jobs to be cancelled)
         jobs[0].jump_ahead(num_jobs/10)
+        # wait some to make sure job cancellations are cancelled since
+        # job tasks are launched asynchronously
+        from time import sleep
+        sleep(0.1)
 
         # verify that nothing remains
         with scheduler._events_lock:
@@ -78,8 +88,7 @@ class TestSchedulerCleanUp(NIOTestCase):
         with scheduler._queue_lock:
             self.assertEqual(len(scheduler._queue), 0)
 
-    def _cancelling_callback(self, jobs, jobs_lock):
-        with jobs_lock:
-            for job in jobs:
-                spawn(job.cancel)
-            jobs.clear()
+    def _cancelling_callback(self, jobs, i, scheduler):
+        jobs[i].cancel()
+        # once event is cancelled it is removed from scheduler events
+        self.assertNotIn(jobs[i]._job, scheduler._events)
