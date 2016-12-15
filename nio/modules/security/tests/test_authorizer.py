@@ -1,3 +1,4 @@
+from nio.modules.security import SecureTask
 from nio.modules.security.authorizer import Authorizer, Unauthorized
 from nio.testing.test_case import NIOTestCaseNoModules
 
@@ -12,7 +13,8 @@ class AuthorizerImpl(object):
 
     @classmethod
     def authorize(cls, user, task):
-        if user != task:
+        if user != 'user' or not isinstance(task, SecureTask) or \
+           task.resource != 'resource' or task.permission != 'permission':
             raise Unauthorized()
 
 
@@ -28,57 +30,15 @@ class TestAuthorizer(NIOTestCaseNoModules):
 
     def test_authorize_pass(self):
         """ Test that a valid authorize passes """
-        Authorizer.authorize("test", "test")
+        user = "user"
+        task = SecureTask("resource", "permission")
+        Authorizer.authorize(user, task)
+        self.assertTrue(Authorizer.is_authorized(user, task))
 
     def test_authorize_fail(self):
         """ Test that when an authorize fails it raises Unauthorized """
+        user = "u"
+        task = SecureTask("r", "p")
         with self.assertRaises(Unauthorized):
-            Authorizer.authorize("test", "fail")
-
-    def test_authorize_multiple_all(self):
-        """ Test that we can authorize multiple and have all pass """
-        Authorizer.authorize_multiple(
-            "test", "test", "test", "test", meet_all=True)
-        with self.assertRaises(Unauthorized):
-            Authorizer.authorize_multiple(
-                "test", "test", "fail", "test", meet_all=True)
-
-    def test_authorize_multiple_all_one_item(self):
-        """ Test that we can authorize multiple and have 1 item pass """
-        with self.assertRaises(Unauthorized):
-            Authorizer.authorize_multiple("test", "fail", meet_all=True)
-
-    def test_authorize_multiple_all_empty_list(self):
-        """ Test that authorize all with an empty list passes """
-        Authorizer.authorize_multiple("test", meet_all=True)
-
-    def test_authorize_multiple_any(self):
-        """ Test that we can authorize multiple and have all pass """
-        Authorizer.authorize_multiple("test",
-                                      "test", "test", "test", meet_all=False)
-        Authorizer.authorize_multiple("test",
-                                      "fail", "fail", "test", meet_all=False)
-        with self.assertRaises(Unauthorized):
-            Authorizer.authorize_multiple(
-                "test",
-                "fail",
-                "fail",
-                "fail",
-                meet_all=False)
-
-    def test_authorize_multiple_any_one_item(self):
-        """ Test that we can authorize multiple and have 1 item pass
-
-        This edge case is true because we expect none of our conditions to
-        fail, since there are no conditions, that criteria is met.
-        """
-        with self.assertRaises(Unauthorized):
-            Authorizer.authorize_multiple("test", "fail", meet_all=False)
-
-    def test_authorize_multiple_any_empty_list(self):
-        """ Test that authorize any with an empty list fails.
-
-        This edge case is true because we expect at least one condition to pass
-        """
-        with self.assertRaises(Unauthorized):
-            Authorizer.authorize_multiple("test", meet_all=False)
+            Authorizer.authorize(user, task)
+            self.assertFalse(Authorizer.is_authorized(user, task))
