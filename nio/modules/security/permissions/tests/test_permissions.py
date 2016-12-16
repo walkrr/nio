@@ -1,6 +1,7 @@
 """ Unit tests for Permissions functionality. """
 
 from unittest import TestCase
+import json
 
 from nio.modules.security.permissions import (
     Permissions,
@@ -333,3 +334,23 @@ class TestPermissions(TestCase):
         self.assertTrue(perms.get("instance", "write"))
         self.assertFalse(perms.get("instance", "execute"))
 
+    def test_serialized_permissions(self):
+        """ Make sure we can get serialized representations of permissions """
+        perms = Permissions()
+        perms.set("services", "read")
+        perms.set("services.*", "read")
+        perms.set("services.MyService1", "execute")
+
+        as_dict = perms.to_dict()
+        self.assertDictEqual(as_dict, {
+            "services": "r",
+            "services.*": "r",
+            "services.MyService1": "x"
+        })
+
+        # Make sure it's JSON serializable
+        json.dumps(as_dict)
+
+        # Serialized dictionaries should be able to be loaded back
+        # as a new permissions object (i.e. deserialized)
+        Permissions(as_dict)
