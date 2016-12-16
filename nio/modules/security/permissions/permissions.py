@@ -153,3 +153,15 @@ class Permissions(object):
 
         # assign actual permission
         setattr(self._permissions[resource], permission, value)
+
+    def to_dict(self):
+        """ Return a serializable dictionary of the permissions
+
+        Returns:
+            dict: keys are resource permission regexes, values are shorthand
+            strings representing the permissions on that resource
+        """
+        return {
+            resource_regex: str(line)
+            for resource_regex, line in self._permissions.items()
+        }
