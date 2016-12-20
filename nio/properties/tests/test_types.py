@@ -31,7 +31,8 @@ class SampleEnum(Enum):
 
 
 class ContainerClass(PropertyHolder):
-    string_property = StringProperty(title="string_property", default="string1")
+    string_property = StringProperty(
+        title="string_property", default="string1")
     string_property_default_env_variable = \
         StringProperty(title="string_property_default_env_variable",
                        default='[[ENV_VARIABLE]]')
@@ -81,8 +82,9 @@ class ContainerClass(PropertyHolder):
     select_property = SelectProperty(
         SampleEnum, title="select_property", default=SampleEnum.option2)
     select_property_default_env_variable = \
-        SelectProperty(SampleEnum, title="select_property_default_env_variable",
-                       default='[[ENV_VARIABLE]]')
+        SelectProperty(
+            SampleEnum, title="select_property_default_env_variable",
+            default='[[ENV_VARIABLE]]')
 
 
 class TestTypes(NIOTestCaseNoModules):

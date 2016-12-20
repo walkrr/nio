@@ -27,7 +27,8 @@ class SampleEnum(Enum):
 
 
 class ContainerClass(PropertyHolder):
-    string_property = StringProperty(title="string_property", default="string1")
+    string_property = StringProperty(
+        title="string_property", default="string1")
     string_property_default_env_variable = \
         StringProperty(title="string_property_default_env_variable",
                        default='[[ENV_VARIABLE]]')

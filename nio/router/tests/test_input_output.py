@@ -289,7 +289,7 @@ class TestInputOutput(NIOTestCaseNoModules):
         router_context = RouterContext(execution, blocks,
                                        settings={"clone_signals": False})
 
-        # it raises exception since Block defines its own outputs but no default
+        # it raises since Block defines its own outputs but no default
         # (when specifying receivers using list format, the block output
         # is mandatory)
         with self.assertRaises(InvalidBlockOutput):

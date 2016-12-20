@@ -62,7 +62,7 @@ class TestBlockWithOutputs(NIOBlockTestCase):
         output2_signal2 = Signal({"name": "o2_s2"})
         self.process_signals([output2_signal1, output2_signal2], "input2")
 
-        # assert output1 signals are not the signals notified by default anymore
+        # output1 signals are not the signals notified by default anymore
         self.assertNotIn(output1_signal1, self.signals_notified())
         self.assertNotIn(output1_signal2, self.signals_notified())
 

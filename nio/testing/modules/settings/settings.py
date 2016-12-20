@@ -16,7 +16,7 @@ class Settings(object):
             option (str): option to get information from
 
         if no section is specified, all sections are returned
-        if no option is specified, all options within given section are returned
+        if no option is specified, all options within section are returned
 
         Keyword Args:
             fallback: default to use when no information can be found

@@ -18,7 +18,8 @@ class SecuredClass(object):
     def secured_method(self):
         ensure_access(self._resource, self._permission)
         # assert that if access was granted then user has access
-        self._test_case.assertTrue(has_access(self._resource, self._permission))
+        self._test_case.assertTrue(
+            has_access(self._resource, self._permission))
 
 
 class TestAccess(NIOTestCase):

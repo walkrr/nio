@@ -36,8 +36,8 @@ class PublisherProxy(object):
 
         Args:
             topic (str): topic to use when publishing log messages
-            max_publisher_ready_time (float): maximum time to wait for publisher
-                to be ready
+            max_publisher_ready_time (float): maximum time to wait for
+                publisher to be ready
             publisher_ready_wait_interval_time (float): interval in seconds to
                 use when waiting for publisher to be ready
         """
