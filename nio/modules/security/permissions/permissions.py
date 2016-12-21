@@ -47,7 +47,7 @@ class Permissions(object):
     Querying a permission is done via the get() member function.
 
     ---- Setting a permission ----
-    Setting a permission can additionally be done via the set() member function.
+    Setting a permission can additionally be done via the set() method
 
     """
 

@@ -16,7 +16,8 @@ class TestProperties(unittest.TestCase):
     def test_parent_child(self):
         """get_class_properties works wth sub classes."""
         class ParentClass(PropertyHolder):
-            parent_property = StringProperty(title="parent_property", default="str")
+            parent_property = StringProperty(
+                title="parent_property", default="str")
 
         class ChildClass(ParentClass):
             child_property = StringProperty(title="child_property")

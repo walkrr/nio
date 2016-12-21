@@ -8,7 +8,7 @@ class NIOAdapter(logging.LoggerAdapter):
 
     """ The base logger adapter class for NIO.  """
 
-    detail_errors = False
+    detail_errors = True
 
     def __init__(self, logger, extra={}):
         self.name = logger.name

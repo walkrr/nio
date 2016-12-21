@@ -81,7 +81,7 @@ class ModuleInitializer(object):
         except ProxyAlreadyProxied:
             get_nio_logger('ModuleInitializer').warning(
                 "Interface implemented by module '{}' is already proxied".
-                    format(module.__class__.__name__))
+                format(module.__class__.__name__))
             if safe:
                 # ignore a module trying to re-proxy when in safe mode
                 return

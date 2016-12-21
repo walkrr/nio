@@ -65,4 +65,3 @@ class TestSettings(NIOTestCase):
         # Assert that an option can be set to a brand new section
         Settings.set('new_section', "boolean_attr", 'True')
         self.assertTrue(Settings.getboolean('new_section', 'boolean_attr'))
-

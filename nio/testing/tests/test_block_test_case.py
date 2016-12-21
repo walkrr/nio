@@ -120,7 +120,8 @@ class TestBlockTestCase(NIOBlockTestCase):
         self.assertEqual(self.last_signal_notified("output1"), output1_signal2)
         self.assertEqual(self.last_signal_notified("output2"), output2_signal2)
         self.assertEqual(
-            self.last_signal_notified(DEFAULT_TERMINAL), default_output_signal2)
+            self.last_signal_notified(DEFAULT_TERMINAL),
+            default_output_signal2)
 
         # notify and assert that signal changed when no output is specified
         b1.notify_signals([default_output_signal1, default_output_signal2])
@@ -130,7 +131,8 @@ class TestBlockTestCase(NIOBlockTestCase):
         self.assertEqual(self.last_signal_notified("output1"), output1_signal2)
         self.assertEqual(self.last_signal_notified("output2"), output2_signal2)
         self.assertEqual(
-            self.last_signal_notified(DEFAULT_TERMINAL), default_output_signal2)
+            self.last_signal_notified(DEFAULT_TERMINAL),
+            default_output_signal2)
 
         # assert that when output is specified, it must be valid when getting
         # last signal from it

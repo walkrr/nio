@@ -64,7 +64,7 @@ class TestNotifyManagementSignals(NIOTestCaseNoModules):
                          RunnerStatus.configured)
         service.do_start()
 
-        error_signal = BlockStatusSignal(RunnerStatus.error, 'It just broke...')
+        error_signal = BlockStatusSignal(RunnerStatus.error, 'It just broke')
         notifier_block = service._blocks['notifierblock']
         notifier_block.notify_management_signal(error_signal)
 

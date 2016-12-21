@@ -26,7 +26,7 @@ class TestSignalsNotifications(NIOBlockTestCase):
         self.stop_block()
 
     def test_allows_mgmt_signal_notify(self):
-        """ Makes sure a test can assert how many mgmt signals were notified """
+        """Makes sure a test can assert how many mgmt signals were notified"""
         self.configure_block({})
         self.start_block()
 

@@ -38,7 +38,6 @@ class TestResetDefaultTerminal(NIOBlockTestCase):
         with self.assertRaises(ValueError):
             self.reset_signals_notified("output1")
 
-
         self.stop_block()
 
 
