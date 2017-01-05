@@ -1,4 +1,5 @@
 from nio.project.entity import Entity
 
-class Block(Entity):
+
+class BlockEntity(Entity):
     pass

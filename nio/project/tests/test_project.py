@@ -1,5 +1,5 @@
 from nio.testing import NIOTestCase
-from nio.project import Block, Configuration, Project, Service
+from nio.project import BlockEntity, Configuration, Project, ServiceEntity
 from nio.project.serializers.serializer import ProjectSerializer
 
 
@@ -9,29 +9,29 @@ class TestProject(NIOTestCase):
         """ Test that we can create a project with blocks/services """
         project = Project()
         project.configuration = {
-            "section": Configuration(configuration={"key": "value"})
+            "section": Configuration(data={"key": "value"})
         }
         project.services = {
-            "ServiceName": Service(configuration={"key": "value"})
+            "ServiceName": ServiceEntity(data={"key": "value"})
         }
         project.blocks = {
-            "BlockName": Block(configuration={"key": "value"})
+            "BlockName": BlockEntity(data={"key": "value"})
         }
 
     def test_entity_defaults(self):
         """ Make sure we get reasonable defaults on new entities """
         # Not providing configuration should give us an empty dict
-        b = Block()
-        self.assertDictEqual(b.configuration, {})
-        s = Service()
-        self.assertDictEqual(s.configuration, {})
+        b = BlockEntity()
+        self.assertDictEqual(b.data, {})
+        s = ServiceEntity()
+        self.assertDictEqual(s.data, {})
 
     def test_invalid_entities(self):
         """ Ensure exceptions raised when creating invalid entities """
         with self.assertRaises(TypeError):
-            Block(configuration="not a dictionary")
+            BlockEntity(data="not a dictionary")
         with self.assertRaises(TypeError):
-            Service(configuration="not a dictionary")
+            ServiceEntity(data="not a dictionary")
 
     def test_serializer(self):
         """ Some sanity checks for the default serializer class """

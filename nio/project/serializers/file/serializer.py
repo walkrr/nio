@@ -2,7 +2,7 @@ from configparser import RawConfigParser
 import json
 import os
 from nio.util.logging import get_nio_logger
-from nio.project import Project, Configuration, Block, Service
+from nio.project import Project, Configuration, BlockEntity, ServiceEntity
 from nio.project.serializers.serializer import ProjectSerializer
 
 
@@ -48,9 +48,9 @@ class FileSerializer(ProjectSerializer):
 
         # add blocks and services
         project.blocks = self._load_entities(
-            os.path.join(etc_folder, 'blocks'), Block)
+            os.path.join(etc_folder, 'blocks'), BlockEntity)
         project.services = self._load_entities(
-            os.path.join(etc_folder, 'services'), Service)
+            os.path.join(etc_folder, 'services'), ServiceEntity)
 
         return project
 
@@ -83,11 +83,11 @@ class FileSerializer(ProjectSerializer):
 
         # Populate our configuration dictionary
         for section in settings.sections():
-            config_data = {
+            data = {
                 option: settings.get(section, option)
                 for option in settings.options(section)
             }
-            configuration[section] = Configuration(configuration=config_data)
+            configuration[section] = Configuration(data=data)
 
         # special handling for entries known to be dictionaries
         self._handle_dict_entries(configuration)
@@ -143,14 +143,14 @@ class FileSerializer(ProjectSerializer):
         for (section, option, default) in links:
             if section not in sections:
                 continue
-            config = sections[section].configuration
-            setting = config.get(option, default)
+            data = sections[section].data
+            setting = data.get(option, default)
             # is it a link
             potential_link = os.path.join(self._project_path, setting)
             if os.path.isfile(potential_link):
                 try:
                     # assume a json file
-                    config[option] = self._load_json(potential_link)
+                    data[option] = self._load_json(potential_link)
                 except:  # pragma: no cover
                     self.logger.exception(
                         "Could not load {} as json".

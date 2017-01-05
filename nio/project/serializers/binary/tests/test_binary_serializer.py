@@ -1,4 +1,4 @@
-from nio.project import Project, Configuration, Block, Service
+from nio.project import Project, Configuration, BlockEntity, ServiceEntity
 from nio.testing import NIOTestCase
 from ..serializer import BinarySerializer
 
@@ -9,13 +9,13 @@ class TestBinarySerializer(NIOTestCase):
         """ Make sure we can serialize then deserialize a project """
         project = Project()
         project.configuration = {
-            "section": Configuration(configuration={"key": "value"})
+            "section": Configuration(data={"key": "value"})
         }
         project.services = {
-            "ServiceName": Service(configuration={"auto_start": True})
+            "ServiceName": ServiceEntity(data={"auto_start": True})
         }
         project.blocks = {
-            "BlockName": Block(configuration={"log_level": "INFO"})
+            "BlockName": BlockEntity(data={"log_level": "INFO"})
         }
 
         serializer = BinarySerializer()
@@ -30,13 +30,13 @@ class TestBinarySerializer(NIOTestCase):
         # as the original project
         self.assertEqual(len(new_project.configuration), 1)
         self.assertDictEqual(
-            new_project.configuration['section'].configuration,
+            new_project.configuration['section'].data,
             {"key": "value"})
         self.assertEqual(len(new_project.blocks), 1)
         self.assertDictEqual(
-            new_project.blocks['BlockName'].configuration,
+            new_project.blocks['BlockName'].data,
             {"log_level": "INFO"})
         self.assertEqual(len(new_project.services), 1)
         self.assertDictEqual(
-            new_project.services['ServiceName'].configuration,
+            new_project.services['ServiceName'].data,
             {"auto_start": True})

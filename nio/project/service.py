@@ -1,4 +1,5 @@
 from nio.project.entity import Entity
 
-class Service(Entity):
+
+class ServiceEntity(Entity):
     pass

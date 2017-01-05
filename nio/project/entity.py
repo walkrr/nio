@@ -1,10 +1,10 @@
 class Entity(object):
 
-    def __init__(self, configuration=None):
-        if configuration is None:
-            configuration = dict()
+    def __init__(self, data=None):
+        if data is None:
+            data = dict()
 
-        if not isinstance(configuration, dict):
-            raise TypeError("Entity configuration must be a dictionary")
+        if not isinstance(data, dict):
+            raise TypeError("Entity data must be a dictionary")
 
-        self.configuration = configuration
+        self.data = data
