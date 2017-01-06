@@ -2,7 +2,7 @@ from configparser import RawConfigParser
 import json
 import os
 from nio.util.logging import get_nio_logger
-from nio.project import Project, Configuration, BlockEntity, ServiceEntity
+from nio.project import Project, ConfigurationEntity, BlockEntity, ServiceEntity
 from nio.project.serializers.serializer import ProjectSerializer
 
 
@@ -87,7 +87,7 @@ class FileSerializer(ProjectSerializer):
                 option: settings.get(section, option)
                 for option in settings.options(section)
             }
-            configuration[section] = Configuration(data=data)
+            configuration[section] = ConfigurationEntity(data=data)
 
         # special handling for entries known to be dictionaries
         self._handle_dict_entries(configuration)

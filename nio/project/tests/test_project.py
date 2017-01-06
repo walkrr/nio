@@ -1,5 +1,5 @@
 from nio.testing import NIOTestCase
-from nio.project import BlockEntity, Configuration, Project, ServiceEntity
+from nio.project import BlockEntity, ConfigurationEntity, Project, ServiceEntity
 from nio.project.serializers.serializer import ProjectSerializer
 
 
@@ -9,7 +9,7 @@ class TestProject(NIOTestCase):
         """ Test that we can create a project with blocks/services """
         project = Project()
         project.configuration = {
-            "section": Configuration(data={"key": "value"})
+            "section": ConfigurationEntity(data={"key": "value"})
         }
         project.services = {
             "ServiceName": ServiceEntity(data={"key": "value"})

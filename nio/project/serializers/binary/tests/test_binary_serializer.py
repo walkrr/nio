@@ -1,4 +1,4 @@
-from nio.project import Project, Configuration, BlockEntity, ServiceEntity
+from nio.project import Project, ConfigurationEntity, BlockEntity, ServiceEntity
 from nio.testing import NIOTestCase
 from ..serializer import BinarySerializer
 
@@ -9,7 +9,7 @@ class TestBinarySerializer(NIOTestCase):
         """ Make sure we can serialize then deserialize a project """
         project = Project()
         project.configuration = {
-            "section": Configuration(data={"key": "value"})
+            "section": ConfigurationEntity(data={"key": "value"})
         }
         project.services = {
             "ServiceName": ServiceEntity(data={"auto_start": True})
