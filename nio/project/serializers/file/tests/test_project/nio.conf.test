@@ -1,0 +1,21 @@
+[DEFAULT]
+
+[logging]
+
+# dictionary of python logging configuration
+#
+conf=etc/logging.json
+
+[security]
+
+# json configuration that defines users and their passwords - can point to a conf file
+#
+users=etc/users.json
+
+
+# json configuration that maps users to permissions - can point to a conf file
+#
+permissions=etc/permissions.json
+
+jwt_key_b64=[[JWT_VERIFY_KEY_B64]]
+jwt_algorithm=RS256
