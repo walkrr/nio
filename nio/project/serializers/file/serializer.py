@@ -1,6 +1,8 @@
 from configparser import RawConfigParser
 import json
 import os
+
+from nio.project.entity import Entity
 from nio.util.logging import get_nio_logger
 from nio.project import Project, ConfigurationEntity, BlockEntity, ServiceEntity
 from nio.project.serializers.serializer import ProjectSerializer
@@ -8,8 +10,11 @@ from nio.project.serializers.serializer import ProjectSerializer
 
 class FileSerializer(ProjectSerializer):
 
-    folders = ['blocks', 'services']
     extensions = ['.cfg', '.json']
+    links = [("logging", "conf", "etc/logging.json"),
+             ("security", "users", "etc/users.json"),
+             ("security", "permissions", "etc/permissions.json"),
+             ("environment", "blocks_from", "etc/blocks.json")]
 
     def __init__(self, project_path=None, conf_filename="nio.conf"):
         """ Initializes a config serializer instance
@@ -18,6 +23,8 @@ class FileSerializer(ProjectSerializer):
             project_path (str): path to nio project location
             conf_filename (str): nio configuration file name
         """
+        self.logger = get_nio_logger("FileSerializer")
+
         if project_path is None:
             project_path = os.getcwd()
         self._project_path = project_path
@@ -44,22 +51,164 @@ class FileSerializer(ProjectSerializer):
 
         # load nio conf first in case in the future '_load' itself depends
         # on anything we read from nio conf
-        project.configuration = self._parse_nio_conf()
+        project.configuration = self._deserialize_nio_conf()
 
         # add blocks and services
-        project.blocks = self._load_entities(
+        project.blocks = self._deserialize_entities(
             os.path.join(etc_folder, 'blocks'), BlockEntity)
-        project.services = self._load_entities(
+        project.services = self._deserialize_entities(
             os.path.join(etc_folder, 'services'), ServiceEntity)
 
         return project
 
     def serialize(self, project):
         """ Take the project instance and create the necessary files """
-        # TODO: Implement this method
-        pass
 
-    def _parse_nio_conf(self):
+        # serialize configuration
+        self._serialize_nio_conf(project.configuration)
+
+        # serialize blocks
+        self._serialize_entities(
+            project.blocks,
+            os.path.join(self._project_path, 'etc', 'blocks'))
+
+        # serialize services
+        self._serialize_entities(
+            project.services,
+            os.path.join(self._project_path, 'etc', 'services'))
+
+    def _serialize_nio_conf(self, configuration):
+        """ Serializes nio configuration settings to a file
+
+        Args:
+            configuration (dict): Configuration to serialize with format:
+                {name: entity}
+        """
+        if configuration:
+            # make sure path where conf file will be written exists
+            if not os.path.isdir(self._project_path):
+                os.makedirs(self._project_path)
+
+            # create instance where settings will be stored and written from
+            settings = RawConfigParser()
+
+            # figure out path to nio conf file
+            nio_conf = os.path.join(self._project_path, self._conf_filename)
+
+            # if nio.conf exists, read existing settings so that incoming
+            # configuration adds and/or overrides to it.
+            if os.path.isfile(nio_conf):
+                # read the contents of the conf file
+                settings.read(nio_conf)
+
+            # save special dict entries known to be saved as linked files
+            serialized_entries = self._serialize_dict_entries(configuration)
+
+            # write settings to parser
+            for section, entity in configuration.items():
+                # check for section existence
+                if not settings.has_section(section):
+                    settings.add_section(section)
+                # save every section option
+                for option, value in entity.data.items():
+                    # handle potential links since need to save the link
+                    # instead of the value, (the value was not written into
+                    # the configuration to preserve incoming configuration
+                    # integrity)
+                    if section in serialized_entries:
+                        serialized_option, serialized_value = \
+                            serialized_entries[section]
+                        if serialized_option == option:
+                            # override value with 'link' value
+                            value = serialized_value
+                    # save to settings resulting option value
+                    settings.set(section, option, value)
+
+            # save actual config file
+            with open(nio_conf, 'w') as fp:
+                settings.write(fp)
+        else:
+            self.logger.info("No configuration items need to be serialized, "
+                             "{} will not be affected".
+                             format(self._conf_filename))
+
+    def _serialize_entities(self, entities, to_folder):
+        """ Serializes a list of entities as json files to a folder.
+
+        For example, this function can save in the 'services' folder
+        a list of Service objects.
+
+        Args:
+            entities (dict): Entities to serialize with format: {name: entity}
+            to_folder (str): The folder where the entities are saved
+        """
+
+        if not os.path.isdir(to_folder):
+            os.makedirs(to_folder)
+
+        for entity_name, entity in entities.items():
+            if not isinstance(entity, Entity):
+                self.logger.warning('{} is not an entity, ignoring it'.
+                                    format(entity_name))
+                continue
+
+            # create filename to serialize to
+            filename = os.path.join(to_folder, "{}.cfg".format(entity_name))
+
+            try:
+                self.save_json(filename, entity.data,
+                               indent=4, separators=(',', ': '), sort_keys=True)
+            except Exception:
+                # log exception and continue handling entities
+                self.logger.exception("Could not save entity data for: {}".
+                                      format(entity_name))
+
+    def _serialize_dict_entries(self, configuration):
+        """ Handles entries known to contain its values as dictionaries
+
+        Saves dictionary entries as stand-alone files and overrides actual
+        entries to point to saved files.
+
+        Args:
+            configuration (dict): Configuration data with format:
+                {name: entity}
+        """
+
+        serialized_entries = {}
+        for (section, option, sub_path) in FileSerializer.links:
+            if section not in configuration:
+                # move to next if section is not in the incoming configuration
+                continue
+            data = configuration[section].data.get(option, None)
+            if data is None:
+                # move to next when option is not in incoming configuration
+                continue
+
+            # is data a potential link
+            if isinstance(data, dict):
+                # determine target filename
+                filename = os.path.join(self._project_path, sub_path)
+                # guarantee path to file
+                path_to_file = os.path.dirname(filename)
+                if not os.path.isdir(path_to_file):
+                    os.makedirs(path_to_file)
+
+                # save link file
+                try:
+                    self.save_json(filename, data, indent=4,
+                                   separators=(',', ': '), sort_keys=True)
+
+                    # save entry so that it can be referenced
+                    serialized_entries[section] = (option, sub_path)
+                except Exception:
+                    # log exception and continue handling entries
+                    self.logger.exception(
+                        "Could not save linked file for: {}.{}".
+                        format(section, option))
+
+        return serialized_entries
+
+    def _deserialize_nio_conf(self):
         """ Parses and converts a nio conf file to a dictionary
 
         Entries that are known to point to a json file are expanded and
@@ -70,31 +219,31 @@ class FileSerializer(ProjectSerializer):
             under an entry
         """
         configuration = dict()
-        settings = RawConfigParser()
 
         # figure out path to nio conf file
         nio_conf = os.path.join(self._project_path, self._conf_filename)
-        if not os.path.isfile(nio_conf):
-            raise ValueError("Expected configuration file: {} is missing".
-                             format(nio_conf))
+        if os.path.isfile(nio_conf):
 
-        # read the contents of the conf file with the config parser
-        settings.read(nio_conf)
+            # read the contents of the conf file with the config parser
+            settings = RawConfigParser()
+            settings.read(nio_conf)
 
-        # Populate our configuration dictionary
-        for section in settings.sections():
-            data = {
-                option: settings.get(section, option)
-                for option in settings.options(section)
-            }
-            configuration[section] = ConfigurationEntity(data=data)
+            # Populate our configuration dictionary
+            for section in settings.sections():
+                data = {
+                    option: settings.get(section, option)
+                    for option in settings.options(section)
+                }
+                configuration[section] = ConfigurationEntity(data=data)
 
-        # special handling for entries known to be dictionaries
-        self._handle_dict_entries(configuration)
+            # special handling for entries known to be dictionaries
+            self._deserialize_dict_entries(configuration)
+        else:
+            self.logger.info('There is no configuration data to deserialize')
 
         return configuration
 
-    def _load_entities(self, from_folder, entity_type):
+    def _deserialize_entities(self, from_folder, entity_type):
         """ Returns a list of entities loaded from a folder.
 
         For example, this function can look through the services/ folder
@@ -121,12 +270,17 @@ class FileSerializer(ProjectSerializer):
                 continue
             # grab only name portion (remove extension and prefix folders)
             key = os.path.basename(filename)
-            entities[key] = entity_type(
-                self._load_json(os.path.join(from_folder, f)))
+            try:
+                entities[key] = entity_type(
+                    self._load_json(os.path.join(from_folder, f)))
+            except ValueError:
+                # handle json file errors
+                self.logger.exception("Could not load entity data for: {}".
+                                      format(key))
 
         return entities
 
-    def _handle_dict_entries(self, sections):
+    def _deserialize_dict_entries(self, sections):
         """ Handles entries known to contain its values as dictionaries
 
         Args:
@@ -135,12 +289,7 @@ class FileSerializer(ProjectSerializer):
         Note: if entry points to a file, this file is loaded as a json file
         """
 
-        links = [("logging", "conf", "etc/logging.json"),
-                 ("security", "users", "etc/users.json"),
-                 ("security", "permissions", "etc/permissions.json"),
-                 ("environment", "blocks_from", "etc/blocks.json")]
-
-        for (section, option, default) in links:
+        for (section, option, default) in FileSerializer.links:
             if section not in sections:
                 continue
             data = sections[section].data
@@ -164,3 +313,8 @@ class FileSerializer(ProjectSerializer):
             with open(path, 'r') as f:
                 data = json.load(f)
         return data
+
+    @staticmethod
+    def save_json(path, data, **kwargs):
+        with open(path, 'w+') as f:
+            json.dump(data, f, **kwargs)

@@ -1,4 +1,7 @@
+from configparser import RawConfigParser
 import os
+import tempfile
+
 from nio.testing import NIOTestCase
 from ..serializer import FileSerializer
 
@@ -64,9 +67,4 @@ class TestFileSerializer(NIOTestCase):
             serializer.deserialize()
 
         with self.assertRaises(ValueError):
-            serializer._load_entities('folder_that_doesnt_exist', dict)
-
-    def test_serializer_invalid_conf_file(self):
-        serializer = FileSerializer(self.project_dir, "nio.conf")
-        with self.assertRaises(ValueError):
-            serializer.deserialize()
+            serializer._deserialize_entities('folder_that_doesnt_exist', dict)
