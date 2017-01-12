@@ -1,11 +1,11 @@
-from configparser import RawConfigParser
 import json
 import os
+from configparser import RawConfigParser
 
-from nio.project.entity import Entity
-from nio.util.logging import get_nio_logger
 from nio.project import Project, ConfigurationEntity, BlockEntity, ServiceEntity
+from nio.project.entity import Entity
 from nio.project.serializers.serializer import ProjectSerializer
+from nio.util.logging import get_nio_logger
 
 
 class FileSerializer(ProjectSerializer):
@@ -112,15 +112,12 @@ class FileSerializer(ProjectSerializer):
                 # save every section option
                 for option, value in entity.data.items():
                     # handle potential links since need to save the link
-                    # instead of the value, (the value was not written into
+                    # instead of the value, (the link-value was not written into
                     # the configuration to preserve incoming configuration
                     # integrity)
-                    if section in serialized_entries:
-                        serialized_option, serialized_value = \
-                            serialized_entries[section]
-                        if serialized_option == option:
-                            # override value with 'link' value
-                            value = serialized_value
+                    if (section,option) in serialized_entries:
+                        # override value with 'link' value
+                        value = serialized_entries[(section,option)]
                     # save to settings resulting option value
                     settings.set(section, option, value)
 
@@ -199,7 +196,7 @@ class FileSerializer(ProjectSerializer):
                                    separators=(',', ': '), sort_keys=True)
 
                     # save entry so that it can be referenced
-                    serialized_entries[section] = (option, sub_path)
+                    serialized_entries[(section,option)] = sub_path
                 except Exception:
                     # log exception and continue handling entries
                     self.logger.exception(

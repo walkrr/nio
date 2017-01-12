@@ -1,12 +1,12 @@
 import os
-import tempfile
 import shutil
+import tempfile
+from configparser import RawConfigParser
 from unittest.mock import Mock
 
-from nio.project import BlockEntity
-from nio.project import ConfigurationEntity
-from nio.project import Project
+from nio.project import BlockEntity, ConfigurationEntity, Project, ServiceEntity
 from nio.testing import NIOTestCase
+
 from ..serializer import FileSerializer
 
 
@@ -20,15 +20,16 @@ class TestSerialize(NIOTestCase):
         self.tmp_project_dir = tempfile.mkdtemp()
 
     def tearDown(self):
+        # at the end of each test, make sure tmp folder/subfolders are removed
         if os.path.isdir(self.tmp_project_dir):
             shutil.rmtree(self.tmp_project_dir)
         super().tearDown()
 
     def test_non_existent_project_dir(self):
-        """ Asserts file is serialized when target folder doesn't exist
+        """ Asserts file is serialized even if target folder doesn't exist
         """
-        project1 = Project()
-        project1.configuration["section"] = \
+        project = Project()
+        project.configuration["section"] = \
             ConfigurationEntity({"option1": "value1"})
 
         # remove tmp dir, effectively making serializer create it
@@ -40,13 +41,15 @@ class TestSerialize(NIOTestCase):
                                  serializer._conf_filename)
         self.assertFalse(os.path.isfile(conf_file))
 
-        serializer.serialize(project1)
+        serializer.serialize(project)
 
         # make sure conf file made it to project directory
         self.assertTrue(os.path.isfile(conf_file))
 
     def test_invalid_entity(self):
         """ Asserts invalid entities are ignored
+
+        Note: A log statement is issued
         """
         project1 = Project()
         project1.blocks["block1"] = BlockEntity({"name": "block1"})
@@ -68,7 +71,9 @@ class TestSerialize(NIOTestCase):
         self.assertIn("block3", project2.blocks)
 
     def test_non_serializable_entity(self):
-        """ Asserts invalid entities are ignored
+        """ Asserts invalid entity data causes entity to be ignored
+
+        Note: A log statement is issued
         """
         project1 = Project()
         not_serializable_entity_attribute = self.test_non_serializable_entity
@@ -93,10 +98,16 @@ class TestSerialize(NIOTestCase):
 
     def test_configuration(self):
         """ Asserts configuration serialization
+
+        Also verifies than in case a conf file already exists, existing
+        data is maintained unless overriden
         """
         project1 = Project()
         project1.configuration["logging"] = \
             ConfigurationEntity({"option1": "value1"})
+        # option to be overriden
+        project1.configuration["security"] = \
+            ConfigurationEntity({"option3": "value3"})
 
         serializer1 = FileSerializer(self.tmp_project_dir)
         serializer1.serialize(project1)
@@ -113,16 +124,27 @@ class TestSerialize(NIOTestCase):
         # setup project1 to now contain a new entry
         project1.configuration["logging"] = \
             ConfigurationEntity({"option2": "value2"})
+        # add an option to override existing entry
+        project1.configuration["security"] = \
+            ConfigurationEntity({"option3": "new value3"})
         serializer1.serialize(project1)
 
         # assert that "option1" entry existing in file was kept intact,
-        # and that option2 was added
+        # that option2 was added, and option3 was overriden
         serializer2 = FileSerializer(self.tmp_project_dir)
         project2 = serializer2.deserialize()
         self.assertIn("option1",
                       project2.configuration["logging"].data)
+        self.assertEqual('value1',
+                         project2.configuration["logging"].data["option1"])
         self.assertIn("option2",
                       project2.configuration["logging"].data)
+        self.assertEqual('value2',
+                         project2.configuration["logging"].data["option2"])
+        self.assertIn("option3",
+                      project2.configuration["security"].data)
+        self.assertEqual('new value3',
+                         project2.configuration["security"].data["option3"])
 
     def test_config_dict_entries(self):
         """ Asserts known dict entries are serialized as files
@@ -138,10 +160,23 @@ class TestSerialize(NIOTestCase):
         serializer = FileSerializer(self.tmp_project_dir)
         serializer.serialize(project)
 
-        # assert that a file exists for each option
-        for (_, _, sub_path) in FileSerializer.links:
+        # read created config file
+        conf_file = os.path.join(self.tmp_project_dir,
+                                 serializer._conf_filename)
+        self.assertTrue(os.path.isfile(conf_file))
+        settings = RawConfigParser()
+        settings.read(conf_file)
+
+        # for each potential link
+        for (section, option, sub_path) in FileSerializer.links:
+            # assert that a file exists for each option
             linked_file = os.path.join(self.tmp_project_dir, sub_path)
             self.assertTrue(os.path.isfile(linked_file))
+
+            # assert that incoming configuration value was not saved in the
+            # resulting config file, thus the link to it is what resulted
+            # being saved
+            self.assertTrue(settings.get(section, option).endswith(sub_path))
 
     def test_invalid_config_dict_entry(self):
         """ Asserts known dict entries are serialized as files
@@ -169,8 +204,30 @@ class TestSerialize(NIOTestCase):
         serializer1 = FileSerializer(self.tmp_project_dir)
         serializer1.serialize(project1)
 
+        # create a new instance to deserialize and compare
         serializer2 = FileSerializer(self.tmp_project_dir)
         project2 = serializer2.deserialize()
+
+        # iterate through project1 and make sure project2 data matches it
         for entity_name, entity in project1.blocks.items():
             self.assertDictEqual(entity.data,
                                  project2.blocks[entity_name].data)
+
+    def test_services(self):
+        """ Asserts services serialization
+        """
+
+        project1 = Project()
+        project1.services["service1"] = ServiceEntity({"name": "service1"})
+
+        serializer1 = FileSerializer(self.tmp_project_dir)
+        serializer1.serialize(project1)
+
+        # create a new instance to deserialize and compare
+        serializer2 = FileSerializer(self.tmp_project_dir)
+        project2 = serializer2.deserialize()
+
+        # iterate through project1 and make sure project2 data matches it
+        for entity_name, entity in project1.services.items():
+            self.assertDictEqual(entity.data,
+                                 project2.services[entity_name].data)
