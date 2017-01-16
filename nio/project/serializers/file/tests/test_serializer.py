@@ -1,8 +1,7 @@
-from configparser import RawConfigParser
 import os
-import tempfile
 
 from nio.testing import NIOTestCase
+
 from ..serializer import FileSerializer
 
 
