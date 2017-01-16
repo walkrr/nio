@@ -99,48 +99,54 @@ class TestSerialize(NIOTestCase):
     def test_configuration(self):
         """ Asserts configuration serialization
 
-        Also verifies than in case a conf file already exists, existing
-        data is maintained unless overriden
+        If a conf file already exists it gets overwritten wiping out
+        former contents
         """
         project1 = Project()
+        # option to be wiped out
         project1.configuration["logging"] = \
             ConfigurationEntity({"option1": "value1"})
-        # option to be overriden
+        # option to be saved with a new value
         project1.configuration["security"] = \
             ConfigurationEntity({"option3": "value3"})
 
+        # seralize configuration creating a conf file on disk
         serializer1 = FileSerializer(self.tmp_project_dir)
         serializer1.serialize(project1)
 
+        # assert that it is deserialized containing expected data
         serializer2 = FileSerializer(self.tmp_project_dir)
         project2 = serializer2.deserialize()
         for section, entity in project1.configuration.items():
             self.assertDictEqual(entity.data,
                                  project2.configuration[section].data)
 
-        # Assert that serializer is able to write to an existing conf file.
+        # Setup a new configuration asserting that existing configuration
+        # is wiped out and only the new configuration is serialized
         serializer1 = FileSerializer(self.tmp_project_dir)
         project1 = Project()
         # setup project1 to now contain a new entry
         project1.configuration["logging"] = \
             ConfigurationEntity({"option2": "value2"})
-        # add an option to override existing entry
+        # add an option that already exists in file
         project1.configuration["security"] = \
             ConfigurationEntity({"option3": "new value3"})
+        # serialize new project
         serializer1.serialize(project1)
 
-        # assert that "option1" entry existing in file was kept intact,
-        # that option2 was added, and option3 was overriden
+        # deserialize new configuration
         serializer2 = FileSerializer(self.tmp_project_dir)
         project2 = serializer2.deserialize()
-        self.assertIn("option1",
-                      project2.configuration["logging"].data)
-        self.assertEqual('value1',
-                         project2.configuration["logging"].data["option1"])
+
+        # assert that option 1 was wiped out
+        self.assertNotIn("option1",
+                         project2.configuration["logging"].data)
+        # assert that option 2 was added
         self.assertIn("option2",
                       project2.configuration["logging"].data)
         self.assertEqual('value2',
                          project2.configuration["logging"].data["option2"])
+        # assert that option3 contains the new value
         self.assertIn("option3",
                       project2.configuration["security"].data)
         self.assertEqual('new value3',

@@ -80,54 +80,50 @@ class FileSerializer(ProjectSerializer):
     def _serialize_nio_conf(self, configuration):
         """ Serializes nio configuration settings to a file
 
+        Note: Any existing configuration will be wiped out
+
         Args:
             configuration (dict): Configuration to serialize with format:
                 {name: entity}
         """
-        if configuration:
-            # make sure path where conf file will be written exists
-            if not os.path.isdir(self._project_path):
-                os.makedirs(self._project_path)
-
-            # create instance where settings will be stored and written from
-            settings = RawConfigParser()
-
-            # figure out path to nio conf file
-            nio_conf = os.path.join(self._project_path, self._conf_filename)
-
-            # if nio.conf exists, read existing settings so that incoming
-            # configuration adds and/or overrides to it.
-            if os.path.isfile(nio_conf):
-                # read the contents of the conf file
-                settings.read(nio_conf)
-
-            # save special dict entries known to be saved as linked files
-            serialized_entries = self._serialize_dict_entries(configuration)
-
-            # write settings to parser
-            for section, entity in configuration.items():
-                # check for section existence
-                if not settings.has_section(section):
-                    settings.add_section(section)
-                # save every section option
-                for option, value in entity.data.items():
-                    # handle potential links since need to save the link
-                    # instead of the value, (the link-value was not written into
-                    # the configuration to preserve incoming configuration
-                    # integrity)
-                    if (section,option) in serialized_entries:
-                        # override value with 'link' value
-                        value = serialized_entries[(section,option)]
-                    # save to settings resulting option value
-                    settings.set(section, option, value)
-
-            # save actual config file
-            with open(nio_conf, 'w') as fp:
-                settings.write(fp)
-        else:
+        if not configuration:
             self.logger.info("No configuration items need to be serialized, "
                              "{} will not be affected".
                              format(self._conf_filename))
+            return
+
+        # make sure path where conf file will be written exists
+        if not os.path.isdir(self._project_path):
+            os.makedirs(self._project_path)
+
+        # create instance where settings will be stored and written from
+        settings = RawConfigParser()
+
+        # save special dict entries known to be saved as linked files
+        serialized_entries = self._serialize_dict_entries(configuration)
+
+        # write settings to parser
+        for section, entity in configuration.items():
+            # check for section existence
+            if not settings.has_section(section):
+                settings.add_section(section)
+            # save every section option
+            for option, value in entity.data.items():
+                # handle potential links since need to save the link
+                # instead of the value, (the link-value was not written into
+                # the configuration to preserve incoming configuration
+                # integrity)
+                if (section,option) in serialized_entries:
+                    # override value with 'link' value
+                    value = serialized_entries[(section,option)]
+                # save to settings resulting option value
+                settings.set(section, option, value)
+
+        # figure out path to nio conf file
+        nio_conf = os.path.join(self._project_path, self._conf_filename)
+        # save actual config file
+        with open(nio_conf, 'w') as fp:
+            settings.write(fp)
 
     def _serialize_entities(self, entities, to_folder):
         """ Serializes a list of entities as json files to a folder.
@@ -219,24 +215,25 @@ class FileSerializer(ProjectSerializer):
 
         # figure out path to nio conf file
         nio_conf = os.path.join(self._project_path, self._conf_filename)
-        if os.path.isfile(nio_conf):
-
-            # read the contents of the conf file with the config parser
-            settings = RawConfigParser()
-            settings.read(nio_conf)
-
-            # Populate our configuration dictionary
-            for section in settings.sections():
-                data = {
-                    option: settings.get(section, option)
-                    for option in settings.options(section)
-                }
-                configuration[section] = ConfigurationEntity(data=data)
-
-            # special handling for entries known to be dictionaries
-            self._deserialize_dict_entries(configuration)
-        else:
+        if not os.path.isfile(nio_conf):
             self.logger.info('There is no configuration data to deserialize')
+            # return an empty configuration
+            return configuration
+
+        # read the contents of the conf file with the config parser
+        settings = RawConfigParser()
+        settings.read(nio_conf)
+
+        # Populate our configuration dictionary
+        for section in settings.sections():
+            data = {
+                option: settings.get(section, option)
+                for option in settings.options(section)
+            }
+            configuration[section] = ConfigurationEntity(data=data)
+
+        # special handling for entries known to be dictionaries
+        self._deserialize_dict_entries(configuration)
 
         return configuration
 
