@@ -2,12 +2,14 @@
    NIO web support base class
 
 """
-import threading
-import requests
 import json
-from nio.testing.test_case import NIOTestCase
+import threading
+
+import requests
+
 from nio.modules.security.user import User
 from nio.modules.web import WebEngine
+from nio.testing.test_case import NIOTestCase
 
 
 class NIOWebTestCase(NIOTestCase):
@@ -68,7 +70,9 @@ class NIOWebTestCase(NIOTestCase):
         """
         web_server = WebEngine.add_server(port, host,
                                           config if config is not None else {})
-        self.servers.append(web_server)
+        # make sure server is not already registered
+        if web_server not in self.servers:
+            self.servers.append(web_server)
         if auto_start:
             web_server.start(config)
         return web_server
