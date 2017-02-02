@@ -84,7 +84,8 @@ class NIOWebTestCase(NIOTestCase):
             server: web server
 
         """
-        self.servers.remove(server)
+        if server in self.servers:
+            self.servers.remove(server)
         WebEngine.remove_server(server)
 
     def get_conf_host(self):
