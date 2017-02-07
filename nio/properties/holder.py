@@ -1,9 +1,9 @@
+from nio.properties.base import BaseProperty
 from nio.properties.exceptions import NoClassVersion, NoInstanceVersion, \
     OlderThanMinVersion
 from nio.util.versioning.check import compare_versions, \
     VersionCheckResult, InvalidVersionFormat, is_version_valid, \
     get_major_version
-from nio.properties.base import BaseProperty
 
 
 class PropertyHolder(object):
@@ -34,11 +34,17 @@ class PropertyHolder(object):
         return {property_name: prop.serialize(self)
                 for (property_name, prop) in class_properties.items()}
 
-    def validate(self):
+    def validate(self, ignore_none=False):
         """ Call and deserialize each input property to determine validity.
 
+        Args:
+            ignore_none (bool): if True, properties that have a value equal to
+                None are ignored (useful when wanting to validate errors on
+                properties for which a value other than None has been assigned)
+
         Raises:
-            AllowNoneViolation: Property value does not allow none
+            AllowNoneViolation: Property value does not allow none, available
+                when ignore_none is False
             TypeError: Property value is invalid
 
         """
@@ -46,6 +52,8 @@ class PropertyHolder(object):
         for (property_name, prop) in class_properties.items():
             # Deserialize the raw value of the PropertyValue
             value = getattr(self, property_name).value
+            if value is None and ignore_none:
+                continue
             # Deserialize to check for AllowNoneViolation and TypeError
             prop.deserialize(value)
 

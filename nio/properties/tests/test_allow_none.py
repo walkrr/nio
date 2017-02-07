@@ -1,6 +1,6 @@
+from nio.properties import StringProperty
 from nio.properties.exceptions import AllowNoneViolation
 from nio.properties.holder import PropertyHolder
-from nio.properties import StringProperty
 from nio.testing.test_case import NIOTestCaseNoModules
 
 
@@ -84,3 +84,6 @@ class TestAllowNone(NIOTestCaseNoModules):
             Properties.validate_dict(properties_to_set)
         with self.assertRaises(AllowNoneViolation):
             properties.validate()
+
+        # assert that when allow_none is True, 'validate' goes through.
+        properties.validate(True)
