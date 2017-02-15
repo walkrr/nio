@@ -1,6 +1,6 @@
+from datetime import datetime, timedelta
 from threading import RLock, Event
 from time import sleep
-from datetime import datetime, timedelta
 
 from nio.modules.communication.publisher import Publisher
 from nio.modules.module import ModuleNotInitialized
@@ -83,7 +83,9 @@ class PublisherProxy(object):
         if cls._publisher:
             try:
                 cls._publisher.close()
-            except:
+            # catch NotImplementedError since when stopping a service
+            # the 'Publisher' interface is eventually un-proxied
+            except NotImplementedError:
                 pass
             finally:
                 cls._publisher = None

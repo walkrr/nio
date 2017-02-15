@@ -32,9 +32,8 @@ class Settings(object):
         else:
             try:
                 return cls._settings.get(section)[option]
-            except:
-                pass
-        return kwargs.get("fallback", None)
+            except KeyError:
+                return kwargs.get("fallback", None)
 
     @classmethod
     def getint(cls, section, option, *args, **kwargs):

@@ -7,12 +7,12 @@ can be as simple as an empty signal representing some sort of ping or as
 complex as a signal with many attributes containing various pieces of
 information.
 
-The base signal does not impose very many rules or restricitions, but the class
+The base signal does not impose very many rules or restrictions, but the class
 is intended to be extended and sub-classed to have more validation and
 functionality for different types of data.
 """
-from nio.util.logging import get_nio_logger
 from nio.util.class_attributes import ClassAttributes
+from nio.util.logging import get_nio_logger
 
 
 class Signal(object):
@@ -56,9 +56,11 @@ class Signal(object):
                     setattr(self, key, val)
                     # If we made it here, keep going to the next attribute
                     continue
-            except:
+            except Exception:
                 # In case of an exception, fail gracefully but log a warning
-                pass
+                get_nio_logger('Signal').exception(
+                    "Failed to assign value: {} to attribute: {}".
+                    format(val, key))
 
             # If we made it here something was wrong with the key/val,
             # otherwise we would have "continued" through the loop

@@ -1,11 +1,12 @@
+from threading import Event
+from time import sleep
 from unittest.mock import MagicMock
+
 from nio.block.base import Block
+from nio.block.mixins.limit_lock.limit_lock import LimitLock, LockQueueFull
 from nio.signal.base import Signal
 from nio.testing.block_test_case import NIOBlockTestCase
-from time import sleep
-from threading import Event
 from nio.util.threading import spawn
-from nio.block.mixins.limit_lock.limit_lock import LimitLock, LockQueueFull
 
 
 class LockBlock(LimitLock, Block):
@@ -31,8 +32,6 @@ class LockBlock(LimitLock, Block):
             except LockQueueFull:
                 # Keep track of the number of signals that are blocked
                 self._number_of_lock_queue_full_errors += 1
-            except:
-                pass
         self.notify_signals(output)
         # Keep track of the number of signals that complese processing
         self._num_processes_count += 1
