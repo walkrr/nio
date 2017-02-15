@@ -61,9 +61,10 @@ class PublisherHandler(logging.Handler):
                                record.funcName,
                                record.lineno)
             PublisherProxy.publish([signal])
-        except (KeyboardInterrupt, SystemExit):
-            raise
-        except:
+        # allow exceptions like KeyboardInterrupt and SystemExit to propagate
+        # and catch NotImplementedError since when stopping a service
+        # the 'Publisher' interface is eventually un-proxied
+        except NotImplementedError:
             pass
 
     def close(self):
