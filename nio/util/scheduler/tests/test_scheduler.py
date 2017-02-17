@@ -1,10 +1,11 @@
-from time import sleep
-from threading import RLock
-from unittest.mock import patch
 from datetime import timedelta
+from threading import RLock
+from time import sleep
+from unittest.mock import patch
+
 from nio.modules.context import ModuleContext
-from nio.util.scheduler.scheduler import SchedulerRunner
 from nio.testing.test_case import NIOTestCaseNoModules
+from nio.util.scheduler.scheduler import SchedulerRunner
 from nio.util.threading import spawn
 
 
@@ -61,7 +62,7 @@ class TestScheduler(NIOTestCaseNoModules):
 
     def _test_invalid_time_callback(self):
         # should not come here, assert otherwise
-        assert False
+        raise ValueError()
 
     def test_min_interval(self):
         """ Asserts that a minimal interval is expected """

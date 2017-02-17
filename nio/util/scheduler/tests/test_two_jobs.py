@@ -1,4 +1,5 @@
 from datetime import timedelta
+
 from nio.modules.scheduler.job import Job
 from nio.testing.test_case import NIOTestCase
 
@@ -10,7 +11,6 @@ class Dummy(object):
         self.foo2_called = False
 
     def foo1(self):
-        assert self.foo2_called
         self.foo1_called = True
 
     def foo2(self):
