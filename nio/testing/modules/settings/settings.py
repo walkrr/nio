@@ -32,7 +32,9 @@ class Settings(object):
         else:
             try:
                 return cls._settings.get(section)[option]
-            except KeyError:
+            # TypeError is raised when section is not present
+            # KeyError is raised when option is not present
+            except (TypeError, KeyError):
                 return kwargs.get("fallback", None)
 
     @classmethod

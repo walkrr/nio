@@ -40,6 +40,9 @@ class TestSettings(NIOTestCase):
         self.assertEqual(value, 0.5)
         value = Settings.get("not_an_entry", fallback=0.5)
         self.assertEqual(value, 0.5)
+        # assert that it can handle a non-existent section
+        value = Settings.get("not_a_section", 'not_an_attr', fallback=0.5)
+        self.assertEqual(value, 0.5)
 
         # assert that settings returns None if the entry is not
         # found and no default is given
