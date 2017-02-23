@@ -13,8 +13,7 @@ class FileSerializer(ProjectSerializer):
     extensions = ['.cfg', '.json']
     links = [("logging", "conf", "etc/logging.json"),
              ("security", "users", "etc/users.json"),
-             ("security", "permissions", "etc/permissions.json"),
-             ("environment", "blocks_from", "etc/blocks.json")]
+             ("security", "permissions", "etc/permissions.json")]
 
     def __init__(self, project_path=None, conf_filename="nio.conf"):
         """ Initializes a config serializer instance
