@@ -354,3 +354,52 @@ class TestPermissions(TestCase):
         # Serialized dictionaries should be able to be loaded back
         # as a new permissions object (i.e. deserialized)
         Permissions(as_dict)
+
+    def test_update_permssions(self):
+        """ Test that merging permissions objects works properly. """
+
+        # Special resources.
+        inst_only = {"instance": "rx"}
+        blocks_only = {
+            "blocks": "rw",
+        }
+
+        # Test that keys are added when necessary.
+        perms = Permissions(inst_only)
+        perms.update(Permissions(blocks_only))
+
+        self.assertTrue(perms.get("instance", "read"))
+        self.assertFalse(perms.get("instance", "write"))
+        self.assertTrue(perms.get("instance", "execute"))
+
+        self.assertTrue(perms.get("blocks", "read"))
+        self.assertTrue(perms.get("blocks", "write"))
+        self.assertFalse(perms.get("blocks", "execute"))
+
+        # Test that the order of operations is respected (updated with
+        # precedes the obj being updated).
+        perms = Permissions(TestStandardPermissions.READ_ONLY_PERMISSIONS)
+        perms.update(Permissions(inst_only))
+
+        # Check that r permissions are available on all blocks,
+        # services, and the instance.
+        self.assertTrue(perms.get("services", "read"))
+        self.assertFalse(perms.get("services", "write"))
+        self.assertFalse(perms.get("services", "execute"))
+
+        self.assertTrue(perms.get("blocks", "read"))
+        self.assertFalse(perms.get("blocks", "write"))
+        self.assertFalse(perms.get("blocks", "execute"))
+
+        self.assertTrue(perms.get("instance", "read"))
+        self.assertFalse(perms.get("instance", "write"))
+        self.assertTrue(perms.get("instance", "execute"))
+
+        # For a made-up service and block, check r permissions.
+        self.assertTrue(perms.get("services.SkoBuffsService", "read"))
+        self.assertFalse(perms.get("services.SkoBuffsService", "write"))
+        self.assertFalse(perms.get("services.SkoBuffsService", "execute"))
+
+        self.assertTrue(perms.get("blocks.TheRiseIsReal", "read"))
+        self.assertFalse(perms.get("blocks.TheRiseIsReal", "write"))
+        self.assertFalse(perms.get("blocks.TheRiseIsReal", "execute"))
