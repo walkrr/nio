@@ -165,3 +165,15 @@ class Permissions(object):
             resource_regex: str(line)
             for resource_regex, line in self._permissions.items()
         }
+
+    def update(self, perms):
+        """ Update the current Permissions object with another permissions
+            object, with the second (argument) taking priority over the
+            original if there is a key collision.
+
+            Returns:
+               Permissions object.
+        """
+
+        self.load(perms.to_dict())
+        return self
