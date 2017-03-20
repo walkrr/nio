@@ -12,10 +12,19 @@ conf=etc/logging.json
 #
 users=etc/users.json
 
-
 # json configuration that maps users to permissions - can point to a conf file
 #
 permissions=etc/permissions.json
 
 jwt_key_b64=[[JWT_VERIFY_KEY_B64]]
 jwt_algorithm=RS256
+
+[persistence]
+
+# root directory for project configuration files
+#
+configuration_data=[[PROJECT_ROOT]]/etc
+
+# directory to store persistence files
+#
+data=[[PROJECT_ROOT]]/etc

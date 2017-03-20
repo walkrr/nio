@@ -26,3 +26,12 @@ class Project(object):
         # A project has some configuration. The top-level dictionary keys are
         # the configuration sections, the values are configuration objects
         self.configuration = dict()
+
+        # A project might contain persistence data besides blocks and services
+        # at the core level, for example, a given core component might save
+        # data using Persistence and would like such data to be part of
+        # the project
+        self.core_persistence = dict()
+
+        # Data saved for a service using Persistence
+        self.service_persistence = dict()

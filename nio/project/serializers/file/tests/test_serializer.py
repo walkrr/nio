@@ -11,12 +11,13 @@ class TestFileSerializer(NIOTestCase):
 
     def test_serializer_defaults(self):
         """ Makes sure it uses the cwd as the default directory """
-        serializer = FileSerializer()
+        serializer = FileSerializer(self.project_dir)
         self.assertEqual(serializer._project_path, os.getcwd())
         self.assertEqual(serializer._conf_filename, 'nio.conf')
 
     def test_loads_configuration(self):
-        serializer = FileSerializer(self.project_dir, "nio.conf.test")
+        serializer = FileSerializer(self.project_dir, "nio.conf.test",
+                                    "nio.env.test")
         project = serializer.deserialize()
 
         config = project.configuration
@@ -43,7 +44,8 @@ class TestFileSerializer(NIOTestCase):
             '[[JWT_VERIFY_KEY_B64]]')
 
     def test_loads_blocks_and_services(self):
-        serializer = FileSerializer(self.project_dir, "nio.conf.test")
+        serializer = FileSerializer(self.project_dir, "nio.conf.test",
+                                    "nio.env.test")
         project = serializer.deserialize()
 
         blocks = project.blocks
@@ -60,10 +62,12 @@ class TestFileSerializer(NIOTestCase):
         self.assertFalse(services['sim_and_log'].data['auto_start'])
 
     def test_serializer_invalid_project(self):
-        serializer = FileSerializer("invalid", "nio.conf.test")
+        serializer = FileSerializer("invalid", "nio.conf.test",
+                                    "nio.env.test")
 
         with self.assertRaises(ValueError):
             serializer.deserialize()
 
         with self.assertRaises(ValueError):
-            serializer._deserialize_entities('folder_that_doesnt_exist', dict)
+            serializer._deserialize_entities('folder_that_doesnt_exist', dict,
+                                             None)
