@@ -23,8 +23,8 @@ jwt_algorithm=RS256
 
 # root directory for project configuration files
 #
-configuration_data=[[PROJECT_ROOT]]/etc
+configuration_data=etc/core_persistence
 
 # directory to store persistence files
 #
-data=[[PROJECT_ROOT]]/etc
+data=etc/services_persistence

@@ -3,13 +3,12 @@ from configparser import RawConfigParser
 
 from nio.project import Project, ConfigurationEntity, BlockEntity, ServiceEntity
 from nio.project.entity import Entity
-from nio.project.serializers.file.environment import NIOEnvironment
 from nio.project.serializers.serializer import ProjectSerializer
 from nio.util.codec import save_json, load_json, save_pickle, load_pickle
 from nio.util.logging import get_nio_logger
 
 
-class FormatSerializer(object):
+class SerializationFormat(object):
     """ Holds serialization settings for a given format
     """
     def __init__(self, allowed_extensions, extension, load, save):
@@ -25,20 +24,13 @@ class FileSerializer(ProjectSerializer):
              ("security", "users", "etc/users.json"),
              ("security", "permissions", "etc/permissions.json")]
 
-    def __init__(self, project_path=None, conf_filename="nio.conf",
-                 environment="nio.env"):
+    def __init__(self, project_path=None, conf_filename="nio.conf"):
         """ Initializes a config serializer instance
 
         Args:
             project_path (str): path to nio project location
             conf_filename (str): nio configuration file name
         """
-
-        # set environment so that when reading a configured value it becomes
-        # possible to replace it if it references an environment variable
-        NIOEnvironment.set_environment(project_path,
-                                       environment)
-
         self.logger = get_nio_logger("FileSerializer")
 
         if project_path is None:
@@ -48,12 +40,12 @@ class FileSerializer(ProjectSerializer):
         self.logger = get_nio_logger("File Project Serializer")
 
         # store in these format serializers specifics for each format
-        self._json_serializer = FormatSerializer([".cfg", ".json"], ".cfg",
-                                                 load_json, save_json)
-        self._pickle_serializer = FormatSerializer([".dat"], ".dat",
-                                                   load_pickle, save_pickle)
+        self._json_format = SerializationFormat([".cfg", ".json"], ".cfg",
+                                                load_json, save_json)
+        self._pickle_format = SerializationFormat([".dat"], ".dat",
+                                                  load_pickle, save_pickle)
 
-    def deserialize(self):
+    def deserialize(self, include_services=True):
         """ Deserializes a file n.io project to a Project instance.
 
         This method will read the files that this serializer class has been
@@ -65,114 +57,83 @@ class FileSerializer(ProjectSerializer):
                 of nio.project.Project
         """
         project = Project()
-        # figure out path to etc folder
-        etc_folder = os.path.join(self._project_path, "etc")
-        if not os.path.isdir(etc_folder):
-            raise ValueError("Expected 'etc' folder at: {} is missing".
-                             format(etc_folder))
 
-        # load nio conf first in case in the future '_load' itself depends
+        if not os.path.isdir(self._project_path):
+            raise ValueError("Folder {} does not exist".format(
+                self._project_path))
+
+        # change to project dir to account for relative paths
+        os.chdir(self._project_path)
+
+        # load nio conf first in case upcoming de-serializations depend
         # on anything we read from nio conf
         project.configuration = self._deserialize_nio_conf()
 
-        # figure out where core persistence is located at
-        try:
-            core_p_folder = \
-                project.configuration["persistence"].data["configuration_data"]
-        except KeyError:
-            print("De-serializing, could not access persistence - "
-                  "configuration_data entry, using 'etc' for backwards "
-                  "compatibility")
-            core_p_folder = etc_folder
-
-        # is core persisted data referencing an environment variable?
-        core_p_folder = NIOEnvironment.replace_setting(core_p_folder)
+        core_p_folder = self._get_core_persistence_folder(project)
 
         # add blocks
         blocks_folder = os.path.join(core_p_folder, 'blocks')
         project.blocks = \
             self._deserialize_entities(blocks_folder,
                                        BlockEntity,
-                                       self._json_serializer)
+                                       self._json_format)
 
-        # add services
         services_folder = os.path.join(core_p_folder, 'services')
-        project.services = \
-            self._deserialize_entities(services_folder,
-                                       ServiceEntity,
-                                       self._json_serializer)
+        if include_services:
+            # add services
+            project.services = \
+                self._deserialize_entities(services_folder,
+                                           ServiceEntity,
+                                           self._json_format)
 
         # deserialize core persistence
         project.core_persistence = \
             self._deserialize_persistence(core_p_folder,
                                           [blocks_folder, services_folder],
-                                          self._json_serializer)
+                                          self._json_format)
 
         # deserialize service persistence
-        try:
-            service_p_folder = \
-                project.configuration["persistence"].data["data"]
-        except KeyError:
-            print("Deserializing, could not access persistence-data entry, "
-                  "using 'etc' for backwards compatibility")
-            service_p_folder = etc_folder
-
-        # is service persisted data referencing an environment variable?
-        service_p_folder = NIOEnvironment.replace_setting(service_p_folder)
-
+        service_p_folder = self._get_service_persistence_folder(project)
         project.service_persistence = \
             self._deserialize_persistence(service_p_folder, [],
-                                          self._pickle_serializer)
+                                          self._pickle_format)
 
         return project
 
-    def serialize(self, project):
+    def serialize(self, project, include_services=True):
         """ Take the project instance and create the necessary files """
+
+        # make sure target path exists
+        if not os.path.isdir(self._project_path):
+            os.makedirs(self._project_path)
+
+        # change to project dir to account for relative paths
+        os.chdir(self._project_path)
 
         # serialize configuration
         self._serialize_nio_conf(project.configuration)
 
-        try:
-            core_p_folder = \
-                project.configuration["persistence"].data["configuration_data"]
-        except KeyError:
-            print("Serializing, could not access persistence - "
-                  "configuration_data entry, using 'etc' for backwards "
-                  "compatibility")
-            core_p_folder = os.path.join(self._project_path, "etc")
-
-        # is core persisted data referencing an environment variable?
-        core_p_folder = NIOEnvironment.replace_setting(core_p_folder)
-
-        # serialize blocks
-        self._serialize_entities(project.blocks,
-                                 os.path.join(core_p_folder, 'blocks'),
-                                 self._json_serializer)
-
-        # serialize services
-        self._serialize_entities(project.services,
-                                 os.path.join(core_p_folder, 'services'),
-                                 self._json_serializer)
+        core_p_folder = self._get_core_persistence_folder(project)
 
         # serialize core persistence
+        self._serialize_entities(project.blocks,
+                                 os.path.join(core_p_folder, 'blocks'),
+                                 self._json_format)
+
+        if include_services:
+            # serialize services
+            self._serialize_entities(project.services,
+                                     os.path.join(core_p_folder, 'services'),
+                                     self._json_format)
+
         self._serialize_entities(project.core_persistence, core_p_folder,
-                                 self._json_serializer)
+                                 self._json_format)
 
         # serialize service persistence
-        try:
-            service_p_folder = \
-                project.configuration["persistence"].data["data"]
-        except KeyError:
-            print("Serializing, could not access persistence-data entry, "
-                  "using 'etc' for backwards compatibility")
-            service_p_folder = os.path.join(self._project_path, "etc")
-
-        # is service persisted data referencing an environment variable?
-        service_p_folder = NIOEnvironment.replace_setting(service_p_folder)
-
+        service_p_folder = self._get_service_persistence_folder(project)
         self._serialize_entities(project.service_persistence,
                                  service_p_folder,
-                                 self._pickle_serializer)
+                                 self._pickle_format)
 
     def _serialize_nio_conf(self, configuration):
         """ Serializes nio configuration settings to a file
@@ -188,10 +149,6 @@ class FileSerializer(ProjectSerializer):
                              "{} will not be affected".
                              format(self._conf_filename))
             return
-
-        # make sure path where conf file will be written exists
-        if not os.path.isdir(self._project_path):
-            os.makedirs(self._project_path)
 
         # create instance where settings will be stored and written from
         settings = RawConfigParser()
@@ -224,7 +181,7 @@ class FileSerializer(ProjectSerializer):
         with open(nio_conf, 'w') as fp:
             settings.write(fp)
 
-    def _serialize_entities(self, entities, to_folder, serializer):
+    def _serialize_entities(self, entities, to_folder, ser_format):
         """ Serializes a list of entities to a folder.
 
         For example, this function can save in the 'services' folder
@@ -233,7 +190,7 @@ class FileSerializer(ProjectSerializer):
         Args:
             entities (dict): Entities to serialize with format: {name: entity}
             to_folder (str): The folder where the entities are saved
-            serializer (FormatSerializer): Format serializer
+            ser_format (SerializationFormat): Serialization format
         """
 
         if not os.path.isdir(to_folder):
@@ -244,7 +201,7 @@ class FileSerializer(ProjectSerializer):
                 # if entity is a dict, create a folder for it and
                 # save each entry as an entity
                 sub_folder = os.path.join(to_folder, entity_name)
-                self._serialize_entities(entity, sub_folder, serializer)
+                self._serialize_entities(entity, sub_folder, ser_format)
             elif not isinstance(entity, Entity):
                 self.logger.warning('{} is not an entity, ignoring it'.
                                     format(entity_name))
@@ -253,10 +210,9 @@ class FileSerializer(ProjectSerializer):
                 # create filename to serialize to
                 filename = \
                     os.path.join(to_folder, "{}{}".format(entity_name,
-                                                          serializer.extension))
-
+                                                          ser_format.extension))
                 try:
-                    serializer.save(filename, entity.data)
+                    ser_format.save(filename, entity.data)
                 except Exception:
                     # log exception and continue handling entities
                     self.logger.exception("Could not save entity data for: {}".
@@ -342,7 +298,7 @@ class FileSerializer(ProjectSerializer):
 
         return configuration
 
-    def _deserialize_entities(self, from_folder, entity_type, serializer):
+    def _deserialize_entities(self, from_folder, entity_type, ser_format):
         """ Returns a list of entities loaded from a folder.
 
         For example, this function can look through the services/ folder
@@ -351,7 +307,7 @@ class FileSerializer(ProjectSerializer):
         Args:
             from_folder: The folder where the entity configurations are
             entity_type: A class to deserialize the configs in to
-            serializer (FormatSerializer): Format serializer
+            ser_format (SerializationFormat): Serialization format
 
         Returns:
             entities (dict): A dict of entity type instances, keyed off of
@@ -359,24 +315,22 @@ class FileSerializer(ProjectSerializer):
         """
 
         entities = dict()
-        if not os.path.isdir(from_folder):
-            raise ValueError("Folder {} does not exist".format(from_folder))
-
-        for f in os.listdir(from_folder):
-            key, entity = self._deserialize_entity(from_folder, f, entity_type,
-                                                   serializer)
-            if key and entity:
-                entities[key] = entity
+        if os.path.isdir(from_folder):
+            for f in os.listdir(from_folder):
+                key, entity = self._deserialize_entity(from_folder, f,
+                                                       entity_type, ser_format)
+                if key and entity:
+                    entities[key] = entity
 
         return entities
 
-    def _deserialize_persistence(self, folder, excluded, serializer):
+    def _deserialize_persistence(self, folder, excluded, ser_format):
         """ Deserializes persistence data
 
         Args:
             folder (str): folder where persistence data resides
             excluded (list): list of sub-folders to exclude
-            serializer (FormatSerializer): Format serializer
+            ser_format (SerializationFormat): Serialization format
 
         Returns:
             dictionary containing persistence data
@@ -389,35 +343,35 @@ class FileSerializer(ProjectSerializer):
                     continue
                 data[f] = self._deserialize_persistence(subdir,
                                                         excluded,
-                                                        serializer)
+                                                        ser_format)
             else:
                 key, entity = self._deserialize_entity(folder, f,
-                                                       Entity, serializer)
+                                                       Entity, ser_format)
                 if key and entity:
                     data[key] = entity
 
         return data
 
-    def _deserialize_entity(self, folder, file, entity_type, serializer):
+    def _deserialize_entity(self, folder, file, entity_type, ser_format):
         """ Deserializes an entity
 
         Args:
             folder: folder where entity exists
             file: entity's file name
             entity_type: Entity type
-            serializer: Format serializer
+            ser_format (SerializationFormat): Serialization format
 
         Returns:
             tuple containing (Key, Entity)
         """
         # grab extension and make sure it is one to process
         filename, extension = os.path.splitext(file)
-        if extension in serializer.allowed_extensions:
+        if extension in ser_format.allowed_extensions:
             try:
                 # return tuple containing:
                 # (filename without extension, actual entity instance)
                 return filename, entity_type(
-                    serializer.load(os.path.join(folder, file)))
+                    ser_format.load(os.path.join(folder, file)))
             except Exception:
                 # handle json file errors
                 self.logger.exception("Could not load entity data for: {}".
@@ -449,3 +403,24 @@ class FileSerializer(ProjectSerializer):
                     self.logger.exception(
                         "Could not load {} as json".
                         format(potential_link))  # pragma: no cover
+
+    def _get_core_persistence_folder(self, project):
+        try:
+            core_p_folder = \
+                project.configuration["persistence"].data["configuration_data"]
+        except KeyError:
+            # if entry is not defined, have 'etc' as fallback
+            core_p_folder = os.path.join(self._project_path, "etc")
+
+        return core_p_folder
+
+    def _get_service_persistence_folder(self, project):
+        try:
+            service_p_folder = \
+                project.configuration["persistence"].data["data"]
+        except KeyError:
+            # if entry is not defined, have 'etc/persist' as fallback
+            service_p_folder = os.path.join(self._project_path,
+                                            "etc", "persist")
+
+        return service_p_folder

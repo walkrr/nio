@@ -237,3 +237,21 @@ class TestSerialize(NIOTestCase):
         for entity_name, entity in project1.services.items():
             self.assertDictEqual(entity.data,
                                  project2.services[entity_name].data)
+
+    def test_services_exclusion(self):
+        """ Asserts services exclusion during serialization
+        """
+
+        project1 = Project()
+        project1.services["service1"] = ServiceEntity({"name": "service1"})
+
+        serializer1 = FileSerializer(self.tmp_project_dir)
+        serializer1.serialize(project1, include_services=False)
+
+        # create a new instance to deserialize and compare
+        serializer2 = FileSerializer(self.tmp_project_dir)
+        project2 = serializer2.deserialize()
+
+        # assert no services were deserialized since they were not serialized
+        # in the first place
+        self.assertEqual(len(project2.services), 0)

@@ -11,13 +11,12 @@ class TestFileSerializer(NIOTestCase):
 
     def test_serializer_defaults(self):
         """ Makes sure it uses the cwd as the default directory """
-        serializer = FileSerializer(self.project_dir)
+        serializer = FileSerializer()
         self.assertEqual(serializer._project_path, os.getcwd())
         self.assertEqual(serializer._conf_filename, 'nio.conf')
 
     def test_loads_configuration(self):
-        serializer = FileSerializer(self.project_dir, "nio.conf.test",
-                                    "nio.env.test")
+        serializer = FileSerializer(self.project_dir, "nio.conf.test")
         project = serializer.deserialize()
 
         config = project.configuration
@@ -44,8 +43,7 @@ class TestFileSerializer(NIOTestCase):
             '[[JWT_VERIFY_KEY_B64]]')
 
     def test_loads_blocks_and_services(self):
-        serializer = FileSerializer(self.project_dir, "nio.conf.test",
-                                    "nio.env.test")
+        serializer = FileSerializer(self.project_dir, "nio.conf.test")
         project = serializer.deserialize()
 
         blocks = project.blocks
@@ -61,13 +59,13 @@ class TestFileSerializer(NIOTestCase):
         # And that their config came along correctly
         self.assertFalse(services['sim_and_log'].data['auto_start'])
 
+        # exclude services this time
+        project = serializer.deserialize(include_services=False)
+        # Make sure no services were de-serialized
+        self.assertEqual(len(project.services), 0)
+
     def test_serializer_invalid_project(self):
-        serializer = FileSerializer("invalid", "nio.conf.test",
-                                    "nio.env.test")
+        serializer = FileSerializer("invalid", "nio.conf.test")
 
         with self.assertRaises(ValueError):
             serializer.deserialize()
-
-        with self.assertRaises(ValueError):
-            serializer._deserialize_entities('folder_that_doesnt_exist', dict,
-                                             None)
