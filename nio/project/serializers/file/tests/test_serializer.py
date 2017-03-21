@@ -9,6 +9,15 @@ class TestFileSerializer(NIOTestCase):
 
     project_dir = os.path.join(os.path.dirname(__file__), "test_project")
 
+    def setUp(self):
+        super().setUp()
+        self.prev_dir = os.getcwd()
+
+    def tearDown(self):
+        # file serialization internally does chdir, better to restore it
+        os.chdir(self.prev_dir)
+        super().tearDown()
+
     def test_serializer_defaults(self):
         """ Makes sure it uses the cwd as the default directory """
         serializer = FileSerializer()

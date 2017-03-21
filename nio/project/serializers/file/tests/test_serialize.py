@@ -18,11 +18,14 @@ class TestSerialize(NIOTestCase):
         super().setUp()
         # create a tmp directory where serialized project will reside
         self.tmp_project_dir = tempfile.mkdtemp()
+        self.prev_dir = os.getcwd()
 
     def tearDown(self):
         # at the end of each test, make sure tmp folder/subfolders are removed
         if os.path.isdir(self.tmp_project_dir):
             shutil.rmtree(self.tmp_project_dir)
+        # file serialization internally does chdir, better to restore it
+        os.chdir(self.prev_dir)
         super().tearDown()
 
     def test_non_existent_project_dir(self):
