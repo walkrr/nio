@@ -6,7 +6,6 @@ from unittest.mock import Mock
 
 from nio.project import BlockEntity, ConfigurationEntity, Project, ServiceEntity
 from nio.testing import NIOTestCase
-
 from ..serializer import FileSerializer
 
 
@@ -18,11 +17,14 @@ class TestSerialize(NIOTestCase):
         super().setUp()
         # create a tmp directory where serialized project will reside
         self.tmp_project_dir = tempfile.mkdtemp()
+        self.prev_dir = os.getcwd()
 
     def tearDown(self):
         # at the end of each test, make sure tmp folder/subfolders are removed
         if os.path.isdir(self.tmp_project_dir):
             shutil.rmtree(self.tmp_project_dir)
+        # file serialization internally does chdir, better to restore it
+        os.chdir(self.prev_dir)
         super().tearDown()
 
     def test_non_existent_project_dir(self):
@@ -227,13 +229,34 @@ class TestSerialize(NIOTestCase):
         project1.services["service1"] = ServiceEntity({"name": "service1"})
 
         serializer1 = FileSerializer(self.tmp_project_dir)
-        serializer1.serialize(project1)
+        serializer1.serialize(project1, include_services=True)
 
         # create a new instance to deserialize and compare
         serializer2 = FileSerializer(self.tmp_project_dir)
-        project2 = serializer2.deserialize()
+        project2 = serializer2.deserialize(include_services=True)
 
         # iterate through project1 and make sure project2 data matches it
         for entity_name, entity in project1.services.items():
             self.assertDictEqual(entity.data,
                                  project2.services[entity_name].data)
+
+    def test_services_exclusion(self):
+        """ Asserts services exclusion during serialization
+        """
+
+        project1 = Project()
+        project1.services["service1"] = ServiceEntity({"name": "service1"})
+
+        serializer1 = FileSerializer(self.tmp_project_dir)
+        serializer1.serialize(project1, include_services=False)
+
+        # create a new instance to deserialize and compare
+        serializer2 = FileSerializer(self.tmp_project_dir)
+
+        # including or not services here makes no difference since
+        # services were not serialized in the first place
+        project2 = serializer2.deserialize(include_services=True)
+
+        # assert no services were deserialized since they were not serialized
+        # in the first place
+        self.assertEqual(len(project2.services), 0)

@@ -12,10 +12,10 @@ class ProjectSerializer(object):
     the same project.
     """
 
-    def serialize(self, project):
+    def serialize(self, project, include_services=False):
         """ Take a project and serialize it to some state.
 
-        This method is inteded to be implemented in subclassed Serializers.
+        This method is intended to be implemented in subclassed Serializers.
         It will be passed an instance of a nio.project.Project class and
         it should convert that instance to its serialized version. For example,
         a file based serializer would take a Project instance and create the
@@ -23,13 +23,14 @@ class ProjectSerializer(object):
 
         Args:
             project (Project): An instance of a n.io project
+            include_services (bool): Specifies if services are serialized
 
         Returns:
             None
         """
         raise NotImplementedError
 
-    def deserialize(self):
+    def deserialize(self, include_services=False):
         """ Create a Project instance from this serializer.
 
         This method should be implemented in subclassed Serializers. It should
@@ -37,6 +38,10 @@ class ProjectSerializer(object):
         representative of the project in the serialized state. For example,
         a file based project serializer would read the file system and parse
         the data into the Project class.
+
+        Args:
+            project (Project): An instance of a n.io project
+            include_services (bool): Specifies if services are de-serialized
 
         Returns:
             project (Project): An instance of a n.io project
