@@ -6,7 +6,6 @@ from unittest.mock import Mock
 
 from nio.project import BlockEntity, ConfigurationEntity, Project, ServiceEntity
 from nio.testing import NIOTestCase
-
 from ..serializer import FileSerializer
 
 
@@ -230,11 +229,11 @@ class TestSerialize(NIOTestCase):
         project1.services["service1"] = ServiceEntity({"name": "service1"})
 
         serializer1 = FileSerializer(self.tmp_project_dir)
-        serializer1.serialize(project1)
+        serializer1.serialize(project1, include_services=True)
 
         # create a new instance to deserialize and compare
         serializer2 = FileSerializer(self.tmp_project_dir)
-        project2 = serializer2.deserialize()
+        project2 = serializer2.deserialize(include_services=True)
 
         # iterate through project1 and make sure project2 data matches it
         for entity_name, entity in project1.services.items():
@@ -253,7 +252,10 @@ class TestSerialize(NIOTestCase):
 
         # create a new instance to deserialize and compare
         serializer2 = FileSerializer(self.tmp_project_dir)
-        project2 = serializer2.deserialize()
+
+        # including or not services here makes no difference since
+        # services were not serialized in the first place
+        project2 = serializer2.deserialize(include_services=True)
 
         # assert no services were deserialized since they were not serialized
         # in the first place

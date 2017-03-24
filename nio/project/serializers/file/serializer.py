@@ -45,7 +45,7 @@ class FileSerializer(ProjectSerializer):
         self._pickle_format = SerializationFormat([".dat"], ".dat",
                                                   load_pickle, save_pickle)
 
-    def deserialize(self, include_services=True):
+    def deserialize(self, include_services=False):
         """ Deserializes a file n.io project to a Project instance.
 
         This method will read the files that this serializer class has been
@@ -100,7 +100,7 @@ class FileSerializer(ProjectSerializer):
 
         return project
 
-    def serialize(self, project, include_services=True):
+    def serialize(self, project, include_services=False):
         """ Take the project instance and create the necessary files """
 
         # make sure target path exists

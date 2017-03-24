@@ -1,7 +1,6 @@
 import os
 
 from nio.testing import NIOTestCase
-
 from ..serializer import FileSerializer
 
 
@@ -53,7 +52,7 @@ class TestFileSerializer(NIOTestCase):
 
     def test_loads_blocks_and_services(self):
         serializer = FileSerializer(self.project_dir, "nio.conf.test")
-        project = serializer.deserialize()
+        project = serializer.deserialize(include_services=True)
 
         blocks = project.blocks
         services = project.services

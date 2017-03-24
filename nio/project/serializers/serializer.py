@@ -30,7 +30,7 @@ class ProjectSerializer(object):
         """
         raise NotImplementedError
 
-    def deserialize(self, include_services=True):
+    def deserialize(self, include_services=False):
         """ Create a Project instance from this serializer.
 
         This method should be implemented in subclassed Serializers. It should
