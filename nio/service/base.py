@@ -58,7 +58,7 @@ class Service(PropertyHolder, CommandHolder, Runner):
     name = StringProperty(title="Name")
 
     # indicates whether service is to be started when nio starts
-    auto_start = BoolProperty(title="Auto Start", default=False)
+    auto_start = BoolProperty(title="Auto Start", default=True)
     # indicates the logging level
     log_level = SelectProperty(LogLevel, title="Log Level", default="NOTSET")
 
