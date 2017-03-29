@@ -45,12 +45,16 @@ class FileSerializer(ProjectSerializer):
         self._pickle_format = SerializationFormat([".dat"], ".dat",
                                                   load_pickle, save_pickle)
 
-    def deserialize(self, include_services=False):
+    def deserialize(self, service_persistence=False):
         """ Deserializes a file n.io project to a Project instance.
 
         This method will read the files that this serializer class has been
         configured with and return a Project instance based on the structure
         and configuration of the files.
+
+        Args:
+            service_persistence (bool): Specifies if service persistence data 
+                is de-serialized
 
         Returns:
             project (Project): A representation of this project as an instance
@@ -79,12 +83,11 @@ class FileSerializer(ProjectSerializer):
                                        self._json_format)
 
         services_folder = os.path.join(core_p_folder, 'services')
-        if include_services:
-            # add services
-            project.services = \
-                self._deserialize_entities(services_folder,
-                                           ServiceEntity,
-                                           self._json_format)
+        # add services
+        project.services = \
+            self._deserialize_entities(services_folder,
+                                       ServiceEntity,
+                                       self._json_format)
 
         # deserialize core persistence
         project.core_persistence = \
@@ -92,16 +95,23 @@ class FileSerializer(ProjectSerializer):
                                           [blocks_folder, services_folder],
                                           self._json_format)
 
-        # deserialize service persistence
-        service_p_folder = self._get_service_persistence_folder(project)
-        project.service_persistence = \
-            self._deserialize_persistence(service_p_folder, [],
-                                          self._pickle_format)
+        if service_persistence:
+            # deserialize service persistence
+            service_p_folder = self._get_service_persistence_folder(project)
+            project.service_persistence = \
+                self._deserialize_persistence(service_p_folder, [],
+                                              self._pickle_format)
 
         return project
 
-    def serialize(self, project, include_services=False):
-        """ Take the project instance and create the necessary files """
+    def serialize(self, project, service_persistence=False):
+        """ Take the project instance and create the necessary files 
+
+        Args:
+            project (Project): configuration to serialize
+            service_persistence (bool): Specifies if service persistence data 
+                is serialized
+        """
 
         # make sure target path exists
         if not os.path.isdir(self._project_path):
@@ -120,20 +130,20 @@ class FileSerializer(ProjectSerializer):
                                  os.path.join(core_p_folder, 'blocks'),
                                  self._json_format)
 
-        if include_services:
-            # serialize services
-            self._serialize_entities(project.services,
-                                     os.path.join(core_p_folder, 'services'),
-                                     self._json_format)
+        # serialize services
+        self._serialize_entities(project.services,
+                                 os.path.join(core_p_folder, 'services'),
+                                 self._json_format)
 
         self._serialize_entities(project.core_persistence, core_p_folder,
                                  self._json_format)
 
-        # serialize service persistence
-        service_p_folder = self._get_service_persistence_folder(project)
-        self._serialize_entities(project.service_persistence,
-                                 service_p_folder,
-                                 self._pickle_format)
+        if service_persistence:
+            # serialize service persistence
+            service_p_folder = self._get_service_persistence_folder(project)
+            self._serialize_entities(project.service_persistence,
+                                     service_p_folder,
+                                     self._pickle_format)
 
     def _serialize_nio_conf(self, configuration):
         """ Serializes nio configuration settings to a file
@@ -336,14 +346,19 @@ class FileSerializer(ProjectSerializer):
             dictionary containing persistence data
         """
         data = {}
+        if not os.path.isdir(folder):
+            return data
+
         for f in os.listdir(folder):
             subdir = os.path.join(folder, f)
             if os.path.isdir(subdir):
                 if subdir in excluded:
                     continue
-                data[f] = self._deserialize_persistence(subdir,
-                                                        excluded,
-                                                        ser_format)
+                result = self._deserialize_persistence(subdir,
+                                                       excluded,
+                                                       ser_format)
+                if result:
+                    data[f] = result
             else:
                 key, entity = self._deserialize_entity(folder, f,
                                                        Entity, ser_format)
