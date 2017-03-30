@@ -1,10 +1,9 @@
 import inspect
-from copy import deepcopy
 from collections import Iterable
+from copy import deepcopy
 
-from nio.util.logging import get_nio_logger
-from nio.util.runner import Runner, RunnerStatus
 from nio.signal.base import Signal
+from nio.util.runner import Runner, RunnerStatus
 
 
 class BlockRouterNotStarted(Exception):
@@ -74,8 +73,7 @@ class BlockRouter(Runner):
 
     def __init__(self):
         """ Create a new block router instance """
-
-        self.logger = get_nio_logger('BlockRouter')
+        # Parent class Runner creates logger for class
         super().__init__(
             status_change_callback=self._on_status_change_callback)
 
