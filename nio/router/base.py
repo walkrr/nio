@@ -317,6 +317,11 @@ class BlockRouter(Runner):
                                          "block: {}".format(block.name()),
                                          exc_info=True)
 
+                    self.logger.debug(
+                        "Routing {} signals from {} to {}".format(
+                            len(signals_to_send),
+                            block.name(),
+                            receiver_data.block.name()))
                     self.deliver_signals(receiver_data, signals_to_send)
 
         elif self.status.is_set(RunnerStatus.stopped):
