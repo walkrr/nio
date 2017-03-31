@@ -1,7 +1,7 @@
 import os
 
+from nio.project.serializers.file.serializer import FileSerializer
 from nio.testing import NIOTestCase
-from ..serializer import FileSerializer
 
 
 class TestFileSerializer(NIOTestCase):
@@ -52,7 +52,7 @@ class TestFileSerializer(NIOTestCase):
 
     def test_loads_blocks_and_services(self):
         serializer = FileSerializer(self.project_dir, "nio.conf.test")
-        project = serializer.deserialize(include_services=True)
+        project = serializer.deserialize()
 
         blocks = project.blocks
         services = project.services
@@ -66,11 +66,6 @@ class TestFileSerializer(NIOTestCase):
         self.assertIn("sim_and_log", services)
         # And that their config came along correctly
         self.assertFalse(services['sim_and_log'].data['auto_start'])
-
-        # exclude services this time
-        project = serializer.deserialize(include_services=False)
-        # Make sure no services were de-serialized
-        self.assertEqual(len(project.services), 0)
 
     def test_serializer_invalid_project(self):
         serializer = FileSerializer("invalid", "nio.conf.test")

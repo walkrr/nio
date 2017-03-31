@@ -12,7 +12,7 @@ class ProjectSerializer(object):
     the same project.
     """
 
-    def serialize(self, project, include_services=False):
+    def serialize(self, project, service_persistence=False):
         """ Take a project and serialize it to some state.
 
         This method is intended to be implemented in subclassed Serializers.
@@ -23,14 +23,15 @@ class ProjectSerializer(object):
 
         Args:
             project (Project): An instance of a n.io project
-            include_services (bool): Specifies if services are serialized
+            service_persistence (bool): Specifies if service persistence data 
+                is serialized
 
         Returns:
             None
         """
         raise NotImplementedError
 
-    def deserialize(self, include_services=False):
+    def deserialize(self, service_persistence=False):
         """ Create a Project instance from this serializer.
 
         This method should be implemented in subclassed Serializers. It should
@@ -41,7 +42,8 @@ class ProjectSerializer(object):
 
         Args:
             project (Project): An instance of a n.io project
-            include_services (bool): Specifies if services are de-serialized
+            service_persistence (bool): Specifies if service persistence data
+                is de-serialized
 
         Returns:
             project (Project): An instance of a n.io project
