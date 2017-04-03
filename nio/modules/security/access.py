@@ -6,6 +6,7 @@
 
 """
 import threading
+
 from nio.modules.security import Authorizer, SecureTask
 from nio.modules.security import User
 
@@ -23,6 +24,12 @@ def set_user(user):
     """ Sets current user
     """
     setattr(threading.current_thread(), "user", user)
+
+
+def clear_user():
+    """ Clears current user
+    """
+    delattr(threading.current_thread(), "user")
 
 
 def has_access(resource, permission):
