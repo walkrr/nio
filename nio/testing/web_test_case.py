@@ -3,10 +3,10 @@
 
 """
 import json
-import threading
 
 import requests
 
+from nio.modules.security.access import set_user, clear_user
 from nio.modules.security.user import User
 from nio.modules.web import WebEngine
 from nio.testing.test_case import NIOTestCase
@@ -46,10 +46,10 @@ class NIOWebTestCase(NIOTestCase):
     def setUp(self):
         super().setUp()
         self.servers = []
-        setattr(threading.current_thread(), "user", User("tester"))
+        set_user(User("tester"))
 
     def tearDown(self):
-        delattr(threading.current_thread(), "user")
+        clear_user()
         for server in list(self.servers):
             self.remove_server(server)
         super().tearDown()
