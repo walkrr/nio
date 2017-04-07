@@ -56,3 +56,12 @@ class Request(ModuleProxy):
 
         """
         raise NotImplementedError()
+
+    def get_method(self):
+        """ Retrieves request method
+
+        Returns:
+            Request method
+
+        """
+        raise NotImplementedError()
