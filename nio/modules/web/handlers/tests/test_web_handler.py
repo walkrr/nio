@@ -29,7 +29,7 @@ class MyWebHandler(WebHandler):
 class TestWebHandler(NIOWebTestCase):
 
     def test_non_preflight_request(self):
-        """ Asserts that a GET request goes is authenticated by default        
+        """ Asserts that requests other than pre-flight are authenticated        
         """
         web_handler = MyWebHandler("/")
         methods = ["GET", "POST", "PUT", "DELETE"]
