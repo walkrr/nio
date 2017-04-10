@@ -12,6 +12,9 @@ class TestingRequest(object):
     def get_headers(self):
         return {}
 
+    def get_method(self):
+        return "UNKNOWN"
+
 
 class TestingResponse(object):
 

@@ -41,6 +41,10 @@ class WebHandler(object):
         Raises:
             Unauthorized: If it cannot determine the user making the request
         """
+        if request.get_method() == 'OPTIONS':
+            # pre-flight requests do not contain security info
+            return
+
         set_user(Authenticator.authenticate(request))
 
     def handle(self, request, response):
