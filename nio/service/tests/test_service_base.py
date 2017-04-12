@@ -1,4 +1,5 @@
 from unittest.mock import Mock, patch
+
 from nio import Block
 from nio.properties.exceptions import AllowNoneViolation
 from nio.router.base import BlockRouter
@@ -200,3 +201,20 @@ class TestBaseService(NIOTestCaseNoModules):
         my_sig = Signal({"key": "val"})
         service.mgmt_signal_handler(my_sig)
         service_mgmt_signal_handler.assert_called_once_with(my_sig)
+
+    def test_failed_start(self):
+        """Test service start failure"""
+        context = ServiceContext({"name": "TestFailedStart"},
+                                 [],
+                                 BlockRouter)
+
+        service = Service()
+        service.configure(context)
+
+        service.start = Mock(side_effect=Exception())
+        with self.assertRaises(Exception):
+            service.do_start()
+
+        service.start.assert_called_once_with()
+        self.assertIn('error', str(service.status).split(', '))
+        service.stop()
