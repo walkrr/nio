@@ -1,6 +1,7 @@
 import json
 import os
-import pickle
+
+from safepickle import safepickle as pickle
 
 
 def load_json(path):
@@ -43,7 +44,7 @@ def load_pickle(path):
     """
     data = {}
     if os.path.isfile(path):
-        with open(path, 'rb') as f:
+        with open(path, 'r') as f:
             data = pickle.load(f)
     return data
 
@@ -56,5 +57,5 @@ def save_pickle(path, data):
         data (dict): data to save
 
     """
-    with open(path, 'wb+') as f:
+    with open(path, 'w+') as f:
         pickle.dump(data, f)
