@@ -1,5 +1,7 @@
 # n.io Framework (Python)
 
+[![PyPI version](https://badge.fury.io/py/nio.svg)](https://badge.fury.io/py/nio)
+
 A Python framework for developing n.io blocks and modules.
 
 ## Installation
