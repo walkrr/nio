@@ -1,10 +1,12 @@
-from time import sleep
 from threading import Event
+from time import sleep
+
 from nio.block.base import Block
 from nio.block.context import BlockContext
 from nio.block.terminals import DEFAULT_TERMINAL
-from nio.service.base import BlockExecution
 from nio.router.context import RouterContext
+from nio.service.base import BlockExecution
+from nio.testing.condition import ensure_condition
 from nio.testing.test_case import NIOTestCase
 
 
@@ -74,12 +76,16 @@ class TestThreadedRouter(NIOTestCase):
         self.assertFalse(receiver_block.signal_received.is_set())
 
         sender_block.process_signals(signals)
-        # We should still have nothing, it will take half a second for the
-        # event to be set. But our thread will continue execution
+        # Asserting that signal has not been received, (since it would take
+        # half a second for the event to be set, see above 'process_signals'
+        # 'sleep' call) yet this thread has continued its execution
         self.assertFalse(receiver_block.signal_received.is_set())
 
-        # Wait up to one second, but we don't expect the timeout to occur
-        self.assertTrue(receiver_block.signal_received.wait(1))
+        # Wait until signal is received
+        ensure_condition(self._signal_is_received, receiver_block)
         self.assertTrue(receiver_block.signal_received.is_set())
 
         block_router.do_stop()
+
+    def _signal_is_received(self, receiver_block):
+        return receiver_block.signal_received.is_set()

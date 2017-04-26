@@ -1,34 +1,50 @@
-from time import sleep
+from time import time
 
-from nio.util.threading import spawn
-from nio.util.cache import Cache
+from nio.testing.condition import ensure_condition
 from nio.testing.test_case import NIOTestCase
+from nio.util.cache import Cache
+from nio.util.threading import spawn
 
 
 class TestCache(NIOTestCase):
 
+    def _item_get(self, cache, key, result):
+        return cache.get(key) == result
+
     def test_add(self):
         """ Adding an item that overrides duration """
-        cache = Cache(0.5)
 
+        cache_duration = 5
+        cache = Cache(cache_duration)
         key = 1
         item = "1"
         self.assertIsNone(cache.get(key))
-        cache.add(key, item, duration=0.1)
+
+        override_duration = 0.1
+        t1 = time()
+        cache.add(key, item, duration=override_duration)
         self.assertEqual(cache.get(key), item)
-        sleep(0.15)
+
+        ensure_condition(self._item_get, cache, key, None)
+        t2 = time()
+        self.assertGreaterEqual(t2, t1+override_duration)
+        self.assertLess(t2, t1+cache_duration)
         self.assertIsNone(cache.get(key))
 
     def test_duration_not_specified(self):
         """ Adding an item that does not specifies duration """
-        cache = Cache(0.1)
+        cache_duration = 0.1
+        cache = Cache(cache_duration)
 
         key = 1
         item = "1"
         self.assertIsNone(cache.get(key))
+        t1 = time()
         cache.add(key, item)
         self.assertEqual(cache.get(key), item)
-        sleep(0.15)
+        ensure_condition(self._item_get, cache, key, None)
+        t2 = time()
+        self.assertGreaterEqual(t2, t1+cache_duration)
         self.assertIsNone(cache.get(key))
 
     def test_no_duration(self):
@@ -62,21 +78,26 @@ class TestCache(NIOTestCase):
         self.assertEqual(cache.get("not existant", "default to be retrieved"),
                          "default to be retrieved")
 
+    def _length_equals(self, item, value):
+        return len(item) == value
+
     def test_multithreading(self):
         """ Verifies that adding from multiple threads keeps results as expected
         """
+        cache_duration = 0.2
+        t1 = time()
         num_threads = 20
-        cache = Cache(0.2)
+        cache = Cache(cache_duration)
         for i in range(num_threads):
             spawn(cache.add, "key{0}".format(i), i)
-        sleep(0.1)
+        ensure_condition(self._length_equals, cache._cache, num_threads)
         # assert all items are in cache, and with the right values
         self.assertEqual(len(cache._cache), num_threads)
         for i in range(num_threads):
             self.assertEqual(cache.get("key{0}".format(i)), i)
-        # allow items to expire
-        sleep(0.15)
         # assert all items expired
+        ensure_condition(self._length_equals, cache._cache, 0)
+        self.assertGreaterEqual(time(), t1+cache_duration)
         self.assertEqual(len(cache._cache), 0)
 
     def test_adding_same_key(self):
@@ -88,8 +109,7 @@ class TestCache(NIOTestCase):
         item = "1"
         cache.add(key, item)
         self.assertEqual(cache.get(key), item)
-        sleep(0.3)
         item = "2"
         cache.add(key, item)
-        sleep(0.3)
         self.assertEqual(cache.get(key), item)
+        self.assertEqual(len(cache._cache), 1)

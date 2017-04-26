@@ -1,8 +1,9 @@
 from datetime import timedelta
 from threading import RLock
 
-from nio.testing.modules.scheduler.scheduler import JumpAheadScheduler
 from nio.modules.scheduler.job import Job
+from nio.testing.condition import ensure_condition
+from nio.testing.modules.scheduler.scheduler import JumpAheadScheduler
 from nio.testing.test_case import NIOTestCase
 
 
@@ -77,16 +78,21 @@ class TestSchedulerCleanUp(NIOTestCase):
 
         # jump forward in time (give ample time for jobs to be cancelled)
         jobs[0].jump_ahead(num_jobs/10)
-        # wait some to make sure job cancellations are cancelled since
+        # ensure condition to make sure job cancellations are cancelled since
         # job tasks are launched asynchronously
-        from time import sleep
-        sleep(0.1)
-
         # verify that nothing remains
+        ensure_condition(self._check_scheduler_events_length, scheduler, 0)
+        self.assertEqual(len(scheduler._events), 0)
+        ensure_condition(self._check_scheduler_queue_length, scheduler, 0)
+        self.assertEqual(len(scheduler._queue), 0)
+
+    def _check_scheduler_events_length(self, scheduler, count):
         with scheduler._events_lock:
-            self.assertEqual(len(scheduler._events), 0)
+            return len(scheduler._events) == count
+
+    def _check_scheduler_queue_length(self, scheduler, count):
         with scheduler._queue_lock:
-            self.assertEqual(len(scheduler._queue), 0)
+            return len(scheduler._queue) == count
 
     def _cancelling_callback(self, jobs, i, scheduler):
         jobs[i].cancel()

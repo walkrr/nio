@@ -1,6 +1,6 @@
-from time import sleep
 from threading import Event
 
+from nio.testing.condition import ensure_condition
 from nio.testing.test_case import NIOTestCaseNoModules
 from nio.util.threading import spawn
 
@@ -79,7 +79,8 @@ class TestSpawn(NIOTestCaseNoModules):
         """
         thread = spawn(self.throw_exception, "arg1", kwarg1="2")
         # allow time for thread to execute
-        sleep(0.01)
+        ensure_condition(self.exception_was_thrown)
+
         self.assertTrue(self._exception_thrown)
         self.assertIsNotNone(thread.nio_exception)
 
@@ -104,3 +105,6 @@ class TestSpawn(NIOTestCaseNoModules):
     def throw_exception(self, *args, **kwargs):
         self._exception_thrown = True
         raise MyException(*args, **kwargs)
+
+    def exception_was_thrown(self):
+        return self._exception_thrown
