@@ -1,14 +1,14 @@
 import heapq
-from uuid import uuid4
+from collections import namedtuple
 from datetime import timedelta
 from threading import Event, RLock
-from time import time
-from collections import namedtuple
+from time import monotonic
+from uuid import uuid4
 
 from nio.modules.module import ModuleNotInitialized
 from nio.util.logging import get_nio_logger
-from nio.util.threading import spawn
 from nio.util.runner import RunnerStatus, Runner
+from nio.util.threading import spawn
 
 QueueEvent = namedtuple('Event', 'time, id, target, frequency, args, kwargs')
 
@@ -236,7 +236,9 @@ class SchedulerRunner(Runner):
     def _get_time(self):
         """ Time retrieval method to use when comparing against event time
         """
-        return time()
+        # Use a clock that cannot go backwards.
+        # This clock is not affected by system clock updates
+        return monotonic()
 
 # Singleton reference to a scheduler
 Scheduler = SchedulerRunner()
