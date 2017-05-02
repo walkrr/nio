@@ -196,21 +196,15 @@ class PropertyHolder(object):
         name = properties.get("name", "")
         try:
             self._handle_versions(class_properties, properties)
-        except NoClassVersion:
-            if logger:
-                logger.warning('Class: {0} does not contain version info'.
-                               format(self.__class__.__name__))
-        except NoInstanceVersion as e:
-            if logger:
-                logger.warning('Instance {0} of class: {1} does not contain '
-                               'version info, class version: {2}'.
-                               format(name, self.__class__.__name__,
-                                      e.class_version))
         except OlderThanMinVersion as e:
             if logger:
                 logger.warning('Instance {0} version: {1} is older than'
                                ' minimum: {2}'.format
                                (name, e.instance_version, e.min_version))
+        except (NoClassVersion, NoInstanceVersion):
+            # pass on classes with no version info.
+            # pass on instances with no version info in their config.
+            pass
 
     def _handle_versions(self, class_properties, instance_properties):
         """ Raise version exceptions based on instance config.
