@@ -101,7 +101,8 @@ class GroupBy(CommandHolder):
         """
         output_sigs = self.for_each_group(
             self.process_group_signals, signals, input_id)
-        self.notify_signals(output_sigs)
+        if output_sigs:
+            self.notify_signals(output_sigs)
 
     def process_group_signals(self, signals, group, input_id=None):
         """Implement this method to make use of the default behavior.
