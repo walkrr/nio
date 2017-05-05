@@ -1,12 +1,12 @@
-from time import sleep
 from unittest.mock import Mock, patch
 
 from nio import Signal
 from nio.block.base import Block
 from nio.block.context import BlockContext
 from nio.block.terminals import DEFAULT_TERMINAL
-from nio.service.base import BlockExecution
 from nio.router.context import RouterContext
+from nio.service.base import BlockExecution
+from nio.testing.condition import ensure_condition
 from nio.testing.test_case import NIOTestCase
 from nio.util.runner import RunnerStatus
 
@@ -70,12 +70,16 @@ class TestThreadedRouter(NIOTestCase):
             sender_block.process_signals(Signal({}))
 
             # asynchronous routers need time to process signals
-            sleep(0.1)
+            ensure_condition(self._router_in_status,
+                             block_router, RunnerStatus.error)
             # assert that router status changed and an exception was logged
             self.assertTrue(block_router.status.is_set(RunnerStatus.error))
             self.assertTrue(logger_mock.exception.called)
 
         block_router.do_stop()
+
+    def _router_in_status(self, router, status):
+        return router.status.is_set(status)
 
     def test_base_router_process_signals_exception(self):
         """Checking that the thread pool executor version of the router logs

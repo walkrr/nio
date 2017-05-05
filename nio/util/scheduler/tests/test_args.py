@@ -1,7 +1,7 @@
 from datetime import timedelta
-from time import sleep
 
 from nio.modules.scheduler.job import Job
+from nio.testing.condition import ensure_condition
 from nio.testing.test_case import NIOTestCase
 
 arg1_parameter = "8"
@@ -27,5 +27,9 @@ class TestScheduler(NIOTestCase):
         dummy = Dummy(self)
         self.job1 = Job(dummy.foo1, timedelta(milliseconds=1), False,
                         arg1_parameter, kwarg1=kwarg1_parameter)
-        sleep(0.05)
+        self.job1.jump_ahead(5)
+        ensure_condition(self._foo_called, dummy)
         self.assertEqual(dummy.foo1_called, True)
+
+    def _foo_called(self, dummy):
+        return dummy.foo1_called

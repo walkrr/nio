@@ -1,11 +1,11 @@
 from datetime import timedelta
 from threading import RLock
-from time import sleep
 from unittest.mock import patch
 
 from nio.modules.context import ModuleContext
+from nio.testing.condition import ensure_condition
+from nio.testing.modules.scheduler.scheduler import JumpAheadSchedulerRunner
 from nio.testing.test_case import NIOTestCaseNoModules
-from nio.util.scheduler.scheduler import SchedulerRunner
 from nio.util.threading import spawn
 
 
@@ -13,14 +13,14 @@ class TestScheduler(NIOTestCaseNoModules):
 
     def setUp(self):
         super().setUp()
-        self._scheduler = SchedulerRunner()
+        self._scheduler = JumpAheadSchedulerRunner()
         ctx = ModuleContext()
         ctx.min_interval = 0.01
         ctx.resolution = 0.01
         self._scheduler.do_configure(ctx)
         self._scheduler.do_start()
         self._fired_times_lock = RLock()
-        self.fired_times = 0
+        self._fired_times = 0
 
     def tearDown(self):
         self._scheduler.do_stop()
@@ -37,17 +37,19 @@ class TestScheduler(NIOTestCaseNoModules):
         ev1 = self._scheduler.schedule_task(
             self._test_fired_times_callback, interval, repeatable=True)
 
-        sleep(interval.total_seconds() + self._scheduler._sched_resolution)
+        self._scheduler.jump_ahead(interval.total_seconds() +
+                                   self._scheduler._sched_resolution)
+        ensure_condition(self._check_fired_times, 1)
         self.assertEquals(self.fired_times, 1)
 
-        sleep(interval.total_seconds())
+        self._scheduler.jump_ahead(interval.total_seconds())
+        ensure_condition(self._check_fired_times, 2)
         self.assertEquals(self.fired_times, 2)
 
         # make sure after cancelling, it is not firing any longer
-        result = self._scheduler.unschedule(ev1)
-        self.assertEquals(result, True)
-
-        sleep(interval.total_seconds())
+        self.assertTrue(self._scheduler.unschedule(ev1))
+        # do another jump and verify no triggering
+        self._scheduler.jump_ahead(interval.total_seconds())
         self.assertEquals(self.fired_times, 2)
 
     def _test_fired_times_callback(self):
@@ -70,12 +72,14 @@ class TestScheduler(NIOTestCaseNoModules):
             self._test_fired_times_callback,
             timedelta(seconds=0.0001),
             repeatable=True)
-        # sleep more than min interval
-        sleep(0.05)
-        # with such a small timedelta (0.0001) jthe ob is expected in theory
+        # jump more than min interval
+        self._scheduler.jump_ahead(0.05)
+        # with such a small timedelta (0.0001) the job is expected in theory
         # to execute 100s of times, so asserting that it fired less than 10
         # times shows that a min_interval overwrote the timedelta
+        ensure_condition(self._check_fired_times_greater_than, 0)
         self.assertGreater(self.fired_times, 0)
+        ensure_condition(self._check_fired_times_less_than, 10)
         self.assertLess(self.fired_times, 10)
 
     def test_min_interval_non_repeatable(self):
@@ -84,11 +88,12 @@ class TestScheduler(NIOTestCaseNoModules):
             self._test_fired_times_callback,
             timedelta(seconds=0.0001),
             repeatable=False)
-        sleep(0.05)
+        self._scheduler.jump_ahead(0.05)
+        ensure_condition(self._check_fired_times, 1)
         self.assertEquals(self.fired_times, 1)
 
     def test_execute_pending_tasks(self):
-        """ Asserts that multiple async calls to _execute_pending_tasks
+        """ Asserts multiple async calls to _execute_pending_tasks
 
         Launches a number of async calls to '_execute_pending_tasks', which
         will execute along with the '_process_events' loop, asserting that
@@ -110,9 +115,11 @@ class TestScheduler(NIOTestCaseNoModules):
             thread.join(1)
             self.assertFalse(thread.is_alive())
 
-        sleep(max_interval.total_seconds() + self._scheduler._sched_resolution)
+        self._scheduler.jump_ahead(max_interval.total_seconds() +
+                                   self._scheduler._sched_resolution)
 
         # assert ten tasks executed
+        ensure_condition(self._check_fired_times, 10)
         self.assertEquals(self.fired_times, 10)
 
         # assert internal collections are empty
@@ -143,3 +150,12 @@ class TestScheduler(NIOTestCaseNoModules):
         with patch('heapq.heapify',
                    side_effect=Exception("Patch induced exception")):
             self.assertFalse(self._scheduler.unschedule(event_id))
+
+    def _check_fired_times(self, times):
+        return self.fired_times == times
+
+    def _check_fired_times_greater_than(self, times):
+        return self.fired_times > times
+
+    def _check_fired_times_less_than(self, times):
+        return self.fired_times < times
