@@ -1,4 +1,5 @@
 from threading import Thread
+
 from nio.util.logging import get_nio_logger
 
 
@@ -52,5 +53,5 @@ class NIOThread(Thread):
         return self.nio_result
 
     def __repr__(self):
-        return "_Thread: nio_result: {0}, nio_exception: {1}".format(
-            self.nio_result, self.nio_exception)
+        return "{}, nio_result: {}, nio_exception: {}".format(
+            super().__repr__(), self.nio_result, self.nio_exception)
