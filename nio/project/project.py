@@ -2,7 +2,7 @@ class Project(object):
 
     """ A class that contains all information needed for a n.io project.
 
-    This class allows for us to create an in-memory represenation of a project.
+    This class allows for us to create an in-memory representation of a project.
     That instance can be validated and/or serialized into different formats
     that will ultimately be read by a n.io binary.
 

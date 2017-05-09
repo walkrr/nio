@@ -1,6 +1,8 @@
 import json
 import os
-import pickle
+import pickle as unsafepickle
+
+from safepickle import safepickle as pickle
 
 
 def load_json(path):
@@ -43,8 +45,14 @@ def load_pickle(path):
     """
     data = {}
     if os.path.isfile(path):
-        with open(path, 'rb') as f:
-            data = pickle.load(f)
+        try:
+            with open(path, 'r') as f:
+                data = pickle.load(f)
+        except:
+            # TODO: this will be eventually removed once there is certainty
+            # that all nio instances have been migrated to using safepickle
+            with open(path, 'rb') as f:
+                data = unsafepickle.load(f)
     return data
 
 
@@ -56,5 +64,5 @@ def save_pickle(path, data):
         data (dict): data to save
 
     """
-    with open(path, 'wb+') as f:
+    with open(path, 'w+') as f:
         pickle.dump(data, f)

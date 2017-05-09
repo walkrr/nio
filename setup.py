@@ -1,4 +1,5 @@
 import re
+
 from setuptools import setup, find_packages
 
 with open('nio/__init__.py', 'r') as fd:
@@ -16,8 +17,7 @@ setup(
     packages=find_packages(
         exclude=['*.tests', '*.tests.*', 'tests.*', 'tests']),
 
-    # No dependenices, believe it!
-    install_requires=[],
+    install_requires=['safepickle>=0.1.0rc2'],
 
     tests_require=[
         'requests>=2.3.0'
