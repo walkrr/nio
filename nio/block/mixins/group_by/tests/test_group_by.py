@@ -1,3 +1,4 @@
+from unittest.mock import MagicMock
 from nio.block.mixins.group_by.group_by import GroupBy
 from nio.block.base import Block, DEFAULT_TERMINAL
 from nio.signal.base import Signal
@@ -17,6 +18,12 @@ class GroupingBlock(GroupBy, Block):
 
     def process_group_without_signals(self, group):
         self._group_count += 1
+
+
+class NoOutputBlock(GroupBy, Block):
+
+    def process_group_signals(self, signals, group, input_id=None):
+        return []
 
 
 class TestGroupBy(NIOBlockTestCase):
@@ -226,3 +233,15 @@ class TestGroupBy(NIOBlockTestCase):
         expected_groups = {1, 2, 3}
         block_groups = block.groups()
         self.assertEqual(expected_groups, block_groups)
+
+    def test_no_output(self):
+        """If process_group_signals returns empty lists, don't notify them"""
+        block = NoOutputBlock()
+        self.configure_block(block, {})
+        block.notify_signals = MagicMock()
+        block.process_signals([
+            Signal({"group": 1, "value": 1}),
+            Signal({"group": 2, "value": 1}),
+            Signal({"group": 1, "value": 2})
+        ])
+        self.assertFalse(block.notify_signals.called)
