@@ -6,15 +6,14 @@ import logging.config
 import multiprocessing
 from unittest import TestCase
 
-
 # Testing module implementations
 from nio.modules.settings import Settings
 from nio.testing.module_initializer import TestingModuleInitializer
-from nio.testing.modules.scheduler.module import TestingSchedulerModule
-from nio.testing.modules.persistence.module \
-    import TestingPersistenceModule
 from nio.testing.modules.communication.module \
     import TestingCommunicationModule
+from nio.testing.modules.persistence.module \
+    import TestingPersistenceModule
+from nio.testing.modules.scheduler.module import TestingSchedulerModule
 from nio.testing.modules.security.module import TestingSecurityModule
 from nio.testing.modules.settings.module import TestingSettingsModule
 from nio.testing.modules.web.module import TestingWebModule
@@ -103,6 +102,8 @@ class NIOTestCase(TestCase):
         # Perform a safe finalization in case anything wasn't proxied first
         if self._module_initializer:
             self._module_initializer.finalize(safe=True)
+            # avoid a second call to finalize
+            self._module_initializer = None
 
     def get_test_modules(self):
         """ Returns set of modules to load during test
@@ -171,6 +172,7 @@ class NIOTestCase(TestCase):
         except NotImplementedError:
             # can be triggered if test chooses not to have a Settings module
             pass
+        self.tearDownModules()
         super().tearDown()
 
     def get_module_name(self, module):
