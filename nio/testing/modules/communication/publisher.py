@@ -36,4 +36,4 @@ class Publisher(object):
 
     def is_closed(self):
         """ Finds out if publisher has been closed """
-        return self in PubSubManager.publishers
+        return self not in PubSubManager.publishers
