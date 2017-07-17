@@ -123,3 +123,12 @@ class Signal(object):
     def __str__(self):
         d = self.to_dict()
         return repr(d) if len(d) else self.__class__.__name__
+
+    def __eq__(self, other):
+        if not isinstance(other, Signal):
+            return False
+
+        if self.to_dict() == other.to_dict():
+            return True
+        else:
+            return False

@@ -105,3 +105,16 @@ class TestSignal(NIOTestCase):
         self.assertNotIn('_hidden1', signal_dict)
         self.assertNotIn('_hidden2', signal_dict)
         self.assertNotIn('__double_hidden', signal_dict)
+
+    def test_signal_equality_comparison(self):
+        """ Ensure that two signals can compare equality """
+        sig1 = Signal(self.attrs)
+        sig2 = Signal(self.attrs)
+        self.assertTrue(sig1 == sig2)
+        self.assertTrue(sig2 == sig1)
+
+        # if lists differ in order they are not equal
+        sig1 = Signal({"hello": [1, 2, 3]})
+        sig2 = Signal({"hello": [3, 2, 1]})
+        self.assertFalse(sig1 == sig2)
+        self.assertFalse(sig2 == sig1)
