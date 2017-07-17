@@ -540,8 +540,8 @@ class TestBaseRouter(NIOTestCaseNoModules):
         self.assertEqual(dest1.total_signals_received, 1)
         self.assertEqual(dest2.total_signals_received, 1)
         # assert that signals were deep-copied
-        self.assertNotEqual(dest1.signals_received[DEFAULT_TERMINAL], signals)
-        self.assertNotEqual(dest2.signals_received[DEFAULT_TERMINAL], signals)
+        self.assertIsNot(dest1.signals_received[DEFAULT_TERMINAL][0], signals[0])
+        self.assertIsNot(dest2.signals_received[DEFAULT_TERMINAL][0], signals[0])
 
         # clear out signal reception
         dest1.total_signals_received = 0
