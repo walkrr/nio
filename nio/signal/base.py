@@ -132,3 +132,6 @@ class Signal(object):
             return True
         else:
             return False
+
+    def __hash__(self):
+        return hash(frozenset(self.to_dict()))
