@@ -112,6 +112,8 @@ class TestSignal(NIOTestCase):
         sig2 = Signal(self.attrs)
         self.assertTrue(sig1 == sig2)
         self.assertTrue(sig2 == sig1)
+        # object identity should be different even with equal value
+        self.assertIsNot(sig1, sig2)
 
         # if lists differ in order they are not equal
         sig1 = Signal({"hello": [1, 2, 3]})
