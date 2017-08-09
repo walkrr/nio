@@ -39,7 +39,7 @@ class LogCache(object):
 
         # determine key, which includes a hashed msg, and attempt to get record
         key = "{}-{}-{}".format(record.filename, record.lineno,
-                                hash(record.msg))
+                                hash(str(record.msg)))
         # determine if item with same message is present
         if self._cache.get(key):
             return True
