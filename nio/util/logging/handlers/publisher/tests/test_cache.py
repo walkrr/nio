@@ -56,3 +56,25 @@ class TestCache(NIOTestCase):
 
         log_cache.process_record(record2)
         self.assertEqual(log_cache._cache.add.call_count, 2)
+
+    def test_cache_key_behavior(self):
+        """ Asserts that record messages can be any object with a __str__ 
+        implementation, which is always hashable
+        """
+        log_cache = LogCache(0.1)
+
+        # two unhashable types for record.msg
+        record1 = get_log_record_same_line({})
+        record2 = get_log_record_same_line([])
+
+        # process two dicts
+        result1 = log_cache.process_record(record1)
+        result2 = log_cache.process_record(record1)
+        self.assertEqual(result1, False)
+        self.assertEqual(result2, True)
+
+        # process two lists
+        result1 = log_cache.process_record(record2)
+        result2 = log_cache.process_record(record2)
+        self.assertEqual(result1, False)
+        self.assertEqual(result2, True)
