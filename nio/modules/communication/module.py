@@ -18,3 +18,6 @@ class CommunicationModule(Module):
 
     def get_module_order(self):
         return 50
+
+    def get_module_type(self):
+        return "communication"

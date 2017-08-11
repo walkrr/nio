@@ -1,5 +1,5 @@
-from nio.modules.scheduler.job import Job
 from nio.modules.module import Module
+from nio.modules.scheduler.job import Job
 
 
 class SchedulerModule(Module):
@@ -13,3 +13,6 @@ class SchedulerModule(Module):
 
     def get_module_order(self):
         return 5
+
+    def get_module_type(self):
+        return "scheduler"

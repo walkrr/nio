@@ -1,6 +1,6 @@
+from nio.modules.module import Module
 from nio.modules.security.authenticator import Authenticator
 from nio.modules.security.authorizer import Authorizer
-from nio.modules.module import Module
 
 
 class SecurityModule(Module):
@@ -18,3 +18,6 @@ class SecurityModule(Module):
 
     def get_module_order(self):
         return 30
+
+    def get_module_type(self):
+        return "security"

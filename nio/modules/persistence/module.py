@@ -1,5 +1,5 @@
-from nio.modules.persistence import Persistence
 from nio.modules.module import Module
+from nio.modules.persistence import Persistence
 
 
 class PersistenceModule(Module):
@@ -13,3 +13,6 @@ class PersistenceModule(Module):
 
     def get_module_order(self):
         return 10
+
+    def get_module_type(self):
+        return "persistence"

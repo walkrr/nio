@@ -1,5 +1,5 @@
-from nio.modules.settings import Settings
 from nio.modules.module import Module
+from nio.modules.settings import Settings
 
 
 class SettingsModule(Module):
@@ -13,3 +13,6 @@ class SettingsModule(Module):
 
     def get_module_order(self):
         return 1
+
+    def get_module_type(self):
+        return "settings"
