@@ -17,6 +17,8 @@ class Module(object):
 
     """ A base class for defining a module interface or implementation """
 
+    default_version = "0.1.0"
+
     def initialize(self, context):
         """ Override this method to perform actions on initialization.
 
@@ -83,3 +85,35 @@ class Module(object):
             ModuleContext: service module context
         """
         return ModuleContext()
+
+    def get_module_type(self):
+        """ Provides module type
+
+        Allows to provide a module type, note that this is not meant
+        to be an actual implementation type.
+
+        Returns:
+            str: module type
+        """
+        raise NotImplementedError()
+
+    def get_version(self):
+        """ Provides module version
+
+        Actual module implementations are encouraged to override this method.
+
+        Returns:
+            str: module version
+        """
+        return Module.default_version
+
+    def get_details(self):
+        """ Provides module details
+
+        Actual module implementations may override this method and
+        decide what details/properties they would like to expose.
+        It is encouraged to call parent method and 'update' the result
+        with own details
+
+        """
+        return {"version": self.get_version()}

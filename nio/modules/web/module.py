@@ -1,6 +1,6 @@
+from nio.modules.module import Module
 from nio.modules.web import WebEngine, WebServer
 from nio.modules.web.http import Request, Response
-from nio.modules.module import Module
 
 
 class WebModule(Module):
@@ -26,3 +26,6 @@ class WebModule(Module):
 
     def get_module_order(self):
         return 40
+
+    def get_module_type(self):
+        return "web"
