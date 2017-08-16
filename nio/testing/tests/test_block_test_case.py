@@ -1,3 +1,5 @@
+from copy import copy
+
 from nio.block.base import Block
 from nio.block.terminals import DEFAULT_TERMINAL
 from nio.signal.base import Signal
@@ -176,6 +178,8 @@ class TestBlockTestCase(NIOBlockTestCase):
         # list should be order-dependent
         self.assert_signal_list_notified([signal1, signal2])
         self.assert_signal_list_notified([signal3, signal4])
+        self.assert_signal_list_notified([copy(signal3), copy(signal4)])
+        self.assert_signal_list_notified([signal3, copy(signal4)])
         with self.assertRaises(AssertionError):
             self.assert_signal_list_notified([signal2, signal1])
 
