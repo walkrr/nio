@@ -55,7 +55,7 @@ class TestGroupBy(NIOBlockTestCase):
             Signal({"group": 1, "value": 2})
         ])
         self.assert_num_signals_notified(1)
-        self.assertEqual(self.last_notified[DEFAULT_TERMINAL][0].group, 1)
+        self.assertEqual(self.notified_signals[DEFAULT_TERMINAL][0].group, 1)
 
     def test_for_each(self):
         """Test we can call for_each_group in our own block"""
