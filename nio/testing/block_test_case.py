@@ -117,6 +117,8 @@ class NIOBlockTestCase(NIOTestCase):
         super().__init__(methodName)
         self._router = BlockRouterForTesting()
         self.notified_signals = defaultdict(list)
+        # keep this as an alias for backwards compatibility
+        self.last_notified = self.notified_signals
         # support internal test case control over signal notifications
         self._last_signals_notified = defaultdict(list)
         self._last_output_notified = None
