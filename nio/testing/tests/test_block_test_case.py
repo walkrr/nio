@@ -207,7 +207,6 @@ class TestBlockTestCase(NIOBlockTestCase):
         self.assert_last_signal_notified(signal2)
         b1.notify_signals([signal1], DEFAULT_TERMINAL)
         self.assert_last_signal_notified(signal1)
-        self.reset_signals_notified()
 
         # test list behavior, the last signal in the list should be the last
         # signal notified
@@ -235,20 +234,3 @@ class TestBlockTestCase(NIOBlockTestCase):
         # second list, the notified signals should reset automatically
         b1.notify_signals([signal2, signal1], DEFAULT_TERMINAL)
         self.assert_last_signal_list_notified([signal2, signal1])
-
-    def test_reset_signals_notified(self):
-        """ Tests reset_signals_notified """
-        b1 = Block()
-        self.configure_block(b1, {})
-        signal1 = Signal({"hello": "n.io"})
-
-        b1.notify_signals([signal1], DEFAULT_TERMINAL)
-        self.assert_signal_notified(signal1)
-        self.assert_last_signal_notified(signal1)
-
-        self.reset_signals_notified()
-
-        # now that signals are reset, they do not exist
-        with self.assertRaises(AssertionError):
-            self.assert_signal_notified(signal1)
-            self.assert_last_signal_notified(signal1)

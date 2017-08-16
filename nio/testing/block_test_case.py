@@ -117,10 +117,7 @@ class NIOBlockTestCase(NIOTestCase):
         super().__init__(methodName)
         self._router = BlockRouterForTesting()
         self.notified_signals = defaultdict(list)
-        # keep this as an alias for backwards compatibility
-        self.last_notified = self.notified_signals
         # support internal test case control over signal notifications
-        self._last_signals_notified = defaultdict(list)
         self._last_output_notified = None
 
     def setUp(self):
@@ -143,6 +140,16 @@ class NIOBlockTestCase(NIOTestCase):
             'TestSuite',
             ''))
 
+    @property
+    def last_notified(self):
+        # keep this property as an alias for backwards compatibility
+        # convert to previous form, a list of signals
+
+        return defaultdict(list, ((output_id, [notified_signal for sublist in
+                                              self.notified_signals[output_id]
+                                              for notified_signal in sublist])
+                                  for output_id in self.notified_signals))
+
     def last_signal_notified(self, output_id=None):
         """ Provides last signal notified
 
@@ -162,14 +169,14 @@ class NIOBlockTestCase(NIOTestCase):
         """
         # if output_id is specified, it must be valid.
         if output_id is not None and \
-           output_id not in self._last_signals_notified:
+           output_id not in self.notified_signals:
             raise ValueError("Invalid output id specified")
 
         # if a valid output_id is not provided, use last output notified on.
         if output_id is None:
             output_id = self._last_output_notified
 
-        return self._last_signals_notified[output_id][-1]
+        return self.notified_signals[output_id][-1][-1]
 
     def _internal_signals_notified(self, block, signals, output_id):
         """ Receives internal block signals notification
@@ -178,7 +185,6 @@ class NIOBlockTestCase(NIOTestCase):
         internal members that support block unit testing.
 
         """
-        self._last_signals_notified[output_id] = signals
         self._last_output_notified = output_id
 
         self.signals_notified(block, signals, output_id)
@@ -283,27 +289,10 @@ class NIOBlockTestCase(NIOTestCase):
             signal_list (list): The list of signals to assert was notified
         """
         notified_list = [signal.to_dict() for signal in
-                         self._last_signals_notified[output_id]]
+                         self.notified_signals[output_id][-1]]
         signal_dict_list = [signal.to_dict() for signal in signal_list]
 
         self.assertListEqual(notified_list, signal_dict_list)
-
-    def reset_signals_notified(self, output_id=None):
-        """ Reset the signals that have been notified from the given block,
-        returning to a state as if no signals have been notified.
-        
-        Args:
-            output_id (string): output terminal of the block. If None, clears
-                notfied signals for all output terminals of the block
-        """
-        if not output_id:
-            self.notified_signals.clear()
-            self._last_signals_notified.clear()
-        else:
-            self.notified_signals[output_id].clear()
-            self._last_signals_notified[output_id].clear()
-
-        self._last_output_notified = None
 
     def assert_block_status(self, block, status):
         """ Asserts that the given block has a certain block status
