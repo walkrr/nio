@@ -239,20 +239,27 @@ class NIOBlockTestCase(NIOTestCase):
             self.assertEqual(
                 num, sum(self._router._block_mgmt_signal_counts.values()))
 
-    def assert_signal_notified(self, signal, output_id=DEFAULT_TERMINAL):
+    def assert_signal_notified(self, signal, position=None,
+                               output_id=DEFAULT_TERMINAL):
         """ Assert that the given signal has been notified from the block 
         
         Args:
             signal (signal object): signal to assert has been notified from 
                 the block
+            position (int): the position of the signal in the notified_signals 
+                list
             output_id (string): output id of the block
         """
         total_notified_signals = [notified_signal.to_dict() for sublist in
                                   self.notified_signals[output_id]
                                   for notified_signal in sublist]
-        self.assertIn(signal.to_dict(), total_notified_signals)
+        if position:
+            self.assertEqual(signal.to_dict(),
+                             total_notified_signals[position])
+        else:
+            self.assertIn(signal.to_dict(), total_notified_signals)
 
-    def assert_signal_list_notified(self, signal_list,
+    def assert_signal_list_notified(self, signal_list, position=None,
                                     output_id=DEFAULT_TERMINAL):
         """ Assert that the given signal list has been notified from the 
         block. The given list must match the order in which the signals were
@@ -261,12 +268,17 @@ class NIOBlockTestCase(NIOTestCase):
         Args:
             signal_list (list): list of signal objects to assert
             output_id (string): output terminal of the block to assert against
+            position (int): position of the signal list in 
+                notified_signals[output_id]
         """
         input_list = [signal.to_dict() for signal in signal_list]
         notified_lists = [[signal.to_dict() for signal in notified_list]
                           for notified_list in self.notified_signals[output_id]]
 
-        self.assertIn(input_list, notified_lists)
+        if position:
+            self.assertListEqual(input_list, notified_lists[position])
+        else:
+            self.assertIn(input_list, notified_lists)
 
     def assert_last_signal_notified(self, signal, output_id=DEFAULT_TERMINAL):
         """ Assert that the last signal notified on the given output_id is

@@ -154,8 +154,14 @@ class TestBlockTestCase(NIOBlockTestCase):
         b1.notify_signals([signal], "output1")
 
         # assert output_id behavior
-        self.assert_signal_notified(signal, DEFAULT_TERMINAL)
-        self.assert_signal_notified(signal, "output1")
+        self.assert_signal_notified(signal)
+        self.assert_signal_notified(signal, output_id="output1")
+
+        # assert position behavior
+        self.assert_signal_notified(signal, position=0)
+        with self.assertRaises(IndexError):
+            self.assert_signal_notified(signal, position=1)
+        self.assert_signal_notified(signal, position=0, output_id="output1")
 
         with self.assertRaises(AssertionError):
             self.assert_signal_notified(Signal({"goodbye": "n.io"}))
@@ -182,6 +188,10 @@ class TestBlockTestCase(NIOBlockTestCase):
         self.assert_signal_list_notified([signal3, copy(signal4)])
         with self.assertRaises(AssertionError):
             self.assert_signal_list_notified([signal2, signal1])
+
+        # assert position behavior
+        self.assert_signal_list_notified([signal1, signal2], position=0)
+        self.assert_signal_list_notified([signal3, signal4], position=2)
 
         # lists that weren't notified but still have notified the same signals
         # should not work
