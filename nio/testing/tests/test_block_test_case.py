@@ -163,15 +163,26 @@ class TestBlockTestCase(NIOBlockTestCase):
         """
         b1 = Block()
         self.configure_block(b1, {})
+
         signal1 = Signal({"hello": "n.io"})
         signal2 = Signal({"goodbye": "n.io"})
+        signal3 = Signal({"welcome back": "n.io"})
+        signal4 = Signal({"do come back": "n.io"})
 
         b1.notify_signals([signal1, signal2], DEFAULT_TERMINAL)
+        b1.notify_signals([signal2, signal3], DEFAULT_TERMINAL)
+        b1.notify_signals([signal3, signal4], DEFAULT_TERMINAL)
 
         # list should be order-dependent
         self.assert_signal_list_notified([signal1, signal2])
+        self.assert_signal_list_notified([signal3, signal4])
         with self.assertRaises(AssertionError):
             self.assert_signal_list_notified([signal2, signal1])
+
+        # lists that weren't notified but still have notified the same signals
+        # should not work
+        with self.assertRaises(AssertionError):
+            self.assert_signal_list_notified([signal1, signal4])
 
         # sub-lists of the whole notified list should not work
         with self.assertRaises(AssertionError):
@@ -201,7 +212,7 @@ class TestBlockTestCase(NIOBlockTestCase):
 
         with self.assertRaises(AssertionError):
             self.assert_last_signal_notified(signal1)
-            
+
     def test_last_signal_list_notified(self):
         """ Tests assert_last_signal_list_notified functionality 
         """

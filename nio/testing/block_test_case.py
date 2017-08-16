@@ -194,7 +194,7 @@ class NIOBlockTestCase(NIOTestCase):
             output_id: output identifier
 
         """
-        self.notified_signals[output_id].extend(signals)
+        self.notified_signals[output_id].append(signals)
 
     def management_signal_notified(self, block, signal):
         """ Receives block management signal notification
@@ -241,7 +241,10 @@ class NIOBlockTestCase(NIOTestCase):
                 the block
             output_id (string): output id of the block
         """
-        self.assertIn(signal, self.notified_signals[output_id])
+        total_notified_signals = [notified_signal.to_dict() for sublist in
+                                  self.notified_signals[output_id]
+                                  for notified_signal in sublist]
+        self.assertIn(signal.to_dict(), total_notified_signals)
 
     def assert_signal_list_notified(self, signal_list,
                                     output_id=DEFAULT_TERMINAL):
@@ -253,12 +256,11 @@ class NIOBlockTestCase(NIOTestCase):
             signal_list (list): list of signal objects to assert
             output_id (string): output terminal of the block to assert against
         """
+        input_list = [signal.to_dict() for signal in signal_list]
+        notified_lists = [[signal.to_dict() for signal in notified_list]
+                          for notified_list in self.notified_signals[output_id]]
 
-        notified_list = [signal.to_dict() for signal
-                         in self.notified_signals[output_id]]
-        signal_dict_list = [signal.to_dict() for signal in signal_list]
-
-        self.assertListEqual(notified_list, signal_dict_list)
+        self.assertIn(input_list, notified_lists)
 
     def assert_last_signal_notified(self, signal, output_id=DEFAULT_TERMINAL):
         """ Assert that the last signal notified on the given output_id is
