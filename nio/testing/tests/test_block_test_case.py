@@ -199,6 +199,9 @@ class TestBlockTestCase(NIOBlockTestCase):
         b1.notify_signals([signal1, signal2], DEFAULT_TERMINAL)
         self.assert_last_signal_notified(signal2)
 
+        with self.assertRaises(AssertionError):
+            self.assert_last_signal_notified(signal1)
+            
     def test_last_signal_list_notified(self):
         """ Tests assert_last_signal_list_notified functionality 
         """
