@@ -3,7 +3,7 @@ from nio.block.terminals import DEFAULT_TERMINAL
 from nio.signal.base import Signal
 from nio.signal.status import BlockStatusSignal
 from nio.util.runner import RunnerStatus
-from nio.testing import NIOBlockTestCase
+from nio.testing.block_test_case import NIOBlockTestCase
 
 
 class TestBlockTestCase(NIOBlockTestCase):
@@ -13,6 +13,7 @@ class TestBlockTestCase(NIOBlockTestCase):
     def signals_notified(self, block, signals, output_id=DEFAULT_TERMINAL):
         """ Override a signal notification handler """
         self._signals_notified = True
+        super().signals_notified(block, signals, output_id)
 
     def management_signal_notified(self, block, signal):
         """ Override a management signal notification handler """
@@ -139,3 +140,97 @@ class TestBlockTestCase(NIOBlockTestCase):
         with self.assertRaises(ValueError):
             self.assertEqual(self.last_signal_notified("INVALID_OUTPUT"),
                              default_output_signal2)
+
+    def test_signal_notified(self):
+        """ Tests assert_signal_notified functionality 
+        """
+        b1 = Block()
+        self.configure_block(b1, {})
+        signal = Signal({"hello": "n.io"})
+
+        b1.notify_signals([signal], DEFAULT_TERMINAL)
+        b1.notify_signals([signal], "output1")
+
+        # assert output_id behavior
+        self.assert_signal_notified(signal, DEFAULT_TERMINAL)
+        self.assert_signal_notified(signal, "output1")
+
+        with self.assertRaises(AssertionError):
+            self.assert_signal_notified(Signal({"goodbye": "n.io"}))
+
+    def test_signal_list_notified(self):
+        """ Tests assert_signal_notified functionality 
+        """
+        b1 = Block()
+        self.configure_block(b1, {})
+        signal1 = Signal({"hello": "n.io"})
+        signal2 = Signal({"goodbye": "n.io"})
+
+        b1.notify_signals([signal1, signal2], DEFAULT_TERMINAL)
+
+        # list should be order-dependent
+        self.assert_signal_list_notified([signal1, signal2])
+        with self.assertRaises(AssertionError):
+            self.assert_signal_list_notified([signal2, signal1])
+
+        # sub-lists of the whole notified list should not work
+        with self.assertRaises(AssertionError):
+            self.assert_signal_list_notified([signal1])
+            self.assert_signal_list_notified([signal2])
+
+    def test_assert_last_signal_notified(self):
+        """ Tests assert_last_signal_notified functionality 
+        """
+        b1 = Block()
+        self.configure_block(b1, {})
+        signal1 = Signal({"hello": "n.io"})
+        signal2 = Signal({"goodbye": "n.io"})
+
+        b1.notify_signals([signal1], DEFAULT_TERMINAL)
+        self.assert_last_signal_notified(signal1)
+        b1.notify_signals([signal2], DEFAULT_TERMINAL)
+        self.assert_last_signal_notified(signal2)
+        b1.notify_signals([signal1], DEFAULT_TERMINAL)
+        self.assert_last_signal_notified(signal1)
+        self.reset_signals_notified()
+
+        # test list behavior, the last signal in the list should be the last
+        # signal notified
+        b1.notify_signals([signal1, signal2], DEFAULT_TERMINAL)
+        self.assert_last_signal_notified(signal2)
+
+    def test_last_signal_list_notified(self):
+        """ Tests assert_last_signal_list_notified functionality 
+        """
+        b1 = Block()
+        self.configure_block(b1, {})
+        signal1 = Signal({"hello": "n.io"})
+        signal2 = Signal({"goodbye": "n.io"})
+
+        # first list
+        b1.notify_signals([signal1, signal2], DEFAULT_TERMINAL)
+        self.assert_last_signal_list_notified([signal1, signal2])
+        # list should be order-dependent
+        with self.assertRaises(AssertionError):
+            self.assert_last_signal_list_notified([signal2, signal1])
+
+        # second list, the notified signals should reset automatically
+        b1.notify_signals([signal2, signal1], DEFAULT_TERMINAL)
+        self.assert_last_signal_list_notified([signal2, signal1])
+
+    def test_reset_signals_notified(self):
+        """ Tests reset_signals_notified """
+        b1 = Block()
+        self.configure_block(b1, {})
+        signal1 = Signal({"hello": "n.io"})
+
+        b1.notify_signals([signal1], DEFAULT_TERMINAL)
+        self.assert_signal_notified(signal1)
+        self.assert_last_signal_notified(signal1)
+
+        self.reset_signals_notified()
+
+        # now that signals are reset, they do not exist
+        with self.assertRaises(AssertionError):
+            self.assert_signal_notified(signal1)
+            self.assert_last_signal_notified(signal1)

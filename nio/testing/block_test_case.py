@@ -34,7 +34,7 @@ class BlockRouterForTesting(BlockRouter):
         """
         self._test_case = test_case
 
-    def notify_signals(self, block, signals, output_id):
+    def notify_signals(self, block, signals, output_id=None):
         """ Receives block signals.
 
          Keeps track of the signal count per block and per output id
@@ -116,7 +116,7 @@ class NIOBlockTestCase(NIOTestCase):
     def __init__(self, methodName='runTests'):
         super().__init__(methodName)
         self._router = BlockRouterForTesting()
-        self.last_notified = defaultdict(list)
+        self.notified_signals = defaultdict(list)
         # support internal test case control over signal notifications
         self._last_signals_notified = defaultdict(list)
         self._last_output_notified = None
@@ -124,9 +124,6 @@ class NIOBlockTestCase(NIOTestCase):
     def setUp(self):
         super().setUp()
         self._router.configure(self)
-
-    def tearDown(self):
-        super().tearDown()
 
     def configure_block(self, block, block_properties):
         """ Configures block by assigning properties and router to given block
@@ -195,7 +192,7 @@ class NIOBlockTestCase(NIOTestCase):
             output_id: output identifier
 
         """
-        self.last_notified[output_id].extend(signals)
+        self.notified_signals[output_id].extend(signals)
 
     def management_signal_notified(self, block, signal):
         """ Receives block management signal notification
@@ -233,6 +230,76 @@ class NIOBlockTestCase(NIOTestCase):
         else:
             self.assertEqual(
                 num, sum(self._router._block_mgmt_signal_counts.values()))
+
+    def assert_signal_notified(self, signal, output_id=DEFAULT_TERMINAL):
+        """ Assert that the given signal has been notified from the block 
+        
+        Args:
+            signal (signal object): signal to assert has been notified from 
+                the block
+            output_id (string): output id of the block
+        """
+        self.assertIn(signal, self.notified_signals[output_id])
+
+    def assert_signal_list_notified(self, signal_list,
+                                    output_id=DEFAULT_TERMINAL):
+        """ Assert that the given signal list has been notified from the 
+        block. The given list must match the order in which the signals were
+        notified.
+        
+        Args:
+            signal_list (list): list of signal objects to assert
+            output_id (string): output terminal of the block to assert against
+        """
+
+        notified_list = [signal.to_dict() for signal
+                         in self.notified_signals[output_id]]
+        signal_dict_list = [signal.to_dict() for signal in signal_list]
+
+        self.assertListEqual(notified_list, signal_dict_list)
+
+    def assert_last_signal_notified(self, signal, output_id=DEFAULT_TERMINAL):
+        """ Assert that the last signal notified on the given output_id is
+        equal to 'signal'. This is designed to be a convenience function
+        for last_signal_notified functionality, and provides dict comparison.
+        
+        Args:
+            signal (signal object): the signal to assert against
+            output_id (string): output terminal of the block to assert against
+        """
+        self.assertDictEqual(self.last_signal_notified(output_id).to_dict(),
+                             signal.to_dict())
+
+    def assert_last_signal_list_notified(self, signal_list,
+                                         output_id=DEFAULT_TERMINAL):
+        """ Assert the given list was notified from the block. Provides dict
+        comparison.
+
+        Args:
+            signal_list (list): The list of signals to assert was notified
+        """
+        notified_list = [signal.to_dict() for signal in
+                         self._last_signals_notified[output_id]]
+        signal_dict_list = [signal.to_dict() for signal in signal_list]
+
+        self.assertListEqual(notified_list, signal_dict_list)
+
+    def reset_signals_notified(self, output_id=None):
+        """ Reset the signals that have been notified from the given block,
+        returning to a state as if no signals have been notified.
+        
+        Args:
+            output_id (string): output terminal of the block. If None, clears
+                notfied signals for all output terminals of the block
+        """
+        if not output_id:
+            self.notified_signals.clear()
+            self._last_signals_notified.clear()
+        else:
+            self.notified_signals[output_id].clear()
+            self._last_signals_notified[output_id].clear()
+
+        self._last_output_notified = None
 
     def assert_block_status(self, block, status):
         """ Asserts that the given block has a certain block status
