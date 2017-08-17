@@ -1,4 +1,5 @@
 from copy import copy
+from unittest.mock import patch
 
 from nio.block.base import Block
 from nio.block.terminals import DEFAULT_TERMINAL
@@ -163,6 +164,12 @@ class TestBlockTestCase(NIOBlockTestCase):
             self.assert_signal_notified(signal, position=1)
         self.assert_signal_notified(signal, position=0, output_id="output1")
 
+        # assert position=0 calls assertEqual instead of assertListEqual
+        # as expected
+        with patch("unittest.TestCase.assertEqual") as patched_equal:
+            self.assert_signal_notified(signal, position=0)
+            assert(patched_equal.call_count == 1)
+
         with self.assertRaises(AssertionError):
             self.assert_signal_notified(Signal({"goodbye": "n.io"}))
 
@@ -192,6 +199,12 @@ class TestBlockTestCase(NIOBlockTestCase):
         # assert position behavior
         self.assert_signal_list_notified([signal1, signal2], position=0)
         self.assert_signal_list_notified([signal3, signal4], position=2)
+
+        # assert position=0 calls assertListEqual instead of assertIn as
+        # expected
+        with patch("unittest.TestCase.assertListEqual") as patched_list_equal:
+            self.assert_signal_list_notified([signal1, signal2], position=0)
+            assert (patched_list_equal.call_count == 1)
 
         # lists that weren't notified but still have notified the same signals
         # should not work
