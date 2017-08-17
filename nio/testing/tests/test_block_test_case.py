@@ -150,8 +150,10 @@ class TestBlockTestCase(NIOBlockTestCase):
         b1 = Block()
         self.configure_block(b1, {})
         signal = Signal({"hello": "n.io"})
+        signal2 = Signal({"goodbye": "n.io"})
 
         b1.notify_signals([signal], DEFAULT_TERMINAL)
+        b1.notify_signals([signal2], DEFAULT_TERMINAL)
         b1.notify_signals([signal], "output1")
 
         # assert output_id behavior
@@ -161,17 +163,16 @@ class TestBlockTestCase(NIOBlockTestCase):
         # assert position behavior
         self.assert_signal_notified(signal, position=0)
         with self.assertRaises(IndexError):
-            self.assert_signal_notified(signal, position=1)
+            self.assert_signal_notified(signal, position=2)
         self.assert_signal_notified(signal, position=0, output_id="output1")
 
-        # assert position=0 calls assertEqual instead of assertListEqual
-        # as expected
-        with patch("unittest.TestCase.assertEqual") as patched_equal:
-            self.assert_signal_notified(signal, position=0)
-            assert(patched_equal.call_count == 1)
-
+        # assert wrong position raises exception
         with self.assertRaises(AssertionError):
-            self.assert_signal_notified(Signal({"goodbye": "n.io"}))
+            self.assert_signal_notified(signal2, position=0)
+
+        # asserting a signal that hasn't been notified raises an exception
+        with self.assertRaises(AssertionError):
+            self.assert_signal_notified(Signal({"welcome back": "n.io"}))
 
     def test_signal_list_notified(self):
         """ Tests assert_signal_notified functionality 
@@ -200,11 +201,9 @@ class TestBlockTestCase(NIOBlockTestCase):
         self.assert_signal_list_notified([signal1, signal2], position=0)
         self.assert_signal_list_notified([signal3, signal4], position=2)
 
-        # assert position=0 calls assertListEqual instead of assertIn as
-        # expected
-        with patch("unittest.TestCase.assertListEqual") as patched_list_equal:
-            self.assert_signal_list_notified([signal1, signal2], position=0)
-            assert(patched_list_equal.call_count == 1)
+        # assert wrong position raises exception
+        with self.assertRaises(AssertionError):
+            self.assert_signal_list_notified([signal3, signal4], position=0)
 
         # lists that weren't notified but still have notified the same signals
         # should not work
