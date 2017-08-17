@@ -128,10 +128,15 @@ class TestEnrichSignals(NIOBlockTestCase):
         blk.notify_output_signals({'num': 4}, incoming_signal, copy=True)
         self.assert_num_signals_notified(4)
 
+        # test last notified alias here as well
         self.assertEqual(self.last_notified[DEFAULT_TERMINAL][0].num, 1)
         self.assertEqual(self.last_notified[DEFAULT_TERMINAL][1].num, 2)
         self.assertEqual(self.last_notified[DEFAULT_TERMINAL][2].num, 3)
         self.assertEqual(self.last_notified[DEFAULT_TERMINAL][3].num, 4)
+        self.assertEqual(self.notified_signals[DEFAULT_TERMINAL][0][0].num, 1)
+        self.assertEqual(self.notified_signals[DEFAULT_TERMINAL][0][1].num, 2)
+        self.assertEqual(self.notified_signals[DEFAULT_TERMINAL][0][2].num, 3)
+        self.assertEqual(self.notified_signals[DEFAULT_TERMINAL][1][0].num, 4)
 
     def set_up_block(self, block, exclude, field):
         self.configure_block(block, {
