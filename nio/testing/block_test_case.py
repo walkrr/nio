@@ -253,7 +253,7 @@ class NIOBlockTestCase(NIOTestCase):
         total_notified_signals = [notified_signal.to_dict() for sublist in
                                   self.notified_signals[output_id]
                                   for notified_signal in sublist]
-        if position:
+        if position is not None:
             self.assertEqual(signal.to_dict(),
                              total_notified_signals[position])
         else:
@@ -275,7 +275,7 @@ class NIOBlockTestCase(NIOTestCase):
         notified_lists = [[signal.to_dict() for signal in notified_list]
                           for notified_list in self.notified_signals[output_id]]
 
-        if position:
+        if position is not None:
             self.assertListEqual(input_list, notified_lists[position])
         else:
             self.assertIn(input_list, notified_lists)
