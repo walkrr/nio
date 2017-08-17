@@ -204,7 +204,7 @@ class TestBlockTestCase(NIOBlockTestCase):
         # expected
         with patch("unittest.TestCase.assertListEqual") as patched_list_equal:
             self.assert_signal_list_notified([signal1, signal2], position=0)
-            assert (patched_list_equal.call_count == 1)
+            assert(patched_list_equal.call_count == 1)
 
         # lists that weren't notified but still have notified the same signals
         # should not work
