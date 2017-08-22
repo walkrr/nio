@@ -53,7 +53,7 @@ class PublisherHandler(logging.Handler):
         """
         try:
             # publishing it as a signal
-            signal = LogSignal(datetime.utcfromtimestamp(record.created),
+            signal = LogSignal(self._get_time_as_str(record.created),
                                record.context,
                                record.levelname,
                                record.msg,
@@ -77,3 +77,18 @@ class PublisherHandler(logging.Handler):
         PublisherProxy.close()
 
         super().close()
+
+    @staticmethod
+    def _get_time_as_str(epoch):
+        """ Converts incoming epoch time to a str formatted version
+
+        Args:
+            epoch (int): number of seconds
+
+        Returns:
+            Time formatted str (same format as nio time)
+
+        """
+        d = datetime.utcfromtimestamp(epoch)
+        # convert to str and trim from microseconds to milliseconds ([:-3])
+        return d.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
