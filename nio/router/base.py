@@ -3,6 +3,7 @@ from collections import Iterable
 from copy import deepcopy
 
 from nio.signal.base import Signal
+from nio.signal.management import ManagementSignal
 from nio.util.runner import Runner, RunnerStatus
 
 
@@ -81,6 +82,7 @@ class BlockRouter(Runner):
         self._clone_signals = False
         self._check_signal_type = True
         self._mgmt_signal_handler = None
+        self._diagnostics = True
 
     def configure(self, context):
         """Configures block router.
@@ -100,6 +102,8 @@ class BlockRouter(Runner):
             self.logger.info('Set to clone signals for multiple receivers')
         self._check_signal_type = \
             context.settings.get("check_signal_type", True)
+        self._diagnostics = \
+            context.settings.get("diagnostics", True)
 
         # cache receivers to avoid searches during signal delivery by
         # creating a dictionary of the form
@@ -320,6 +324,22 @@ class BlockRouter(Runner):
                             len(signals_to_send),
                             block.name(),
                             receiver_data.block.name()))
+
+                    # if diagnostics are enabled, notify
+                    # through management signal delivery
+                    if self._diagnostics:
+                        self.notify_management_signal(
+                            block,
+                            ManagementSignal(
+                                {
+                                    "type": "RouterDiagnostic",
+                                    "source": block.name(),
+                                    "target": receiver_data.block.name(),
+                                    "count": len(signals_to_send)
+                                }
+                            )
+                        )
+
                     self.deliver_signals(receiver_data, signals_to_send)
 
         elif self.status.is_set(RunnerStatus.stopped):
