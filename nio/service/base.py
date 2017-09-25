@@ -1,15 +1,15 @@
-from nio.router.context import RouterContext
+from nio import discoverable
 from nio.block.context import BlockContext
 from nio.command import command
 from nio.command.holder import CommandHolder
-from nio import discoverable
-from nio.util.threading import spawn
-from nio.util.versioning.dependency import DependsOn
 from nio.properties import PropertyHolder, VersionProperty, \
     BoolProperty, ListProperty, StringProperty, Property, SelectProperty
+from nio.router.context import RouterContext
 from nio.util.logging import get_nio_logger
 from nio.util.logging.levels import LogLevel
 from nio.util.runner import Runner, RunnerStatus
+from nio.util.threading import spawn
+from nio.util.versioning.dependency import DependsOn
 
 
 class BlockExecution(PropertyHolder):
@@ -196,7 +196,8 @@ class Service(PropertyHolder, CommandHolder, Runner):
         router_context = RouterContext(self.execution(),
                                        self._blocks,
                                        context.router_settings,
-                                       context.mgmt_signal_handler)
+                                       context.mgmt_signal_handler,
+                                       context.instance_id)
         self._block_router.do_configure(router_context)
         self.mgmt_signal_handler = context.mgmt_signal_handler
         self._blocks_async_start = context.blocks_async_start

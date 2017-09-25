@@ -2,6 +2,7 @@ import inspect
 from collections import Iterable
 from copy import deepcopy
 
+from nio.router.diagnostic import DiagnosticManager
 from nio.signal.base import Signal
 from nio.signal.management import ManagementSignal
 from nio.util.runner import Runner, RunnerStatus
@@ -82,7 +83,9 @@ class BlockRouter(Runner):
         self._clone_signals = False
         self._check_signal_type = True
         self._mgmt_signal_handler = None
+        self._instance_id = None
         self._diagnostics = True
+        self._diagnostic_manager = None
 
     def configure(self, context):
         """Configures block router.
@@ -96,6 +99,7 @@ class BlockRouter(Runner):
         """
 
         self._mgmt_signal_handler = context.mgmt_signal_handler
+        self._instance_id = context.instance_id
         self._clone_signals = \
             context.settings.get("clone_signals", True)
         if self._clone_signals:
@@ -104,6 +108,9 @@ class BlockRouter(Runner):
             context.settings.get("check_signal_type", True)
         self._diagnostics = \
             context.settings.get("diagnostics", True)
+        if self._diagnostics:
+            self._diagnostic_manager = DiagnosticManager()
+            self._diagnostic_manager.configure(context)
 
         # cache receivers to avoid searches during signal delivery by
         # creating a dictionary of the form
@@ -152,6 +159,16 @@ class BlockRouter(Runner):
                         context.blocks,
                         sender_block._default_output.id)
                     self._receivers[sender_block_name].extend(parsed_receivers)
+
+    def start(self):
+        super().start()
+        if self._diagnostic_manager:
+            self._diagnostic_manager.start()
+
+    def stop(self):
+        if self._diagnostic_manager:
+            self._diagnostic_manager.stop()
+        super().stop()
 
     def _process_receivers_list(self, receivers, blocks, output_id):
         """ Goes through and process each receiver
@@ -328,10 +345,11 @@ class BlockRouter(Runner):
                     # if diagnostics are enabled, notify
                     # through management signal delivery
                     if self._diagnostics:
-                        self.notify_management_signal(
-                            block,
+                        self._diagnostic_manager.on_signal(
                             ManagementSignal(
                                 {
+                                    "instance_id": self._instance_id,
+                                    "service": block._service_name,
                                     "type": "RouterDiagnostic",
                                     "source": block.name(),
                                     "target": receiver_data.block.name(),
