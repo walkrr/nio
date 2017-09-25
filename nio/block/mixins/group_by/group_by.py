@@ -6,7 +6,7 @@ from nio.command import command
 from nio.command.holder import CommandHolder
 
 
-@command("groups")
+@command("groups", method='_groups_command')
 class GroupBy(CommandHolder):
 
     """ Use this base class to extend block functionality to groups of signals
@@ -144,3 +144,6 @@ class GroupBy(CommandHolder):
 
     def groups(self):
         return self._groups
+
+    def _groups_command(self):
+        return {"groups": list(self._groups)}

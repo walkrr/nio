@@ -216,8 +216,8 @@ class TestGroupBy(NIOBlockTestCase):
             "group_by": "{{ $group }}"
         })
 
-        block_groups = block.groups()
-        self.assertEqual(len(block_groups), 0)
+        block_groups = block._groups_command()
+        self.assertDictEqual(block_groups, {"groups": []})
 
         # Notify 3 signals into the block
         block.process_signals([
@@ -227,17 +227,17 @@ class TestGroupBy(NIOBlockTestCase):
         ])
 
         # verify created groups
-        expected_groups = {1, 2}
-        block_groups = block.groups()
-        self.assertEqual(expected_groups, block_groups)
+        expected_groups = {"groups": [1, 2]}
+        block_groups = block._groups_command()
+        self.assertDictEqual(expected_groups, block_groups)
 
         block.process_signals([
             Signal({"group": 3, "value": 3})
         ])
 
-        expected_groups = {1, 2, 3}
-        block_groups = block.groups()
-        self.assertEqual(expected_groups, block_groups)
+        expected_groups = {"groups": [1, 2, 3]}
+        block_groups = block._groups_command()
+        self.assertDictEqual(expected_groups, block_groups)
 
     def test_no_output(self):
         """If process_group_signals returns empty lists, don't notify them"""
