@@ -3,11 +3,11 @@ from unittest.mock import patch
 from nio.block.base import Block
 from nio.block.context import BlockContext
 from nio.block.terminals import DEFAULT_TERMINAL
-from nio.service.base import BlockExecution
-from nio.signal.base import Signal
 from nio.router.base import BlockRouter
 from nio.router.context import RouterContext
-from nio.testing.test_case import NIOTestCaseNoModules
+from nio.service.base import BlockExecution
+from nio.signal.base import Signal
+from nio.testing.test_case import NIOTestCase
 
 
 class SenderBlock(Block):
@@ -31,7 +31,7 @@ class BlockExecutionTest(BlockExecution):
         self.receivers = receivers
 
 
-class TestSignalsArgument(NIOTestCaseNoModules):
+class TestSignalsArgument(NIOTestCase):
 
     def test_signals_argument_type_check(self):
         """Asserts that router handles the argument signals per specifications

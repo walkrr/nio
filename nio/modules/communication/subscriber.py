@@ -32,11 +32,10 @@ class Subscriber(ModuleProxy):
         raise NotImplementedError()
 
     def close(self):
-        """ Closes publisher.
+        """ Close a subscriber.
 
-        This method delegates functionality to notify others the
-        subscriber removal via a management signal.
+        After closing it is expected all connections to publishers to be
+        severed.
 
         """
-
         raise NotImplementedError()

@@ -1,12 +1,12 @@
 from nio import Signal
-from nio.block.terminals import input, output, DEFAULT_TERMINAL
 from nio.block.base import Block
 from nio.block.context import BlockContext
+from nio.block.terminals import input, output, DEFAULT_TERMINAL
 from nio.router.base import BlockRouter, BlockReceiverData, \
     InvalidProcessSignalsSignature, InvalidBlockOutput
 from nio.router.context import RouterContext
 from nio.service.base import BlockExecution
-from nio.testing.test_case import NIOTestCaseNoModules
+from nio.testing.test_case import NIOTestCase
 
 # CONFIGURATION to follow for unittests understanding
 """
@@ -175,7 +175,7 @@ class BlockExecutionTest(BlockExecution):
         self.receivers = receivers
 
 
-class TestInputOutput(NIOTestCaseNoModules):
+class TestInputOutput(NIOTestCase):
 
     def test_two_outputs_default_input(self):
         block_router = BlockRouter()

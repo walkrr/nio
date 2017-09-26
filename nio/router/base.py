@@ -2,7 +2,9 @@ import inspect
 from collections import Iterable
 from copy import deepcopy
 
+from nio.router.diagnostic import DiagnosticManager
 from nio.signal.base import Signal
+from nio.signal.management import ManagementSignal
 from nio.util.runner import Runner, RunnerStatus
 
 
@@ -81,6 +83,8 @@ class BlockRouter(Runner):
         self._clone_signals = False
         self._check_signal_type = True
         self._mgmt_signal_handler = None
+        self._diagnostics = True
+        self._diagnostic_manager = None
 
     def configure(self, context):
         """Configures block router.
@@ -100,6 +104,11 @@ class BlockRouter(Runner):
             self.logger.info('Set to clone signals for multiple receivers')
         self._check_signal_type = \
             context.settings.get("check_signal_type", True)
+        self._diagnostics = \
+            context.settings.get("diagnostics", True)
+        if self._diagnostics:
+            self._diagnostic_manager = DiagnosticManager()
+            self._diagnostic_manager.do_configure(context)
 
         # cache receivers to avoid searches during signal delivery by
         # creating a dictionary of the form
@@ -148,6 +157,16 @@ class BlockRouter(Runner):
                         context.blocks,
                         sender_block._default_output.id)
                     self._receivers[sender_block_name].extend(parsed_receivers)
+
+    def start(self):
+        super().start()
+        if self._diagnostics:
+            self._diagnostic_manager.do_start()
+
+    def stop(self):
+        if self._diagnostics:
+            self._diagnostic_manager.do_stop()
+        super().stop()
 
     def _process_receivers_list(self, receivers, blocks, output_id):
         """ Goes through and process each receiver
@@ -320,6 +339,13 @@ class BlockRouter(Runner):
                             len(signals_to_send),
                             block.name(),
                             receiver_data.block.name()))
+
+                    if self._diagnostics:
+                        self._diagnostic_manager.on_signal_delivery(
+                            block._service_name, block.name(),
+                            receiver_data.block.name(), len(signals_to_send)
+                        )
+
                     self.deliver_signals(receiver_data, signals_to_send)
 
         elif self.status.is_set(RunnerStatus.stopped):

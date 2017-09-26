@@ -1,12 +1,12 @@
-from nio.util.runner import RunnerStatus
 from nio.block.base import Block
 from nio.router.base import BlockRouter
-from nio.testing.test_case import NIOTestCaseNoModules
 from nio.service.base import Service, BlockExecution
 from nio.service.context import ServiceContext
-from nio.signal.management import ManagementSignal
 from nio.signal.base import Signal
+from nio.signal.management import ManagementSignal
 from nio.signal.status import StatusSignal, BlockStatusSignal
+from nio.testing.test_case import NIOTestCase
+from nio.util.runner import RunnerStatus
 
 
 class SenderBlock(Block):
@@ -49,7 +49,7 @@ properties = {"name": "ServiceTestInstance",
               "mappings": []}
 
 
-class TestNotifyManagementSignals(NIOTestCaseNoModules):
+class TestNotifyManagementSignals(NIOTestCase):
 
     """ These tests mainly prove that the Service handles well the
     mappings specified and that the signals make it all the way through

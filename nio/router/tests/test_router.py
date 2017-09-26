@@ -4,16 +4,16 @@ from unittest.mock import patch
 from nio.block.base import Block
 from nio.block.context import BlockContext
 from nio.block.terminals import input, output, DEFAULT_TERMINAL
-from nio.signal.base import Signal
-from nio.router.context import RouterContext
 from nio.router.base import BlockRouter, InvalidBlockOutput, \
     InvalidBlockInput, MissingBlock, BlockRouterNotStarted
+from nio.router.context import RouterContext
 from nio.service.base import BlockExecution
+from nio.signal.base import Signal
+from nio.testing.test_case import NIOTestCase
 from nio.util.runner import RunnerStatus
-from nio.testing.test_case import NIOTestCaseNoModules
 
 
-class TestBaseRouter(NIOTestCaseNoModules):
+class TestBaseRouter(NIOTestCase):
 
     def _configure_router(self, block_1, block_2, block_1_output=None,
                           block_2_input=None):

@@ -2,8 +2,8 @@ from nio import Signal
 from nio.block.base import Block
 from nio.block.context import BlockContext
 from nio.block.terminals import DEFAULT_TERMINAL
-from nio.service.base import BlockExecution
 from nio.router.context import RouterContext
+from nio.service.base import BlockExecution
 from nio.testing.test_case import NIOTestCase
 
 
@@ -49,7 +49,7 @@ class TestBlockRouter(NIOTestCase):
         from nio.router.thread_pool_executor import ThreadedPoolExecutorRouter
 
         block_router = ThreadedPoolExecutorRouter()
-        context = BlockContext(block_router, dict(), dict())
+        context = BlockContext(block_router, dict(), "service_name")
 
         # create blocks
         sender_block = SenderBlock()
