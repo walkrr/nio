@@ -41,7 +41,7 @@ class BlockExecutionTest(BlockExecution):
         self.receivers = receivers
 
 
-class TestDiagnostics(NIOTestCase):
+class TestBaseDiagnostics(NIOTestCase):
 
     def test_diagnostics(self):
         """ Checking that router delivers signals and diagnostics """
@@ -71,6 +71,7 @@ class TestDiagnostics(NIOTestCase):
 
         block_router.do_configure(router_context)
         block_router.do_start()
+        block_router._diagnostic_manager = Mock()
 
         common_attribute = "common attribute"
         common_value = "common value"
@@ -81,16 +82,16 @@ class TestDiagnostics(NIOTestCase):
 
         sender_block.process_signals(signals)
 
-        # make sure signals made it and signal_handler was invoked
+        # make sure signals made it and diagnostic_manager.on_signal_delivery
+        # was invoked
         self.assertIsNotNone(receiver_block.signal_cache)
-        self.assertGreater(signal_handler.call_count, 0)
-        self.assertEqual(signal_handler.call_args[0][0].type,
-                         "RouterDiagnostic")
+        self.assertGreater(
+            block_router._diagnostic_manager.on_signal_delivery.call_count, 0)
 
         block_router.do_stop()
 
         # setup now a router without diagnostics
-        signal_handler.reset_mock()
+        block_router._diagnostic_manager.on_signal_delivery.reset_mock()
         router_context = RouterContext(execution, blocks,
                                        {
                                            "clone_signals": True,
@@ -103,6 +104,7 @@ class TestDiagnostics(NIOTestCase):
         sender_block.process_signals(signals)
         self.assertIsNotNone(receiver_block.signal_cache)
         # assert that diagnostics were not delivered
-        self.assertEqual(signal_handler.call_count, 0)
+        self.assertEqual(
+            block_router._diagnostic_manager.on_signal_delivery.call_count, 0)
 
         block_router.do_stop()

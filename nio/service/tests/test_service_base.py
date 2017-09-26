@@ -6,10 +6,10 @@ from nio.router.base import BlockRouter
 from nio.service.base import Service
 from nio.service.context import ServiceContext
 from nio.signal.base import Signal
-from nio.testing.test_case import NIOTestCaseNoModules
+from nio.testing.test_case import NIOTestCase
 
 
-class TestBaseService(NIOTestCaseNoModules):
+class TestBaseService(NIOTestCase):
 
     def test_configure(self):
         """Make sure a service can be configured"""

@@ -1,12 +1,12 @@
 from nio import Signal
 from nio.block.base import Block
 from nio.block.context import BlockContext
+from nio.block.terminals import input, output, DEFAULT_TERMINAL
 from nio.router.base import BlockRouter, InvalidBlockOutput, \
     InvalidBlockInput
 from nio.router.context import RouterContext
 from nio.service.base import BlockExecution
-from nio.testing.test_case import NIOTestCaseNoModules
-from nio.block.terminals import input, output, DEFAULT_TERMINAL
+from nio.testing.test_case import NIOTestCase
 
 
 class OutputBlock(Block):
@@ -54,7 +54,7 @@ class BlockExecutionTest(BlockExecution):
         self.receivers = receivers
 
 
-class TestInputOutputValidations(NIOTestCaseNoModules):
+class TestInputOutputValidations(NIOTestCase):
 
     def test_valid_input_output(self):
         block_router = BlockRouter()

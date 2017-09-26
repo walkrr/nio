@@ -83,7 +83,6 @@ class BlockRouter(Runner):
         self._clone_signals = False
         self._check_signal_type = True
         self._mgmt_signal_handler = None
-        self._instance_id = None
         self._diagnostics = True
         self._diagnostic_manager = None
 
@@ -99,7 +98,6 @@ class BlockRouter(Runner):
         """
 
         self._mgmt_signal_handler = context.mgmt_signal_handler
-        self._instance_id = context.instance_id
         self._clone_signals = \
             context.settings.get("clone_signals", True)
         if self._clone_signals:
@@ -110,7 +108,7 @@ class BlockRouter(Runner):
             context.settings.get("diagnostics", True)
         if self._diagnostics:
             self._diagnostic_manager = DiagnosticManager()
-            self._diagnostic_manager.configure(context)
+            self._diagnostic_manager.do_configure(context)
 
         # cache receivers to avoid searches during signal delivery by
         # creating a dictionary of the form
@@ -162,12 +160,12 @@ class BlockRouter(Runner):
 
     def start(self):
         super().start()
-        if self._diagnostic_manager:
-            self._diagnostic_manager.start()
+        if self._diagnostics:
+            self._diagnostic_manager.do_start()
 
     def stop(self):
-        if self._diagnostic_manager:
-            self._diagnostic_manager.stop()
+        if self._diagnostics:
+            self._diagnostic_manager.do_stop()
         super().stop()
 
     def _process_receivers_list(self, receivers, blocks, output_id):
@@ -342,20 +340,10 @@ class BlockRouter(Runner):
                             block.name(),
                             receiver_data.block.name()))
 
-                    # if diagnostics are enabled, notify
-                    # through management signal delivery
                     if self._diagnostics:
-                        self._diagnostic_manager.on_signal(
-                            ManagementSignal(
-                                {
-                                    "instance_id": self._instance_id,
-                                    "service": block._service_name,
-                                    "type": "RouterDiagnostic",
-                                    "source": block.name(),
-                                    "target": receiver_data.block.name(),
-                                    "count": len(signals_to_send)
-                                }
-                            )
+                        self._diagnostic_manager.on_signal_delivery(
+                            block._service_name, block.name(),
+                            receiver_data.block.name(), len(signals_to_send)
                         )
 
                     self.deliver_signals(receiver_data, signals_to_send)
