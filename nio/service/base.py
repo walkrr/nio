@@ -197,7 +197,8 @@ class Service(PropertyHolder, CommandHolder, Runner):
                                        self._blocks,
                                        context.router_settings,
                                        context.mgmt_signal_handler,
-                                       context.instance_id)
+                                       context.instance_id,
+                                       self.name())
         self._block_router.do_configure(router_context)
         self.mgmt_signal_handler = context.mgmt_signal_handler
         self._blocks_async_start = context.blocks_async_start

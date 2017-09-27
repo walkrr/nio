@@ -11,6 +11,10 @@ from nio.testing.test_case import NIOTestCase
 class TestDiagnostic(NIOTestCase):
 
     def test_diagnostic(self):
+
+        def check_handler_was_called(signal_handler):
+            return signal_handler.call_count > 0
+
         instance_id1 = "instance_id1"
         service1 = "service1"
         source1 = "source1"
@@ -27,8 +31,8 @@ class TestDiagnostic(NIOTestCase):
                                            "diagnostic_interval": 0.1
                                        },
                                        mgmt_signal_handler=signal_handler,
-                                       instance_id=instance_id1)
-
+                                       instance_id=instance_id1,
+                                       service_name=service1)
 
         dm = DiagnosticManager()
         dm.do_configure(router_context)
@@ -36,34 +40,70 @@ class TestDiagnostic(NIOTestCase):
 
         event = Event()
         condition = ConditionWaiter(event,
-                                    self._check_handler_was_called,
+                                    check_handler_was_called,
                                     signal_handler)
         condition.start()
-        dm.on_signal_delivery(service1, source1, target1, count11)
-        dm.on_signal_delivery(service1, source1, target1, count12)
-        dm.on_signal_delivery(service1, source1, target2, count2)
+        dm.on_signal_delivery(source1, target1, count11)
+        dm.on_signal_delivery(source1, target1, count12)
+        dm.on_signal_delivery(source1, target2, count2)
         self.assertTrue(event.wait(1))
         condition.stop()
 
         self.assertEqual(signal_handler.call_count, 1)
-        self.assertEqual(len(signal_handler.call_args[0][0]), 2)
-        for signal in signal_handler.call_args[0][0]:
-            self.assertIsInstance(signal, ManagementSignal)
-            # assert signal fields
-            self.assertEqual(signal.type, "RouterDiagnostic")
-            self.assertEqual(signal.instance_id, instance_id1)
-            self.assertEqual(signal.service, service1)
-            self.assertEqual(signal.source, source1)
-            if signal.target == target1:
+        signal = signal_handler.call_args[0][0]
+        self.assertIsInstance(signal, ManagementSignal)
+        # assert signal fields
+        self.assertEqual(signal.type, "RouterDiagnostic")
+        self.assertEqual(signal.instance_id, instance_id1)
+        self.assertEqual(signal.service, service1)
+        self.assertLessEqual(signal.start_time, signal.end_time)
+        for block_data in signal.blocks_data:
+            self.assertEqual(block_data["source"], source1)
+            if block_data["target"] == target1:
                 # assert that count was added up
-                self.assertEqual(signal.count, count11 + count12)
-            elif signal.target == target2:
-                # assert that count was added up
-                self.assertEqual(signal.count, count2)
+                self.assertEqual(block_data["count"], count11 + count12)
+            elif block_data["target"] == target2:
+                self.assertEqual(block_data["count"], count2)
             else:
                 raise ValueError("Invalid target")
 
         dm.do_stop()
 
-    def _check_handler_was_called(self, signal_handler):
-        return signal_handler.call_count > 0
+    def test_times(self):
+        """ Assert diagnostic start_time/end_time values.
+        """
+        instance_id1 = "instance_id1"
+        service1 = "service1"
+        source1 = "source1"
+        target1 = "target1"
+        count1 = 5
+
+        signal_handler = Mock()
+        router_context = RouterContext([], {},
+                                       {},
+                                       mgmt_signal_handler=signal_handler,
+                                       instance_id=instance_id1,
+                                       service_name=service1)
+
+        dm = DiagnosticManager()
+        dm.do_configure(router_context)
+        dm.do_start()
+
+        dm.on_signal_delivery(source1, target1, count1)
+        dm._send_diagnostic()
+        self.assertEqual(signal_handler.call_count, 1)
+        signal1 = signal_handler.call_args[0][0]
+
+        # cause a second diagnostic
+        signal_handler.reset_mock()
+        dm.on_signal_delivery(source1, target1, count1)
+        dm._send_diagnostic()
+        self.assertEqual(signal_handler.call_count, 1)
+        signal2 = signal_handler.call_args[0][0]
+
+        # assert start_time and end_time combinations
+        self.assertLessEqual(signal1.start_time, signal1.end_time)
+        self.assertEqual(signal1.end_time, signal2.start_time)
+        self.assertLessEqual(signal2.start_time, signal2.end_time)
+
+        dm.do_stop()

@@ -1,5 +1,5 @@
 from collections import defaultdict
-from datetime import timedelta
+from datetime import timedelta, datetime
 from threading import RLock
 
 from nio.modules.scheduler.job import Job
@@ -12,27 +12,29 @@ class DiagnosticManager(Runner):
     def __init__(self):
         super().__init__()
 
+        self._start_time = None
         self._instance_id = None
+        self._service_name = None
         self._interval = None
         self._mgmt_signal_handler = None
         self._job = None
 
-        self._signals_lock = RLock()
-        self._signals = None
+        self._blocks_data_lock = RLock()
+        self._blocks_data = None
 
     def configure(self, context):
         self._instance_id = context.instance_id
+        self._service_name = context.service_name
         self._interval = \
             context.settings.get("diagnostic_interval", 60)
         self._mgmt_signal_handler = context.mgmt_signal_handler
-        self._signals = \
-            defaultdict(lambda:
-                        defaultdict(lambda:
-                                    defaultdict((int))))
+        self._blocks_data = defaultdict(lambda: defaultdict(int))
 
     def start(self):
         super().start()
 
+        # initialize collection start time
+        self._start_time = datetime.utcnow().timestamp()
         # create job to periodically send updates
         if self._interval > 0:
             self._job = \
@@ -48,29 +50,35 @@ class DiagnosticManager(Runner):
         self._send_diagnostic()
         super().stop()
 
-    def on_signal_delivery(self, service, source, target, count):
-        with self._signals_lock:
-            self._signals[service][source][target] += count
+    def on_signal_delivery(self, source, target, count):
+        with self._blocks_data_lock:
+            self._blocks_data[source][target] += count
 
     def _send_diagnostic(self):
-        with self._signals_lock:
-            if self._signals and self._mgmt_signal_handler:
-                signals_to_send = []
-                for service, data in self._signals.items():
-                    for source, target_data in data.items():
-                        for target, count in target_data.items():
-                            signals_to_send.append(
-                                ManagementSignal(
-                                    {
-                                        "type": "RouterDiagnostic",
-                                        "instance_id": self._instance_id,
-                                        "service": service,
-                                        "source": source,
-                                        "target": target,
-                                        "count": count
-                                    }
-                                )
-                            )
-
-                self._mgmt_signal_handler(signals_to_send)
-                self._signals.clear()
+        with self._blocks_data_lock:
+            end_time = datetime.utcnow().timestamp()
+            if self._blocks_data and self._mgmt_signal_handler:
+                blocks_data = []
+                for source, target_data in self._blocks_data.items():
+                    for target, count in target_data.items():
+                        blocks_data.append(
+                            {
+                                "source": source,
+                                "target": target,
+                                "count": count
+                            }
+                        )
+                self._mgmt_signal_handler(
+                    ManagementSignal(
+                        {
+                            "type": "RouterDiagnostic",
+                            "instance_id": self._instance_id,
+                            "service": self._service_name,
+                            "blocks_data": blocks_data,
+                            "start_time": self._start_time,
+                            "end_time": end_time
+                        }
+                    )
+                )
+                self._blocks_data.clear()
+            self._start_time = end_time
