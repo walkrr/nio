@@ -9,6 +9,8 @@ from nio.util.runner import Runner
 
 class DiagnosticManager(Runner):
 
+    _type_separator = "###"
+
     def __init__(self):
         super().__init__()
 
@@ -50,20 +52,30 @@ class DiagnosticManager(Runner):
         self._send_diagnostic()
         super().stop()
 
-    def on_signal_delivery(self, source, target, count):
+    def on_signal_delivery(self,
+                           source_type, source,
+                           target_type, target, count):
         with self._blocks_data_lock:
-            self._blocks_data[source][target] += count
+            source_key = self._create_key(source_type, source)
+            target_key = self._create_key(target_type, target)
+            self._blocks_data[source_key][target_key] += count
 
     def _send_diagnostic(self):
         with self._blocks_data_lock:
             end_time = datetime.utcnow().timestamp()
             if self._blocks_data and self._mgmt_signal_handler:
                 blocks_data = []
-                for source, target_data in self._blocks_data.items():
-                    for target, count in target_data.items():
+                for source_key, target_data in self._blocks_data.items():
+                    for target_key, count in target_data.items():
+                        source_type, source = \
+                            self._split_key(source_key)
+                        target_type, target = \
+                            self._split_key(target_key)
                         blocks_data.append(
                             {
+                                "source_type": source_type,
                                 "source": source,
+                                "target_type": target_type,
                                 "target": target,
                                 "count": count
                             }
@@ -82,3 +94,22 @@ class DiagnosticManager(Runner):
                 )
                 self._blocks_data.clear()
             self._start_time = end_time
+
+    @staticmethod
+    def _create_key(_type, name):
+        """ Creates a key by merging type and name
+
+        Returns:
+            created key
+        """
+        return "{}{}{}".format(_type, DiagnosticManager._type_separator, name)
+
+    @staticmethod
+    def _split_key(_id):
+        """ Splits a key
+
+        Returns:
+            type, name tuple
+        """
+        ids = _id.split(DiagnosticManager._type_separator)
+        return ids[0], ids[1]
