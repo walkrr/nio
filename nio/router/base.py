@@ -342,7 +342,9 @@ class BlockRouter(Runner):
 
                     if self._diagnostics:
                         self._diagnostic_manager.on_signal_delivery(
+                            block.type(),
                             block.name(),
+                            receiver_data.block.type(),
                             receiver_data.block.name(),
                             len(signals_to_send)
                         )
