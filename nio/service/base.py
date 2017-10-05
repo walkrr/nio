@@ -7,7 +7,7 @@ from nio.properties import PropertyHolder, VersionProperty, \
 from nio.router.context import RouterContext
 from nio.util.logging import get_nio_logger
 from nio.util.logging.levels import LogLevel
-from nio.util.runner import Runner, RunnerStatus
+from nio.util.runner import Runner
 from nio.util.threading import spawn
 from nio.util.versioning.dependency import DependsOn
 
@@ -120,11 +120,6 @@ class Service(PropertyHolder, CommandHolder, Runner):
         on the parent, after which it can assume that block router and blocks
         are stopped
         """
-        if self._block_router:
-            # 'alert' block controller that service will be
-            # 'stopped' shortly
-            self._block_router.status = RunnerStatus.stopping
-
         if self._blocks_async_stop:
             self._execute_on_blocks_async("do_stop")
         else:
