@@ -17,7 +17,7 @@ setup(
     packages=find_packages(
         exclude=['*.tests', '*.tests.*', 'tests.*', 'tests']),
 
-    install_requires=['safepickle>=0.1.0rc2'],
+    install_requires=['safepickle>=0.1.0'],
 
     tests_require=[
         'requests>=2.3.0'
