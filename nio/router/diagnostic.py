@@ -28,7 +28,7 @@ class DiagnosticManager(Runner):
         self._instance_id = context.instance_id
         self._service_name = context.service_name
         self._interval = \
-            context.settings.get("diagnostic_interval", 60)
+            context.settings.get("diagnostic_interval", 3600)
         self._mgmt_signal_handler = context.mgmt_signal_handler
         self._blocks_data = defaultdict(lambda: defaultdict(int))
 
