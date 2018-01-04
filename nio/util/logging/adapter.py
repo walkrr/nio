@@ -1,7 +1,7 @@
-from enum import Enum
 import logging
 import sys
 from datetime import datetime
+from enum import Enum
 
 
 class NIOAdapter(logging.LoggerAdapter):
@@ -11,7 +11,6 @@ class NIOAdapter(logging.LoggerAdapter):
     detail_errors = True
 
     def __init__(self, logger, extra={}):
-        self.name = logger.name
         super().__init__(logger, extra)
 
     def setLevel(self, level):
@@ -63,7 +62,7 @@ class NIOAdapter(logging.LoggerAdapter):
         """
 
         self.extra["niotime"] = self._time()
-        self.extra["context"] = self.name
+        self.extra["context"] = self.logger.name
         return super().process(msg, kwargs)
 
     def _time(self):
