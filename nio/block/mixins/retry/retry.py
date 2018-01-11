@@ -131,19 +131,20 @@ class Retry(object):
         # If it doesn't define __name__, use however we should stringify
         execute_method_name = getattr(
             execute_method, '__name__', str(execute_method))
+        backoff_strategy = self.__new_backoff_strategy()
         while not stop_retry_event or not stop_retry_event.is_set():
             try:
                 result = execute_method(*args, **kwargs)
                 # If we got here, the request succeeded, let the backoff
                 # strategy know then return the result
-                self._backoff_strategy.request_succeeded()
+                backoff_strategy.request_succeeded()
                 return result
             except Exception as exc:
                 self.logger.warning(
                     "Retryable execution on method {} failed".format(
                         execute_method_name), exc_info=True)
-                self._backoff_strategy.request_failed(exc)
-                should_retry = self._backoff_strategy.should_retry()
+                backoff_strategy.request_failed(exc)
+                should_retry = backoff_strategy.should_retry()
                 if not should_retry:
                     # Backoff strategy has said we're done retrying,
                     # so re-raise the exception
@@ -155,7 +156,7 @@ class Retry(object):
                     # Backoff strategy has instructed us to retry again. First
                     # let the strategy do any waiting, then execute any
                     # pre-work before looping and executing the method again
-                    self._backoff_strategy.wait_for_retry()
+                    backoff_strategy.wait_for_retry()
                     self.before_retry(*args, **kwargs)
 
     def use_backoff_strategy(self, strategy, *args, **kwargs):
@@ -171,8 +172,16 @@ class Retry(object):
         """
         if not issubclass(strategy, BackoffStrategy):
             raise TypeError("Backoff strategy must subclass BackoffStrategy")
-        self._backoff_strategy = strategy(*args, **kwargs)
-        self._backoff_strategy.use_logger(self.logger)
+        self.__backoff_strategy_class = strategy
+        self.__backoff_strategy_args = args
+        self.__backoff_strategy_kwargs = kwargs
+
+    def __new_backoff_strategy(self):
+        strategy = self.__backoff_strategy_class(
+            *self.__backoff_strategy_args,
+            **self.__backoff_strategy_kwargs)
+        strategy.use_logger(self.logger)
+        return strategy
 
     def before_retry(self, *args, **kwargs):
         """ Perform any actions before the next retry occurs.
