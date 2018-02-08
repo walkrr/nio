@@ -162,6 +162,8 @@ class FileSerializer(ProjectSerializer):
 
         # create instance where settings will be stored and written from
         settings = RawConfigParser()
+        # keep case sensitivity
+        settings.optionxform = str
 
         # save special dict entries known to be saved as linked files
         serialized_entries = self._serialize_dict_entries(configuration)
@@ -293,6 +295,8 @@ class FileSerializer(ProjectSerializer):
 
         # read the contents of the conf file with the config parser
         settings = RawConfigParser()
+        # keep case sensitivity
+        settings.optionxform = str
         settings.read(nio_conf)
 
         # Populate our configuration dictionary

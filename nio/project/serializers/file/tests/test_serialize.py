@@ -111,7 +111,7 @@ class TestSerialize(NIOTestCase):
             ConfigurationEntity({"option1": "value1"})
         # option to be saved with a new value
         project1.configuration["security"] = \
-            ConfigurationEntity({"option3": "value3"})
+            ConfigurationEntity({"OPTION3": "value3"})
 
         # seralize configuration creating a conf file on disk
         serializer1 = FileSerializer(self.tmp_project_dir)
@@ -133,7 +133,7 @@ class TestSerialize(NIOTestCase):
             ConfigurationEntity({"option2": "value2"})
         # add an option that already exists in file
         project1.configuration["security"] = \
-            ConfigurationEntity({"option3": "new value3"})
+            ConfigurationEntity({"OPTION3": "new value3"})
         # serialize new project
         serializer1.serialize(project1)
 
@@ -150,10 +150,10 @@ class TestSerialize(NIOTestCase):
         self.assertEqual('value2',
                          project2.configuration["logging"].data["option2"])
         # assert that option3 contains the new value
-        self.assertIn("option3",
+        self.assertIn("OPTION3",
                       project2.configuration["security"].data)
         self.assertEqual('new value3',
-                         project2.configuration["security"].data["option3"])
+                         project2.configuration["security"].data["OPTION3"])
 
     def test_config_dict_entries(self):
         """ Asserts known dict entries are serialized as files
