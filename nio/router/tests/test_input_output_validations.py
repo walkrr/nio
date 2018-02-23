@@ -10,10 +10,7 @@ from nio.testing.test_case import NIOTestCase
 
 
 class OutputBlock(Block):
-
-    def __init__(self):
-        super().__init__()
-        self.name = self.__class__.__name__.lower()
+    pass
 
 
 @output("first", default=True)
@@ -30,7 +27,6 @@ class InputBlock(Block):
 
     def __init__(self):
         super().__init__()
-        self.name = self.__class__.__name__.lower()
         self.signal_cache = []
 
     def process_signals(self, signals, input_id=DEFAULT_TERMINAL):
@@ -49,8 +45,8 @@ class SecondInputBlock(InputBlock):
 
 class BlockExecutionTest(BlockExecution):
 
-    def __init__(self, name, receivers):
-        self.name = name
+    def __init__(self, id, receivers):
+        self.id = id
         self.receivers = receivers
 
 
@@ -67,16 +63,18 @@ class TestInputOutputValidations(NIOTestCase):
         receiver_block.configure(context)
 
         # create context initialization data
-        blocks = dict(firstinputblock=receiver_block,
-                      firstoutputblock=sender_block)
+        blocks = {receiver_block.id():receiver_block,
+                  sender_block.id():sender_block}
 
         input_id1 = "first"
         execution = [
             BlockExecutionTest(
-                name="FirstOutputBlock".lower(),
+                id=sender_block.id(),
                 receivers={
-                    "first": [
-                        "FirstInputBlock".lower()]})]
+                    "first": [receiver_block.id()]
+                }
+            )
+        ]
 
         router_context = RouterContext(execution, blocks)
 
@@ -111,14 +109,17 @@ class TestInputOutputValidations(NIOTestCase):
         receiver_block.configure(context)
 
         # create context initialization data
-        blocks = dict(firstinputblock=receiver_block,
-                      firstoutputblock=sender_block)
+        blocks = {receiver_block.id():receiver_block,
+                  sender_block.id():sender_block}
 
         execution = [
-            BlockExecutionTest(name="FirstOutputBlock".lower(),
-                               receivers={"second": [
-                                   {"name": "FirstInputBlock".lower(),
-                                    "input": "first"}]})]
+            BlockExecutionTest(
+                id=sender_block.id(),
+                receivers={
+                    "second": [{
+                        "id": receiver_block.id(),
+                        "input": "first"
+                    }]})]
         router_context = RouterContext(execution, blocks)
 
         self.assertRaises(InvalidBlockOutput,
@@ -136,14 +137,17 @@ class TestInputOutputValidations(NIOTestCase):
         receiver_block.configure(context)
 
         # create context initialization data
-        blocks = dict(secondinputblock=receiver_block,
-                      firstoutputblock=sender_block)
+        blocks = {receiver_block.id():receiver_block,
+                  sender_block.id():sender_block}
 
         execution = [
-            BlockExecutionTest(name="FirstOutputBlock".lower(),
-                               receivers={"first": [
-                                   {"name": "SecondInputBlock".lower(),
-                                    "input": "first"}]})]
+            BlockExecutionTest(
+                id=sender_block.id(),
+                receivers= {
+                    "first": [{
+                        "id": receiver_block.id(),
+                        "input": "first"
+                    }]})]
         router_context = RouterContext(execution, blocks)
 
         self.assertRaises(InvalidBlockInput,
@@ -169,12 +173,13 @@ class TestInputOutputValidations(NIOTestCase):
         receiver_block.configure(context)
 
         # create context initialization data
-        blocks = dict(firstinputblock=receiver_block,
-                      outputblock=sender_block)
+        blocks = {receiver_block.id():receiver_block,
+                  sender_block.id():sender_block}
 
         execution = [
-            BlockExecutionTest(name="OutputBlock".lower(),
-                               receivers=["FirstInputBlock".lower()])]
+            BlockExecutionTest(
+                id=sender_block.id(),
+                receivers=[receiver_block.id()])]
         router_context = RouterContext(execution, blocks)
 
         block_router.do_configure(router_context)

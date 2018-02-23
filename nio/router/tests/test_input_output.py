@@ -90,10 +90,6 @@ from nio.testing.test_case import NIOTestCase
 
 class Sim(Block):
 
-    def __init__(self):
-        super().__init__()
-        self.name = self.__class__.__name__.lower()
-
     def process_signals(self, signals, input_id=DEFAULT_TERMINAL):
         self.notify_signals(signals)
 
@@ -102,7 +98,6 @@ class Log1(Block):
 
     def __init__(self):
         super().__init__()
-        self.name = self.__class__.__name__.lower()
         self.signal_cache = []
 
     def process_signals(self, signals, input_id=DEFAULT_TERMINAL):
@@ -113,7 +108,6 @@ class Log2(Block):
 
     def __init__(self):
         super().__init__()
-        self.name = self.__class__.__name__.lower()
         self.signal_cache = []
 
     # Don't have to define an input_id
@@ -123,10 +117,6 @@ class Log2(Block):
 
 class InvalidProcessSignals(Block):
 
-    def __init__(self):
-        super().__init__()
-        self.name = self.__class__.__name__.lower()
-
     # This process signals signature is invalid and should throw an exception
     def process_signals(self, signals, input_id, what_am_i):
         pass
@@ -135,29 +125,21 @@ class InvalidProcessSignals(Block):
 @output(0)
 @output(1)
 class Two_Outputs(Block):
-
-    def __init__(self):
-        super().__init__()
-        self.name = self.__class__.__name__.lower()
+    pass
 
 
 @output(0)
 @output(1)
 @output(2)
 class Three_Outputs(Block):
-
-    def __init__(self):
-        super().__init__()
-        self.name = self.__class__.__name__.lower()
+    pass
 
 
 @input(0)
 @input(1)
 class State(Block):
-
     def __init__(self):
         super().__init__()
-        self.name = self.__class__.__name__.lower()
         self.signal_cache_input0 = []
         self.signal_cache_input1 = []
 
@@ -169,9 +151,8 @@ class State(Block):
 
 
 class BlockExecutionTest(BlockExecution):
-
-    def __init__(self, name, receivers):
-        self.name = name
+    def __init__(self, id, receivers):
+        self.id = id
         self.receivers = receivers
 
 
@@ -190,16 +171,18 @@ class TestInputOutput(NIOTestCase):
         log2.configure(context)
 
         # create context initialization data
-        blocks = dict(log1=log1,
-                      log2=log2,
-                      two_outputs=two_outputs)
+        blocks = {
+            log1.id(): log1,
+            log2.id(): log2,
+            two_outputs.id(): two_outputs
+        }
 
         input_id1 = 0
         input_id2 = 1
         execution = [
-            BlockExecutionTest(name="two_outputs",
-                               receivers={0: ["log1"],
-                                          1: ["log2"]})]
+            BlockExecutionTest(id=two_outputs.id(),
+                               receivers={0: [log1.id()],
+                                          1: [log2.id()]})]
 
         router_context = RouterContext(execution, blocks,
                                        settings={"clone_signals": False})
@@ -251,11 +234,12 @@ class TestInputOutput(NIOTestCase):
         log1.configure(context)
 
         # create context initialization data
-        blocks = dict(log1=log1,
-                      two_outputs=two_outputs)
-
+        blocks = {
+            log1.id(): log1,
+            two_outputs.id(): two_outputs
+        }
         execution = [
-            BlockExecutionTest(name="two_outputs",
+            BlockExecutionTest(id=two_outputs.id(),
                                receivers=[])]
 
         router_context = RouterContext(execution, blocks,
@@ -279,12 +263,13 @@ class TestInputOutput(NIOTestCase):
         log1.configure(context)
 
         # create context initialization data
-        blocks = dict(log1=log1,
-                      two_outputs=two_outputs)
-
+        blocks = {
+            log1.id(): log1,
+            two_outputs.id(): two_outputs
+        }
         execution = [
-            BlockExecutionTest(name="two_outputs",
-                               receivers=["log1"])]
+            BlockExecutionTest(id=two_outputs.id(),
+                               receivers=[log1.id()])]
 
         router_context = RouterContext(execution, blocks,
                                        settings={"clone_signals": False})
@@ -310,19 +295,20 @@ class TestInputOutput(NIOTestCase):
         log2.configure(context)
 
         # create context initialization data
-        blocks = dict(three_outputs=three_outputs,
-                      state=state,
-                      log1=log1,
-                      log2=log2)
-
+        blocks = {
+            log1.id(): log1,
+            log2.id(): log2,
+            state.id(): state,
+            three_outputs.id(): three_outputs
+        }
         input_id0 = 0
         input_id1 = 1
         input_id2 = 2
         execution = [BlockExecutionTest(
-            name="three_outputs",
-            receivers={0: [{"name": "state", "input": input_id0}, "log1"],
-                       1: [{"name": "state", "input": input_id1}],
-                       2: ["log2"]})]
+            id=three_outputs.id(),
+            receivers={0: [{"id": state.id(), "input": input_id0}, log1.id()],
+                       1: [{"id": state.id(), "input": input_id1}],
+                       2: [log2.id()]})]
 
         router_context = RouterContext(execution, blocks,
                                        settings={"clone_signals": False})

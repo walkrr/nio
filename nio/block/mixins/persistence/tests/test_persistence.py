@@ -1,8 +1,9 @@
 from datetime import timedelta
 from unittest.mock import MagicMock, patch
+
+from nio.block.base import Block
 from nio.block.mixins.persistence.persistence import Persistence
 from nio.modules.persistence import Persistence as PersistenceModule
-from nio.block.base import Block
 from nio.testing.block_test_case import NIOBlockTestCase
 
 
@@ -27,13 +28,13 @@ class TestPersistence(NIOBlockTestCase):
     def test_saves_properly(self):
         """ Tests that the mixin saves the right values """
         block = PersistingBlock()
-        self.configure_block(block, {"name": "test_block"})
+        self.configure_block(block, {})
         block.start()
         # Stop the block to initiate the save using values specified
         # in block's constructor
         block.stop()
 
-        item = block._persistence.load('test_block')
+        item = block._persistence.load(block.id())
         # Make sure the right data was saved
         self.assertEqual(len(item), 2)
         self.assertEqual(item['_to_be_saved'], 'value')
@@ -43,13 +44,12 @@ class TestPersistence(NIOBlockTestCase):
         """ Tests that the mixin loads into the right values """
         block = PersistingBlock()
         self.configure_block(block, {
-            'load_from_persistence': True,
-            'name': "test_block"
+            'load_from_persistence': True
         })
         block._persistence.save({
             "_to_be_saved": "saved value 1",
             "_to_be_saved_again": "saved value 2"
-        }, "test_block")
+        }, block.id())
         # Force the load now - it happened in configure too, but we hadn't
         # overwritten the values yet
         block._load()
@@ -107,59 +107,17 @@ class TestPersistence(NIOBlockTestCase):
         can be picked up by block's persistence
         """
 
-        # save data under 'test_block' which is the name that block will have
+        block = PersistingBlock()
+        # save data under block id
         PersistenceModule().save(
             {'_to_be_saved': 3,
              '_to_be_saved_again': 4},
-            'test_block')
+            block.id())
 
-        block = PersistingBlock()
         # make block load from persistence
         self.configure_block(block,
-                             {"name": "test_block",
-                              'load_from_persistence': True
+                             {'load_from_persistence': True
                               })
         # assert that data matches what was persisted outside of block
         self.assertEqual(block._to_be_saved, 3)
         self.assertEqual(block._to_be_saved_again, 4)
-
-    def test_two_blocks_persistence_sharing(self):
-        """ Tests that different block instances with same name access same values
-        """
-        block1 = PersistingBlock()
-        self.configure_block(block1, {
-            'load_from_persistence': True,
-            'name': "test_block"
-        })
-        block1._to_be_saved = '1'
-        block1._to_be_saved_again = '2'
-        block1._save()
-
-        block2 = PersistingBlock()
-        self.configure_block(block2, {
-            'load_from_persistence': True,
-            'name': "test_block"
-        })
-
-        # Make sure the new data was loaded into the right variables
-        # on the new block with same name
-        self.assertEqual(block2._to_be_saved, '1')
-        self.assertEqual(block2._to_be_saved_again, '2')
-
-        # create a block with a different name and assert that it does not
-        # pickup the new values
-        block3 = PersistingBlock()
-        self.configure_block(block3, {
-            'load_from_persistence': True,
-            'name': "test_block3"
-        })
-        # Values loaded must be default ones since a block with this
-        # name is not persisted
-        self.assertEqual(block3._to_be_saved, 'value')
-        self.assertEqual(block3._to_be_saved_again, 'another value')
-
-        # assert that it did not affect values on block1 nor block2
-        self.assertEqual(block1._to_be_saved, '1')
-        self.assertEqual(block1._to_be_saved_again, '2')
-        self.assertEqual(block2._to_be_saved, '1')
-        self.assertEqual(block2._to_be_saved_again, '2')

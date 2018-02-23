@@ -1,7 +1,7 @@
 from nio.block.base import Block
 from nio.block.context import BlockContext
-from nio.router.base import BlockRouter
 from nio.properties import StringProperty
+from nio.router.base import BlockRouter
 from nio.testing.test_case import NIOTestCase
 
 CONFIG_KEY = "attr_1"
@@ -11,7 +11,6 @@ CONFIG_VAL = "attr_1_val"
 class DummyBlock(Block):
     # Create a dummy block with my configurable attribute
     attr_1 = StringProperty(title="attr_1", allow_none=True)
-    # For this test only, allow name to be None
     name = StringProperty(title="name", allow_none=True)
 
 

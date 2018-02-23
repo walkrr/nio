@@ -3,19 +3,21 @@
 A block contains modular functionality to be used inside of Services. To create
 a custom block, extend this Block class and override the appropriate methods.
 """
+from uuid import uuid4
+
 from nio.block.context import BlockContext
 from nio.block.terminals import Terminal, TerminalType, input, output, \
     DEFAULT_TERMINAL
 from nio.command import command
 from nio.command.holder import CommandHolder
-from nio.router.base import BlockRouter
 from nio.properties import PropertyHolder, StringProperty, \
     VersionProperty, SelectProperty
+from nio.router.base import BlockRouter
+from nio.signal.base import Signal
+from nio.signal.status import BlockStatusSignal
 from nio.util.logging import get_nio_logger
 from nio.util.logging.levels import LogLevel
 from nio.util.runner import Runner
-from nio.signal.status import BlockStatusSignal
-from nio.signal.base import Signal
 
 
 @command('properties')
@@ -25,7 +27,8 @@ class Base(PropertyHolder, CommandHolder, Runner):
 
     version = VersionProperty(version='0.0.0')
     type = StringProperty(title="Type", visible=False, readonly=True)
-    name = StringProperty(title="Name", visible=False)
+    id = StringProperty(title="Id", visible=False, allow_none=False)
+    name = StringProperty(title="Name", visible=False, allow_none=True)
     log_level = SelectProperty(enum=LogLevel,
                                title="Log Level", default="NOTSET")
 
@@ -47,6 +50,7 @@ class Base(PropertyHolder, CommandHolder, Runner):
 
         super().__init__(status_change_callback=status_change_callback)
 
+        self.id = uuid4().hex
         # store block type so that it gets serialized
         self.type = self.__class__.__name__
 
@@ -85,7 +89,7 @@ class Base(PropertyHolder, CommandHolder, Runner):
         # verify that block properties are valid
         self.validate()
 
-        self.logger = get_nio_logger(self.name())
+        self.logger = get_nio_logger(self.id())
         self.logger.setLevel(self.log_level())
         self._service_name = context.service_name
 
@@ -151,6 +155,7 @@ class Base(PropertyHolder, CommandHolder, Runner):
         if isinstance(signal, BlockStatusSignal):
             # set service block is part of
             signal.service_name = self._service_name
+            signal.block_id = self.id()
             signal.block_name = self.name()
             self.status.add(signal.status)
         self._block_router.notify_management_signal(self, signal)

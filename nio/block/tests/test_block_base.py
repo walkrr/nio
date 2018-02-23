@@ -1,15 +1,16 @@
 from unittest.mock import patch, Mock
+
 from nio.block.base import Block
-from nio.block.terminator_block import TerminatorBlock
-from nio.block.generator_block import GeneratorBlock
 from nio.block.context import BlockContext
+from nio.block.generator_block import GeneratorBlock
 from nio.block.terminals import DEFAULT_TERMINAL
+from nio.block.terminator_block import TerminatorBlock
 from nio.properties.exceptions import AllowNoneViolation
-from nio.signal.base import Signal
 from nio.router.base import BlockRouter
 from nio.router.context import RouterContext
-from nio.testing.test_case import NIOTestCaseNoModules
+from nio.signal.base import Signal
 from nio.signal.status import BlockStatusSignal
+from nio.testing.test_case import NIOTestCaseNoModules
 from nio.util.runner import RunnerStatus
 
 
@@ -20,8 +21,7 @@ class TestBaseBlock(NIOTestCaseNoModules):
         blk = Block()
         blk.configure(BlockContext(
             BlockRouter(),
-            {"name": "BlockName", "log_level": "WARNING"},
-            {}))
+            {"name": "BlockName", "log_level": "WARNING"}))
         # Make sure the name property got set properly
         self.assertEqual(blk.name(), "BlockName")
 
@@ -36,8 +36,8 @@ class TestBaseBlock(NIOTestCaseNoModules):
             # The context's block router needs to be a BlockRouter
             Block().configure(BlockContext(JustAnObject, {}))
         with self.assertRaises(AllowNoneViolation):
-            # Block needs a name
-            Block().configure(BlockContext(BlockRouter(), {"name": None}))
+            # Block needs an id
+            Block().configure(BlockContext(BlockRouter(), {"id": None}))
         with self.assertRaises(TypeError):
             # Wrong types (like log_level not being corrrect) raise TypeError
             Block().configure(BlockContext(BlockRouter(), {"name": "BlockName",

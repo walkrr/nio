@@ -23,7 +23,7 @@ class BlockExecution(PropertyHolder):
     This information is parsed/used by the Router which is able then, based on
     the sending block, to forward signals to its receivers
     """
-    name = StringProperty(title="Name")
+    id = StringProperty(title="Id")
     receivers = Property(title="Receivers")
 
 
@@ -185,7 +185,7 @@ class Service(PropertyHolder, CommandHolder, Runner):
             block = self._create_and_configure_block(
                 block_definition['type'],
                 block_context)
-            self._blocks[block.name()] = block
+            self._blocks[block.id()] = block
 
         # populate router context and configure block router
         router_context = RouterContext(self.execution(),
@@ -253,6 +253,6 @@ class Service(PropertyHolder, CommandHolder, Runner):
     def full_status(self):
         """Returns service plus block statuses for each block in the service"""
         status = {"service": self.status.name}
-        for name in self._blocks:
-            status.update({name: self._blocks[name].status.name})
+        for id in self._blocks:
+            status.update({id: self._blocks[id].status.name})
         return status

@@ -12,7 +12,7 @@ class RouterContext(object):
             execution (list):  execution list as defined by BaseService
                 execution property
             blocks (dict):  dictionary of blocks that looks like this:
-                block_name: block instance format
+                [block_id]: [block instance]
             settings (dict): router settings, these can include
                 "clone_signals" and/or any other settings depending on router
                 being used

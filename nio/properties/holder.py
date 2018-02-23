@@ -193,14 +193,14 @@ class PropertyHolder(object):
         return getattr(cls, class_attribute)
 
     def _process_and_log_version(self, class_properties, properties, logger):
-        name = properties.get("name", "")
+        id = properties.get("id", "")
         try:
             self._handle_versions(class_properties, properties)
         except OlderThanMinVersion as e:
             if logger:
                 logger.warning('Instance {0} version: {1} is older than'
                                ' minimum: {2}'.format
-                               (name, e.instance_version, e.min_version))
+                               (id, e.instance_version, e.min_version))
         except (NoClassVersion, NoInstanceVersion):
             # pass on classes with no version info.
             # pass on instances with no version info in their config.

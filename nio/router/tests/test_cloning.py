@@ -12,10 +12,6 @@ from nio.testing.test_case import NIOTestCase
 
 class SenderBlock(Block):
 
-    def __init__(self):
-        super().__init__()
-        self.name = self.__class__.__name__.lower()
-
     def process_signals(self, signals, input_id=DEFAULT_TERMINAL):
         self.notify_signals(signals)
 
@@ -24,7 +20,6 @@ class ReceiverBlock1(Block):
 
     def __init__(self):
         super().__init__()
-        self.name = self.__class__.__name__.lower()
         self.signal_cache = None
 
     def process_signals(self, signals, input_id=DEFAULT_TERMINAL):
@@ -41,7 +36,6 @@ class ReceiverBlock2(Block):
 
     def __init__(self):
         super().__init__()
-        self.name = self.__class__.__name__.lower()
         self.signal_cache = None
 
     def process_signals(self, signals, input_id=DEFAULT_TERMINAL):
@@ -55,8 +49,8 @@ class ReceiverBlock2(Block):
 
 class BlockExecutionTest(BlockExecution):
 
-    def __init__(self, name, receivers):
-        self.name = name
+    def __init__(self, id, receivers):
+        self.id = id
         self.receivers = receivers
 
 
@@ -77,12 +71,14 @@ class TestCloningSignals(NIOTestCase):
         receiver_block2.configure(context)
 
         # create context initialization data
-        blocks = dict(receiverblock1=receiver_block1,
-                      receiverblock2=receiver_block2,
-                      senderblock=sender_block)
-        execution = [BlockExecutionTest(name="senderblock",
-                                        receivers=["receiverblock1",
-                                                   "receiverblock2"])]
+        blocks = {
+            receiver_block1.id(): receiver_block1,
+            receiver_block2.id(): receiver_block2,
+            sender_block.id(): sender_block
+        }
+        execution = [BlockExecutionTest(id=sender_block.id(),
+                                        receivers=[receiver_block1.id(),
+                                                   receiver_block2.id()])]
 
         router_context = RouterContext(execution, blocks,
                                        {"clone_signals": True})
@@ -142,12 +138,14 @@ class TestCloningSignals(NIOTestCase):
         receiver_block2.configure(context)
 
         # create context initialization data
-        blocks = dict(receiverblock1=receiver_block1,
-                      receiverblock2=receiver_block2,
-                      senderblock=sender_block)
-        execution = [BlockExecutionTest(name="senderblock",
-                                        receivers=["receiverblock1",
-                                                   "receiverblock2"])]
+        blocks = {
+            receiver_block1.id(): receiver_block1,
+            receiver_block2.id(): receiver_block2,
+            sender_block.id(): sender_block
+        }
+        execution = [BlockExecutionTest(id=sender_block.id(),
+                                        receivers=[receiver_block1.id(),
+                                                   receiver_block2.id()])]
 
         router_context = RouterContext(execution, blocks)
 

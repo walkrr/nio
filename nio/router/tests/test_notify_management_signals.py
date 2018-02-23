@@ -33,14 +33,14 @@ class ReceiverBlock(Block):
 # In some of the tests, one of the recevier blocks (the notifier) will notify
 # some management signals to the router
 blocks = [{"type": SenderBlock,
-           "properties": {'name': 'senderblock'}},
+           "properties": {'id': 'senderblock'}},
           {"type": ReceiverBlock,
-           "properties": {'name': 'receiverblock'}},
+           "properties": {'id': 'receiverblock'}},
           {"type": ReceiverBlock,
-           "properties": {'name': 'notifierblock'}}]
+           "properties": {'id': 'notifierblock'}}]
 
 execution = [BlockExecution()]
-execution[0].name = "senderblock"
+execution[0].id = "senderblock"
 execution[0].receivers = ["receiverblock", "notifierblock"]
 
 properties = {"name": "ServiceTestInstance",
