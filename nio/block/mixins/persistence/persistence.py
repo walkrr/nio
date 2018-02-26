@@ -46,7 +46,7 @@ class Persistence(object):
         """
         self.logger.debug("Loading from persistence")
         # load whole item from persistence
-        item = self._persistence.load(self.id(), default={})
+        item = self._persistence.load(self.label(include_id=True), default={})
         for persisted_var in self.persisted_values():
             if persisted_var in item:
                 self.logger.debug("Loaded value {} for attribute {}".format(
@@ -62,8 +62,8 @@ class Persistence(object):
         # to be persisted into a dictionary
         item = {persisted_var: getattr(self, persisted_var)
                 for persisted_var in self.persisted_values()}
-        # save generated dictionary under block's id
-        self._persistence.save(item, self.id())
+        # save generated dictionary under block's label
+        self._persistence.save(item, self.label(include_id=True))
 
     def configure(self, context):
         super().configure(context)

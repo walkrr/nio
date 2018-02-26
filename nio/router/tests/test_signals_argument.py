@@ -11,14 +11,21 @@ from nio.testing.test_case import NIOTestCase
 
 
 class SenderBlock(Block):
-    pass
+
+    def __init__(self):
+        super().__init__()
+        self.id = "sender_block"
 
 
 class ReceiverBlock(Block):
-    pass
+
+    def __init__(self):
+        super().__init__()
+        self.id = "receiver_block"
 
 
 class BlockExecutionTest(BlockExecution):
+
     def __init__(self, id, receivers):
         self.id = id
         self.receivers = receivers

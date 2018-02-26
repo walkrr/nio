@@ -13,11 +13,19 @@ from nio.util.runner import RunnerStatus
 
 class SenderBlock(Block):
 
+    def __init__(self):
+        super().__init__()
+        self.id = self.__class__.__name__.lower()
+
     def process_signals(self, signals, input_id=DEFAULT_TERMINAL):
         self.notify_signals(signals)
 
 
 class ExceptionThrowerReceiverBlock(Block):
+
+    def __init__(self):
+        super().__init__()
+        self.id = self.__class__.__name__.lower()
 
     def process_signals(self, signals, input_id=DEFAULT_TERMINAL):
         raise RuntimeError("Throwing exception")

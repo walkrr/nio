@@ -3,8 +3,6 @@
 A block contains modular functionality to be used inside of Services. To create
 a custom block, extend this Block class and override the appropriate methods.
 """
-from uuid import uuid4
-
 from nio.block.context import BlockContext
 from nio.block.terminals import Terminal, TerminalType, input, output, \
     DEFAULT_TERMINAL
@@ -50,7 +48,6 @@ class Base(PropertyHolder, CommandHolder, Runner):
 
         super().__init__(status_change_callback=status_change_callback)
 
-        self.id = uuid4().hex
         # store block type so that it gets serialized
         self.type = self.__class__.__name__
 
@@ -89,7 +86,7 @@ class Base(PropertyHolder, CommandHolder, Runner):
         # verify that block properties are valid
         self.validate()
 
-        self.logger = get_nio_logger(self.id())
+        self.logger = get_nio_logger(self.label(True))
         self.logger.setLevel(self.log_level())
         self._service_name = context.service_name
 
@@ -225,6 +222,19 @@ class Base(PropertyHolder, CommandHolder, Runner):
             bool: True if the output ID exists on this block
         """
         return output_id in [o.id for o in self.__class__.outputs()]
+
+    def label(self, include_id=False):
+        """ Provides a label to a block based on name and id properties
+        
+        Args:
+            include_id: whether id is to be included in label 
+        """
+        if self.name():
+            if include_id:
+                return "{}-{}".format(self.name(), self.id())
+            else:
+                return self.name()
+        return self.id()
 
 
 @input(DEFAULT_TERMINAL, default=True, label="default")

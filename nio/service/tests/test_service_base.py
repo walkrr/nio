@@ -33,9 +33,9 @@ class TestBaseService(NIOTestCase):
             pass
 
         blocks = [{"type": Block1,
-                   "properties": {'name': 'block1'}},
+                   "properties": {'id': 'block1'}},
                   {"type": Block2,
-                   "properties": {'name': 'block2'}}]
+                   "properties": {'id': 'block2'}}]
 
         service.do_configure(ServiceContext(
             {"name": "ServiceName", "log_level": "WARNING"},
@@ -79,9 +79,9 @@ class TestBaseService(NIOTestCase):
         """
         service = Service()
         blocks = [{"type": Block,
-                   "properties": {}},
+                   "properties": {'id': 'block1'}},
                   {"type": Block,
-                   "properties": {}}]
+                   "properties": {'id': 'block2'}}]
         service.do_configure(ServiceContext(
             {"name": "ServiceName", "log_level": "WARNING"},
             blocks=blocks,
@@ -101,9 +101,9 @@ class TestBaseService(NIOTestCase):
 
         service = Service()
         blocks = [{"type": Block,
-                   "properties": {}},
+                   "properties": {'id': 'block1'}},
                   {"type": Block,
-                   "properties": {}}]
+                   "properties": {'id': 'block2'}}]
         service.do_configure(ServiceContext(
             {"name": "ServiceName", "log_level": "WARNING"},
             blocks=blocks,
@@ -123,9 +123,9 @@ class TestBaseService(NIOTestCase):
 
         service = Service()
         blocks = [{"type": Block,
-                   "properties": {}},
+                   "properties": {'id': 'block1'}},
                   {"type": Block,
-                   "properties": {}}]
+                   "properties": {'id': 'block2'}}]
         service.do_configure(ServiceContext(
             {"name": "ServiceName", "log_level": "WARNING"},
             blocks=blocks,

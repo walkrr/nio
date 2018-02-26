@@ -58,7 +58,7 @@ class BlockReceiverData(object):
             return True
         else:
             raise InvalidProcessSignalsSignature(
-                "Block {} signature is invalid".format(block.id()))
+                "Block {} signature is invalid".format(block.label(True)))
 
 
 class BlockRouter(Runner):
@@ -337,7 +337,7 @@ class BlockRouter(Runner):
                     self.logger.debug(
                         "Routing {} signals from {} to {}".format(
                             len(signals_to_send),
-                            block.id(),
+                            block.label(True),
                             receiver_data.block.id()))
 
                     if self._diagnostics:

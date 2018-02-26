@@ -21,9 +21,9 @@ class TestBaseBlock(NIOTestCaseNoModules):
         blk = Block()
         blk.configure(BlockContext(
             BlockRouter(),
-            {"name": "BlockName", "log_level": "WARNING"}))
+            {"id": "BlockId", "log_level": "WARNING"}))
         # Make sure the name property got set properly
-        self.assertEqual(blk.name(), "BlockName")
+        self.assertEqual(blk.id(), "BlockId")
 
     def test_invalid_configure(self):
         """Make sure a block is configured with valid information"""
@@ -39,8 +39,8 @@ class TestBaseBlock(NIOTestCaseNoModules):
             # Block needs an id
             Block().configure(BlockContext(BlockRouter(), {"id": None}))
         with self.assertRaises(TypeError):
-            # Wrong types (like log_level not being corrrect) raise TypeError
-            Block().configure(BlockContext(BlockRouter(), {"name": "BlockName",
+            # Wrong types (like log_level not being correct) raise TypeError
+            Block().configure(BlockContext(BlockRouter(), {"id": "BlockId",
                                                            "log_level": 42}))
 
     def test_notify_management_signal(self):
@@ -48,8 +48,7 @@ class TestBaseBlock(NIOTestCaseNoModules):
         blk = Block()
         blk.configure(BlockContext(
             BlockRouter(),
-            {"name": "BlockName", "log_level": "WARNING"},
-            {}))
+            {"id": "BlockId", "log_level": "WARNING"}))
         my_sig = Signal({"key": "val"})
         with patch.object(blk, '_block_router') as router_patch:
             blk.notify_management_signal(my_sig)
@@ -67,8 +66,7 @@ class TestBaseBlock(NIOTestCaseNoModules):
         block_router.configure(router_context)
         blk.configure(BlockContext(
             block_router,
-            {"name": "BlockName", "log_level": "WARNING"},
-            {}))
+            {"id": "BlockId", "log_level": "WARNING"}))
         my_sig = Signal({"key": "val"})
         blk.notify_management_signal(my_sig)
         service_mgmt_signal_handler.assert_called_once_with(my_sig)
@@ -80,7 +78,7 @@ class TestBaseBlock(NIOTestCaseNoModules):
         service_name = 'service1'
         blk.configure(BlockContext(
             BlockRouter(),
-            {"name": block_name},
+            {"id": block_name},
             service_name=service_name))
 
         my_sigs = [Signal({"key": "val"})]
@@ -171,7 +169,8 @@ class TestBaseBlock(NIOTestCaseNoModules):
         service_name = 'service1'
         blk.configure(BlockContext(
             BlockRouter(),
-            {"name": block_name},
+            {"id": "block_id",
+             "name": block_name},
             service_name=service_name))
 
         warning = BlockStatusSignal(

@@ -90,6 +90,10 @@ from nio.testing.test_case import NIOTestCase
 
 class Sim(Block):
 
+    def __init__(self):
+        super().__init__()
+        self.id = self.__class__.__name__.lower()
+
     def process_signals(self, signals, input_id=DEFAULT_TERMINAL):
         self.notify_signals(signals)
 
@@ -98,6 +102,7 @@ class Log1(Block):
 
     def __init__(self):
         super().__init__()
+        self.id = self.__class__.__name__.lower()
         self.signal_cache = []
 
     def process_signals(self, signals, input_id=DEFAULT_TERMINAL):
@@ -108,6 +113,7 @@ class Log2(Block):
 
     def __init__(self):
         super().__init__()
+        self.id = self.__class__.__name__.lower()
         self.signal_cache = []
 
     # Don't have to define an input_id
@@ -117,6 +123,10 @@ class Log2(Block):
 
 class InvalidProcessSignals(Block):
 
+    def __init__(self):
+        super().__init__()
+        self.id = self.__class__.__name__.lower()
+
     # This process signals signature is invalid and should throw an exception
     def process_signals(self, signals, input_id, what_am_i):
         pass
@@ -125,14 +135,20 @@ class InvalidProcessSignals(Block):
 @output(0)
 @output(1)
 class Two_Outputs(Block):
-    pass
+
+    def __init__(self):
+        super().__init__()
+        self.id = self.__class__.__name__.lower()
 
 
 @output(0)
 @output(1)
 @output(2)
 class Three_Outputs(Block):
-    pass
+
+    def __init__(self):
+        super().__init__()
+        self.id = self.__class__.__name__.lower()
 
 
 @input(0)
@@ -140,6 +156,7 @@ class Three_Outputs(Block):
 class State(Block):
     def __init__(self):
         super().__init__()
+        self.id = self.__class__.__name__.lower()
         self.signal_cache_input0 = []
         self.signal_cache_input1 = []
 

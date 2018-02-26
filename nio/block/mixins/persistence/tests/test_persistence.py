@@ -28,13 +28,13 @@ class TestPersistence(NIOBlockTestCase):
     def test_saves_properly(self):
         """ Tests that the mixin saves the right values """
         block = PersistingBlock()
-        self.configure_block(block, {})
+        self.configure_block(block, {"id": "test_block"})
         block.start()
         # Stop the block to initiate the save using values specified
         # in block's constructor
         block.stop()
 
-        item = block._persistence.load(block.id())
+        item = block._persistence.load(block.label(include_id=True))
         # Make sure the right data was saved
         self.assertEqual(len(item), 2)
         self.assertEqual(item['_to_be_saved'], 'value')
@@ -44,12 +44,13 @@ class TestPersistence(NIOBlockTestCase):
         """ Tests that the mixin loads into the right values """
         block = PersistingBlock()
         self.configure_block(block, {
-            'load_from_persistence': True
+            'load_from_persistence': True,
+            'id': 'test_block'
         })
         block._persistence.save({
             "_to_be_saved": "saved value 1",
             "_to_be_saved_again": "saved value 2"
-        }, block.id())
+        }, block.label(include_id=True))
         # Force the load now - it happened in configure too, but we hadn't
         # overwritten the values yet
         block._load()
@@ -108,15 +109,17 @@ class TestPersistence(NIOBlockTestCase):
         """
 
         block = PersistingBlock()
-        # save data under block id
+        block.id = 'test_block'
+        # save data under block label
         PersistenceModule().save(
             {'_to_be_saved': 3,
              '_to_be_saved_again': 4},
-            block.id())
+            block.label(include_id=True))
 
         # make block load from persistence
         self.configure_block(block,
-                             {'load_from_persistence': True
+                             {'id': 'test_block',
+                              'load_from_persistence': True
                               })
         # assert that data matches what was persisted outside of block
         self.assertEqual(block._to_be_saved, 3)

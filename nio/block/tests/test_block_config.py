@@ -27,8 +27,7 @@ class TestBlockConfig(NIOTestCase):
     def setUp(self):
         # Build some sample configuration (don't actually load anything)
         super().setUp()
-        self._config = {"name": "dummy_block"}
-        self._config[CONFIG_KEY] = CONFIG_VAL
+        self._config = {"id": "dummy_block", CONFIG_KEY: CONFIG_VAL}
 
     def test_load_config(self):
         """Test that a configuration can get loaded into the block"""
@@ -42,7 +41,7 @@ class TestBlockConfig(NIOTestCase):
         """Test that with no configuration the attribute exists, but not set"""
         block = DummyBlock()
         block.configure(BlockContext(BlockRouter(),
-                                     dict()))
+                                     {"id": "BlockId"}))
 
         self.assertTrue(hasattr(block, CONFIG_KEY))
         self.assertEqual(getattr(block, CONFIG_KEY)(), None)

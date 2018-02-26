@@ -193,7 +193,8 @@ class PropertyHolder(object):
         return getattr(cls, class_attribute)
 
     def _process_and_log_version(self, class_properties, properties, logger):
-        id = properties.get("id", "")
+        # get either 'id' or 'name' property of this holder
+        id = properties.get("id", properties.get("name", ""))
         try:
             self._handle_versions(class_properties, properties)
         except OlderThanMinVersion as e:
