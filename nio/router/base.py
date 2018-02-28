@@ -312,13 +312,13 @@ class BlockRouter(Runner):
                     self.logger.debug(
                         "Block '{}' has status 'error'. Not delivering "
                         "signals from '{}'...".format(
-                            receiver_data.block.id(), block.id()))
+                            receiver_data.block.label(), block.label()))
                     continue
                 elif receiver_data.block.status.is_set(RunnerStatus.warning):
                     self.logger.debug(
                         "Block '{}' has status 'warning'. Delivering signals"
                         " anyway from '{}...".format(
-                            receiver_data.block.id(), block.id()))
+                            receiver_data.block.label(), block.label()))
 
                 # We only send signals if the receiver's output matches
                 # the output that these signals were notified on
@@ -331,14 +331,14 @@ class BlockRouter(Runner):
                         signals_to_send = signals
                         self.logger.info("'deepcopy' operation failed while "
                                          "sending signals originating from "
-                                         "block: {}".format(block.id()),
+                                         "block: {}".format(block.label()),
                                          exc_info=True)
 
                     self.logger.debug(
                         "Routing {} signals from {} to {}".format(
                             len(signals_to_send),
                             block.label(True),
-                            receiver_data.block.id()))
+                            receiver_data.block.label()))
 
                     if self._diagnostics:
                         self._diagnostic_manager.on_signal_delivery(
@@ -354,15 +354,15 @@ class BlockRouter(Runner):
         elif self.status.is_set(RunnerStatus.stopped):
             self.logger.warning("Block Router is stopped, discarding signal"
                                 " notification from block: {}".
-                                format(block.id()))
+                                format(block.label()))
         elif self.status.is_set(RunnerStatus.stopping):
             self.logger.debug("Block Router is stopping, discarding signal"
                               " notification from block: {}".
-                              format(block.id()))
+                              format(block.label()))
         else:
             self.logger.warning("Block Router is not started, status is: {}, "
                                 "discarding signal notification from block: {}"
-                                .format(self.status, block.id()))
+                                .format(self.status, block.label()))
             raise BlockRouterNotStarted()
 
     def deliver_signals(self, block_receiver, signals):
@@ -405,4 +405,4 @@ class BlockRouter(Runner):
         except:
             self.status.add(RunnerStatus.error)
             self.logger.exception("{}.process_signals failed".
-                                  format(block_receiver.block.id()))
+                                  format(block_receiver.block.label()))

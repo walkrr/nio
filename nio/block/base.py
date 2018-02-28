@@ -86,7 +86,7 @@ class Base(PropertyHolder, CommandHolder, Runner):
         # verify that block properties are valid
         self.validate()
 
-        self.logger = get_nio_logger(self.label(True))
+        self.logger = get_nio_logger(self.label())
         self.logger.setLevel(self.log_level())
         self._service_name = context.service_name
 

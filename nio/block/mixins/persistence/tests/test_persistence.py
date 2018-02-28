@@ -34,7 +34,7 @@ class TestPersistence(NIOBlockTestCase):
         # in block's constructor
         block.stop()
 
-        item = block._persistence.load(block.label(include_id=True))
+        item = block._persistence.load(block.id())
         # Make sure the right data was saved
         self.assertEqual(len(item), 2)
         self.assertEqual(item['_to_be_saved'], 'value')
@@ -50,7 +50,7 @@ class TestPersistence(NIOBlockTestCase):
         block._persistence.save({
             "_to_be_saved": "saved value 1",
             "_to_be_saved_again": "saved value 2"
-        }, block.label(include_id=True))
+        }, block.id())
         # Force the load now - it happened in configure too, but we hadn't
         # overwritten the values yet
         block._load()
@@ -110,11 +110,11 @@ class TestPersistence(NIOBlockTestCase):
 
         block = PersistingBlock()
         block.id = 'test_block'
-        # save data under block label
+        # save data under block id
         PersistenceModule().save(
             {'_to_be_saved': 3,
              '_to_be_saved_again': 4},
-            block.label(include_id=True))
+            block.id())
 
         # make block load from persistence
         self.configure_block(block,
