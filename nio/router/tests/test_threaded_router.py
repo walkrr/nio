@@ -14,7 +14,7 @@ class SenderBlock(Block):
 
     def __init__(self):
         super().__init__()
-        self.name = self.__class__.__name__.lower()
+        self.id = self.__class__.__name__.lower()
 
     def process_signals(self, signals):
         self.notify_signals(signals)
@@ -24,7 +24,7 @@ class ReceiverBlock(Block):
 
     def __init__(self):
         super().__init__()
-        self.name = self.__class__.__name__.lower()
+        self.id = self.__class__.__name__.lower()
         self.signal_received = Event()
 
     def process_signals(self, signals, input_id=DEFAULT_TERMINAL):
@@ -37,8 +37,8 @@ class ReceiverBlock(Block):
 
 class BlockExecutionTest(BlockExecution):
 
-    def __init__(self, name, receivers):
-        self.name = name
+    def __init__(self, id, receivers):
+        self.id = id
         self.receivers = receivers
 
 
@@ -59,10 +59,12 @@ class TestThreadedRouter(NIOTestCase):
         receiver_block.configure(context)
 
         # create context initialization data
-        blocks = dict(receiverblock=receiver_block,
-                      senderblock=sender_block)
-        execution = [BlockExecutionTest(name="senderblock",
-                                        receivers=["receiverblock"])]
+        blocks = {
+            receiver_block.id():receiver_block,
+            sender_block.id():sender_block
+        }
+        execution = [BlockExecutionTest(id=sender_block.id(),
+                                        receivers=[receiver_block.id()])]
 
         router_context = RouterContext(execution, blocks,
                                        {"check_signal_type": False})

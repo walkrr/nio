@@ -14,20 +14,20 @@ class SenderBlock(Block):
 
     def __init__(self):
         super().__init__()
-        self.name = "sender_block"
+        self.id = "sender_block"
 
 
 class ReceiverBlock(Block):
 
     def __init__(self):
         super().__init__()
-        self.name = "receiver_block"
+        self.id = "receiver_block"
 
 
 class BlockExecutionTest(BlockExecution):
 
-    def __init__(self, name, receivers):
-        self.name = name
+    def __init__(self, id, receivers):
+        self.id = id
         self.receivers = receivers
 
 
@@ -41,10 +41,12 @@ class TestSignalsArgument(NIOTestCase):
         receiver_block = ReceiverBlock()
         block_router = BlockRouter()
         context = BlockContext(block_router, dict())
-        blocks = dict(receiver_block=receiver_block,
-                      sender_block=sender_block)
-        execution = [BlockExecutionTest(name="sender_block",
-                                        receivers=["receiver_block"])]
+        blocks = {
+            receiver_block.id():receiver_block,
+            sender_block.id():sender_block
+        }
+        execution = [BlockExecutionTest(id=sender_block.id(),
+                                        receivers=[receiver_block.id()])]
         router_context = RouterContext(execution, blocks)
         block_router.do_configure(router_context)
         block_router.do_start()
@@ -94,10 +96,12 @@ class TestSignalsArgument(NIOTestCase):
         receiver_block = ReceiverBlock()
         block_router = BlockRouter()
         context = BlockContext(block_router, dict())
-        blocks = dict(receiver_block=receiver_block,
-                      sender_block=sender_block)
-        execution = [BlockExecutionTest(name="sender_block",
-                                        receivers=["receiver_block"])]
+        blocks = {
+            receiver_block.id():receiver_block,
+            sender_block.id():sender_block
+        }
+        execution = [BlockExecutionTest(id=sender_block.id(),
+                                        receivers=[receiver_block.id()])]
         router_context = RouterContext(execution, blocks,
                                        {"check_signal_type": False})
         block_router.do_configure(router_context)

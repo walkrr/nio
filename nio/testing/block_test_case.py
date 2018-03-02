@@ -132,8 +132,8 @@ class NIOBlockTestCase(NIOTestCase):
             block_properties (dict): properties to assign
 
         """
-        # Blocks should always have a 'name', but we'll let it pass in tests
-        block_properties["name"] = block_properties.get("name", "default")
+        # Blocks should always have an 'id', but we'll let it pass in tests
+        block_properties["id"] = block_properties.get("id", "default")
         block.configure(BlockContext(
             self._router,
             block_properties,

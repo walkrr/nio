@@ -33,9 +33,9 @@ class TestBaseService(NIOTestCase):
             pass
 
         blocks = [{"type": Block1,
-                   "properties": {'name': 'block1'}},
+                   "properties": {'id': 'block1'}},
                   {"type": Block2,
-                   "properties": {'name': 'block2'}}]
+                   "properties": {'id': 'block2'}}]
 
         service.do_configure(ServiceContext(
             {"name": "ServiceName", "log_level": "WARNING"},
@@ -46,23 +46,21 @@ class TestBaseService(NIOTestCase):
         ))
         # verify that statuses were updated
         status = service.full_status()
-        self.assertIn("service", status)
-        self.assertEqual(status["service"], "configured")
-        self.assertIn("block1", status)
-        self.assertEqual(status["block1"], "configured")
-        self.assertIn("block2", status)
-        self.assertEqual(status["block2"], "configured")
+        status_values = list(status.values())
+        self.assertEqual(len(status_values), 3)
+        self.assertEqual(status_values[0], "configured")
+        self.assertEqual(status_values[1], "configured")
+        self.assertEqual(status_values[2], "configured")
 
         service.do_start()
 
         # verify that statuses were updated
         status = service.full_status()
-        self.assertIn("service", status)
-        self.assertEqual(status["service"], "started")
-        self.assertIn("block1", status)
-        self.assertEqual(status["block1"], "started")
-        self.assertIn("block2", status)
-        self.assertEqual(status["block2"], "started")
+        status_values = list(status.values())
+        self.assertEqual(len(status_values), 3)
+        self.assertEqual(status_values[0], "started")
+        self.assertEqual(status_values[1], "started")
+        self.assertEqual(status_values[2], "started")
 
         self.assertEqual(len(service.blocks), 2)
 
@@ -70,23 +68,20 @@ class TestBaseService(NIOTestCase):
 
         # verify that statuses were updated
         status = service.full_status()
-        self.assertIn("service", status)
-        self.assertEqual(status["service"], "stopped")
-        self.assertIn("block1", status)
-        self.assertEqual(status["block1"], "stopped")
-        self.assertIn("block2", status)
-        self.assertEqual(status["block2"], "stopped")
+        status_values = list(status.values())
+        self.assertEqual(len(status_values), 3)
+        self.assertEqual(status_values[0], "stopped")
+        self.assertEqual(status_values[1], "stopped")
+        self.assertEqual(status_values[2], "stopped")
 
     def test_start_stop_blocks_async(self):
         """ Makes sure blocks are started/stopped according to 'async' setting
         """
         service = Service()
-
         blocks = [{"type": Block,
-                   "properties": {'name': 'block1'}},
+                   "properties": {'id': 'block1'}},
                   {"type": Block,
-                   "properties": {'name': 'block2'}}]
-
+                   "properties": {'id': 'block2'}}]
         service.do_configure(ServiceContext(
             {"name": "ServiceName", "log_level": "WARNING"},
             blocks=blocks,
@@ -104,6 +99,11 @@ class TestBaseService(NIOTestCase):
             # assert one spawn call per block stopped
             self.assertEqual(spawn_patched.call_count, 4)
 
+        service = Service()
+        blocks = [{"type": Block,
+                   "properties": {'id': 'block1'}},
+                  {"type": Block,
+                   "properties": {'id': 'block2'}}]
         service.do_configure(ServiceContext(
             {"name": "ServiceName", "log_level": "WARNING"},
             blocks=blocks,
@@ -121,6 +121,11 @@ class TestBaseService(NIOTestCase):
             service.do_stop()
             self.assertEqual(spawn_patched.call_count, 2)
 
+        service = Service()
+        blocks = [{"type": Block,
+                   "properties": {'id': 'block1'}},
+                  {"type": Block,
+                   "properties": {'id': 'block2'}}]
         service.do_configure(ServiceContext(
             {"name": "ServiceName", "log_level": "WARNING"},
             blocks=blocks,
@@ -173,7 +178,7 @@ class TestBaseService(NIOTestCase):
         service.do_stop()
 
     def test_config_with_no_name(self):
-        """Make sure a service cononfig has required 'name' property."""
+        """Make sure a service config has required 'name' property."""
         service = Service()
         with self.assertRaises(AllowNoneViolation):
             service.configure(ServiceContext({}))
