@@ -257,3 +257,16 @@ class Service(PropertyHolder, CommandHolder, Runner):
         for id in self._blocks:
             status.update({id: self._blocks[id].status.name})
         return status
+
+    def label(self, include_id=False):
+        """ Provides a label to a service based on name and id properties
+
+        Args:
+            include_id: whether id is to be included in label
+        """
+        if self.name():
+            if include_id:
+                return "{}-{}".format(self.name(), self.id())
+            else:
+                return self.name()
+        return self.id()
