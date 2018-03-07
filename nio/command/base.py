@@ -15,28 +15,28 @@ class Command(object):
     """Command to be used in CommandHolders (Blocks and Services).
 
     Args:
-        name (str): The name of the command. Should be the same as the name of
+        id (str): The id of the command. Should be the same as the name of
             the corresponding method.
         params (Properties): List of Property Params that are part of the
             command
         title (str): An optionally more detailed description of the
-            command. If left blank, title defaults to name.
-        method (str): The name of the real method exposed by this command if
-            different than name
+            command. If left blank, title defaults to id.
+        method (str): The id of the real method exposed by this command if
+            different than id
 
     """
 
-    def __init__(self, name, *params, title=None, method=None):
-        self._name = name
+    def __init__(self, id, *params, title=None, method=None):
+        self._id = id
         self._parameters = []
         for p in params:
             self._add_parameter(p)
-        self._title = title or name
-        self._method = method or name
+        self._title = title or id
+        self._method = method or id
 
     @property
-    def name(self):
-        return self._name
+    def id(self):
+        return self._id
 
     @property
     def title(self):
@@ -105,7 +105,7 @@ class Command(object):
                 else:
                     raise MissingCommandArg(
                         "Command {}: missing argument {}".format(
-                            self.name, p.name))
+                            self.id, p.name))
             # Now that we have all params that were not passed but have
             # default value covered, lets check for unrecognized param passed
             invalid_args = [arg for arg in args if arg not in

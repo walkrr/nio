@@ -55,7 +55,8 @@ class Service(PropertyHolder, CommandHolder, Runner):
 
     version = VersionProperty(version='0.1.0')
     type = StringProperty(title="Type", visible=False, readonly=True)
-    name = StringProperty(title="Name")
+    id = StringProperty(title="Id", visible=False, allow_none=False)
+    name = StringProperty(title="Name", allow_none=True)
 
     # indicates whether service is to be started when nio starts
     auto_start = BoolProperty(title="Auto Start", default=True)
@@ -168,7 +169,7 @@ class Service(PropertyHolder, CommandHolder, Runner):
 
         # reset logger after modules initialization
         # and properties setting
-        self.logger = get_nio_logger("service")
+        self.logger = get_nio_logger(self.label())
         self.logger.setLevel(self.log_level())
 
         # instantiate block router
@@ -204,16 +205,16 @@ class Service(PropertyHolder, CommandHolder, Runner):
         return BlockContext(
             self._block_router,
             block_properties,
-            service_context.properties.get('name', ''),
+            service_context.properties.get('id', ''),
             self._create_commandable_url(service_context.properties,
-                                         block_properties.get('name', ''))
+                                         block_properties.get('id', ''))
         )
 
     def _create_commandable_url(self, service_properties, block_alias):
         """ Get the commandable url of a block given its alias """
 
         return '/services/{0}/{1}/'.format(
-            service_properties.get('name', ''), block_alias)
+            service_properties.get('id', ''), block_alias)
 
     def _create_and_configure_block(self, block_type, block_context):
         """ Instantiates and configures given block """
@@ -256,3 +257,16 @@ class Service(PropertyHolder, CommandHolder, Runner):
         for id in self._blocks:
             status.update({id: self._blocks[id].status.name})
         return status
+
+    def label(self, include_id=False):
+        """ Provides a label to a service based on name and id properties
+
+        Args:
+            include_id: whether id is to be included in label
+        """
+        if self.name():
+            if include_id:
+                return "{}-{}".format(self.name(), self.id())
+            else:
+                return self.name()
+        return self.id()

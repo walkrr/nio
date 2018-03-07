@@ -8,7 +8,7 @@ from nio.util.versioning.check import compare_versions, \
 
 class PropertyHolder(object):
 
-    """ Support nio.properties.BaseProperty as class attribtes.
+    """ Support nio.properties.BaseProperty as class attributes.
 
     Functionality to group all properties of a given class.
     Provides methods to serialize and deserialize a given instance, and

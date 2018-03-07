@@ -225,9 +225,9 @@ class Base(PropertyHolder, CommandHolder, Runner):
 
     def label(self, include_id=False):
         """ Provides a label to a block based on name and id properties
-        
+
         Args:
-            include_id: whether id is to be included in label 
+            include_id: whether id is to be included in label
         """
         if self.name():
             if include_id:
