@@ -223,19 +223,6 @@ class Base(PropertyHolder, CommandHolder, Runner):
         """
         return output_id in [o.id for o in self.__class__.outputs()]
 
-    def label(self, include_id=False):
-        """ Provides a label to a block based on name and id properties
-        
-        Args:
-            include_id: whether id is to be included in label 
-        """
-        if self.name():
-            if include_id:
-                return "{}-{}".format(self.name(), self.id())
-            else:
-                return self.name()
-        return self.id()
-
 
 @input(DEFAULT_TERMINAL, default=True, label="default")
 @output(DEFAULT_TERMINAL, default=True, label="default")

@@ -8,7 +8,7 @@ from nio.util.versioning.check import compare_versions, \
 
 class PropertyHolder(object):
 
-    """ Support nio.properties.BaseProperty as class attribtes.
+    """ Support nio.properties.BaseProperty as class attributes.
 
     Functionality to group all properties of a given class.
     Provides methods to serialize and deserialize a given instance, and
@@ -111,6 +111,19 @@ class PropertyHolder(object):
         for (property_name, prop) in class_properties.items():
             if property_name in properties:
                 setattr(self, property_name, properties[property_name])
+
+    def label(self, include_id=False):
+        """ Provides a label to an item based on name and id properties
+
+        Args:
+            include_id: whether id is to be included in label
+        """
+        if self.name():
+            if include_id:
+                return "{}-{}".format(self.name(), self.id())
+            else:
+                return self.name()
+        return self.id()
 
     @classmethod
     def get_description(cls):

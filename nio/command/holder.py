@@ -60,7 +60,7 @@ class CommandHolder(object):
         """
         class_commands = cls.get_commands_entry()
         if isinstance(command, Command):
-            class_commands[command.name] = command
+            class_commands[command.id] = command
         else:
             raise TypeError("Added command must be an instance of Command")
 
@@ -81,11 +81,11 @@ class CommandHolder(object):
             commands[c] = class_commands[c].get_description()
         return commands
 
-    def invoke(self, name, args):
-        """ Call the instance method 'name' with the specified arguments.
+    def invoke(self, id, args):
+        """ Call the instance method 'id' with the specified arguments.
 
         Args:
-            name (str): the name of the command/instance method
+            id (str): the id of the command/instance method
             args (dict{name: value}): the arguments to the command method.
                 These will be assigned to the formal parameters of the
                 command, being converted to the appropriate type in the process
@@ -95,9 +95,9 @@ class CommandHolder(object):
 
         """
         class_commands = self.get_commands()
-        command = class_commands.get(name)
+        command = class_commands.get(id)
         if command is None or command.method is None:
-            raise RuntimeError("Invalid command: {}".format(name))
+            raise RuntimeError("Invalid command: {}".format(id))
 
         method = getattr(self, command.method, None)
 
@@ -108,6 +108,6 @@ class CommandHolder(object):
             except TypeError as e:
                 raise InvalidCommandArg(e)
         else:
-            raise RuntimeError("Invalid command: {}".format(name))
+            raise RuntimeError("Invalid command: {}".format(id))
 
         return result

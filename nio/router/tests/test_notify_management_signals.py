@@ -43,7 +43,7 @@ execution = [BlockExecution()]
 execution[0].id = "senderblock"
 execution[0].receivers = ["receiverblock", "notifierblock"]
 
-properties = {"name": "ServiceTestInstance",
+properties = {"id": "ServiceTestInstance",
               "auto_start": False,
               "execution": execution,
               "mappings": []}
