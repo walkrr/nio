@@ -166,19 +166,22 @@ class TestBaseBlock(NIOTestCaseNoModules):
         blk = Block()
 
         block_name = 'block1'
-        service_id = 'service1'
+        service_id = 'service1_id'
+        service_name = 'service1'
         blk.configure(BlockContext(
             BlockRouter(),
             {"id": "block_id",
              "name": block_name},
-            service_id=service_id))
+            service_id=service_id,
+            service_name=service_name))
 
         warning = BlockStatusSignal(
-                    RunnerStatus.warning, message='It just broke...')
+            RunnerStatus.warning, message='It just broke...')
         self.assertIsNone(warning.service_id)
         self.assertIsNone(warning.block_name)
         blk.notify_management_signal(warning)
         self.assertIsNotNone(warning.service_id)
         self.assertIsNotNone(warning.block_name)
         self.assertEqual(warning.service_id, service_id)
+        self.assertEqual(warning.service_name, service_name)
         self.assertEqual(warning.block_name, block_name)

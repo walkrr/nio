@@ -89,6 +89,7 @@ class Base(PropertyHolder, CommandHolder, Runner):
         self.logger = get_nio_logger(self.label())
         self.logger.setLevel(self.log_level())
         self._service_id = context.service_id
+        self._service_name = context.service_name
 
     def start(self):
         """Overrideable method to be called when the block starts.
@@ -152,6 +153,7 @@ class Base(PropertyHolder, CommandHolder, Runner):
         if isinstance(signal, BlockStatusSignal):
             # set service block is part of
             signal.service_id = self._service_id
+            signal.service_name = self._service_name
             signal.block_id = self.id()
             signal.block_name = self.name()
             self.status.add(signal.status)

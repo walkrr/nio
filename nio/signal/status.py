@@ -34,10 +34,10 @@ class ServiceStatusSignal(StatusSignal):
     """
 
     def __init__(self, status, message=None,
-                 service_name=None, service_id=None, **kwargs):
+                 service_id=None, service_name=None, **kwargs):
         super().__init__(status, message, **kwargs)
-        self.service_name = service_name
         self.service_id = service_id
+        self.service_name = service_name
 
 
 class BlockStatusSignal(StatusSignal):
@@ -50,11 +50,14 @@ class BlockStatusSignal(StatusSignal):
         block_name (str): The name of the block affected
         block_id (str): The identifier of the block affected
         service_id (str): The service the block is contained in
+        service_name (str): The name of the service affected
     """
 
     def __init__(self, status, message=None,
-                 block_name=None, block_id=None, service_id=None, **kwargs):
+                 block_name=None, block_id=None,
+                 service_id=None, service_name="", **kwargs):
         super().__init__(status, message, **kwargs)
         self.block_name = block_name
         self.block_id = block_id
         self.service_id = service_id
+        self.service_name = service_name
