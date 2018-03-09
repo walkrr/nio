@@ -16,7 +16,7 @@ class DiagnosticManager(Runner):
 
         self._start_time = None
         self._instance_id = None
-        self._service_name = None
+        self._service_id = None
         self._interval = None
         self._mgmt_signal_handler = None
         self._job = None
@@ -26,7 +26,7 @@ class DiagnosticManager(Runner):
 
     def configure(self, context):
         self._instance_id = context.instance_id
-        self._service_name = context.service_name
+        self._service_id = context.service_id
         self._interval = \
             context.settings.get("diagnostic_interval", 3600)
         self._mgmt_signal_handler = context.mgmt_signal_handler
@@ -85,7 +85,7 @@ class DiagnosticManager(Runner):
                         {
                             "type": "RouterDiagnostic",
                             "instance_id": self._instance_id,
-                            "service": self._service_name,
+                            "service": self._service_id,
                             "blocks_data": blocks_data,
                             "start_time": self._start_time,
                             "end_time": end_time

@@ -29,12 +29,15 @@ class ServiceStatusSignal(StatusSignal):
         status (RunnerStatus): The signal status.
         message (str): An optional explanation to go with the status change.
         service_name (str): The name of the service affected
+        service_id (str): The identifier of the service affected
 
     """
 
-    def __init__(self, status, message=None, service_name=None, **kwargs):
+    def __init__(self, status, message=None,
+                 service_name=None, service_id=None, **kwargs):
         super().__init__(status, message, **kwargs)
         self.service_name = service_name
+        self.service_id = service_id
 
 
 class BlockStatusSignal(StatusSignal):
@@ -45,11 +48,13 @@ class BlockStatusSignal(StatusSignal):
         status (RunnerStatus): The signal status.
         message (str): An optional explanation to go with the status change.
         block_name (str): The name of the block affected
-        service_name (str): The name of the service the block is contained in
+        block_id (str): The identifier of the block affected
+        service_id (str): The service the block is contained in
     """
 
     def __init__(self, status, message=None,
-                 block_name=None, service_name=None, **kwargs):
+                 block_name=None, block_id=None, service_id=None, **kwargs):
         super().__init__(status, message, **kwargs)
         self.block_name = block_name
-        self.service_name = service_name
+        self.block_id = block_id
+        self.service_id = service_id

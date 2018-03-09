@@ -5,7 +5,7 @@ class RouterContext(object):
     def __init__(self, execution, blocks, settings=None,
                  mgmt_signal_handler=None,
                  instance_id=None,
-                 service_name=None):
+                 service_id=None):
         """Initializes a router context.
 
         Args:
@@ -19,11 +19,11 @@ class RouterContext(object):
             mgmt_signal_handler (method): method to use to notify
                 management signals, receives signal as only parameter
             instance_id: Instance the service belongs to
-            service_name (str): service this router belongs to
+            service_id (str): service this router belongs to
         """
         self.execution = execution
         self.blocks = blocks
         self.settings = settings or {}
         self.mgmt_signal_handler = mgmt_signal_handler
         self.instance_id = instance_id
-        self.service_name = service_name
+        self.service_id = service_id

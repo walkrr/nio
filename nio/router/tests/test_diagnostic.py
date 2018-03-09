@@ -34,7 +34,7 @@ class TestDiagnostic(NIOTestCase):
                                        },
                                        mgmt_signal_handler=signal_handler,
                                        instance_id=instance_id1,
-                                       service_name=service1)
+                                       service_id=service1)
 
         dm = DiagnosticManager()
         dm.do_configure(router_context)
@@ -92,7 +92,7 @@ class TestDiagnostic(NIOTestCase):
                                        {},
                                        mgmt_signal_handler=signal_handler,
                                        instance_id=instance_id1,
-                                       service_name=service1)
+                                       service_id=service1)
 
         dm = DiagnosticManager()
         dm.do_configure(router_context)

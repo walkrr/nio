@@ -74,12 +74,12 @@ class TestBaseBlock(NIOTestCaseNoModules):
     def test_notify_signals(self):
         """Test the block can notify signals properly"""
         blk = Block()
-        block_name = 'block1'
-        service_name = 'service1'
+        block_id = 'block1'
+        service_id = 'service1'
         blk.configure(BlockContext(
             BlockRouter(),
-            {"id": block_name},
-            service_name=service_name))
+            {"id": block_id},
+            service_id=service_id))
 
         my_sigs = [Signal({"key": "val"})]
         with patch.object(blk, '_block_router') as router_patch:
@@ -166,19 +166,19 @@ class TestBaseBlock(NIOTestCaseNoModules):
         blk = Block()
 
         block_name = 'block1'
-        service_name = 'service1'
+        service_id = 'service1'
         blk.configure(BlockContext(
             BlockRouter(),
             {"id": "block_id",
              "name": block_name},
-            service_name=service_name))
+            service_id=service_id))
 
         warning = BlockStatusSignal(
                     RunnerStatus.warning, message='It just broke...')
-        self.assertIsNone(warning.service_name)
+        self.assertIsNone(warning.service_id)
         self.assertIsNone(warning.block_name)
         blk.notify_management_signal(warning)
-        self.assertIsNotNone(warning.service_name)
+        self.assertIsNotNone(warning.service_id)
         self.assertIsNotNone(warning.block_name)
-        self.assertEqual(warning.service_name, service_name)
+        self.assertEqual(warning.service_id, service_id)
         self.assertEqual(warning.block_name, block_name)
