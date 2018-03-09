@@ -16,7 +16,8 @@ class TestDiagnostic(NIOTestCase):
             return signal_handler.call_count > 0
 
         instance_id1 = "instance_id1"
-        service1 = "service1"
+        service1_id = "service1_id"
+        service1_name = "service1"
         source_type = "source_type"
         source1 = "source1"
         target_type = "target_type"
@@ -34,7 +35,8 @@ class TestDiagnostic(NIOTestCase):
                                        },
                                        mgmt_signal_handler=signal_handler,
                                        instance_id=instance_id1,
-                                       service_name=service1)
+                                       service_id=service1_id,
+                                       service_name=service1_name)
 
         dm = DiagnosticManager()
         dm.do_configure(router_context)
@@ -60,7 +62,8 @@ class TestDiagnostic(NIOTestCase):
         # assert signal fields
         self.assertEqual(signal.type, "RouterDiagnostic")
         self.assertEqual(signal.instance_id, instance_id1)
-        self.assertEqual(signal.service, service1)
+        self.assertEqual(signal.service_id, service1_id)
+        self.assertEqual(signal.service, service1_name)
         self.assertLessEqual(signal.start_time, signal.end_time)
         for block_data in signal.blocks_data:
             self.assertEqual(block_data["source_type"], source_type)
@@ -92,7 +95,7 @@ class TestDiagnostic(NIOTestCase):
                                        {},
                                        mgmt_signal_handler=signal_handler,
                                        instance_id=instance_id1,
-                                       service_name=service1)
+                                       service_id=service1)
 
         dm = DiagnosticManager()
         dm.do_configure(router_context)

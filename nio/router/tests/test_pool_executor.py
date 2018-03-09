@@ -49,7 +49,7 @@ class TestBlockRouter(NIOTestCase):
         from nio.router.thread_pool_executor import ThreadedPoolExecutorRouter
 
         block_router = ThreadedPoolExecutorRouter()
-        context = BlockContext(block_router, dict(), "service_name")
+        context = BlockContext(block_router, dict(), "service_id")
 
         # create blocks
         sender_block = SenderBlock()

@@ -47,6 +47,7 @@ class TestBaseDiagnostics(NIOTestCase):
         """ Checking that router delivers signals and diagnostics """
 
         instance_id = "instance1"
+        service_id = "service1_id"
         service_name = "service1"
 
         block_router = BlockRouter()
@@ -74,6 +75,7 @@ class TestBaseDiagnostics(NIOTestCase):
                                        },
                                        mgmt_signal_handler=signal_handler,
                                        instance_id=instance_id,
+                                       service_id=service_id,
                                        service_name=service_name)
 
         block_router.do_configure(router_context)
@@ -101,6 +103,7 @@ class TestBaseDiagnostics(NIOTestCase):
         signal = signal_handler.call_args[0][0]
         self.assertEqual(signal.type, "RouterDiagnostic")
         self.assertEqual(signal.instance_id, instance_id)
+        self.assertEqual(signal.service_id, service_id)
         self.assertEqual(signal.service, service_name)
         self.assertEqual(len(signal.blocks_data), 1)
         block_data = signal.blocks_data[0]

@@ -194,6 +194,7 @@ class Service(PropertyHolder, CommandHolder, Runner):
                                        context.router_settings,
                                        context.mgmt_signal_handler,
                                        context.instance_id,
+                                       self.id(),
                                        self.name())
         self._block_router.do_configure(router_context)
         self.mgmt_signal_handler = context.mgmt_signal_handler
@@ -205,9 +206,10 @@ class Service(PropertyHolder, CommandHolder, Runner):
         return BlockContext(
             self._block_router,
             block_properties,
-            service_context.properties.get('id', ''),
+            service_context.properties.get('id'),
+            service_context.properties.get('name', ""),
             self._create_commandable_url(service_context.properties,
-                                         block_properties.get('id', ''))
+                                         block_properties.get('id'))
         )
 
     def _create_commandable_url(self, service_properties, block_alias):
