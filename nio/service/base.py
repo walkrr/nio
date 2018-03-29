@@ -9,7 +9,6 @@ from nio.util.logging import get_nio_logger
 from nio.util.logging.levels import LogLevel
 from nio.util.runner import Runner
 from nio.util.threading import spawn
-from nio.util.versioning.dependency import DependsOn
 
 
 class BlockExecution(PropertyHolder):
@@ -38,7 +37,6 @@ class BlockMapping(PropertyHolder):
     mapping = StringProperty(title="Mapping")
 
 
-@DependsOn("nio", "2.0.0b1")
 @command('status', method="full_status")
 @command('heartbeat')
 @command('runproperties')
@@ -53,7 +51,7 @@ class Service(PropertyHolder, CommandHolder, Runner):
     by calling 'configure' and 'start'
     """
 
-    version = VersionProperty(version='0.1.0')
+    version = VersionProperty(version='1.0.0')
     type = StringProperty(title="Type", visible=False, readonly=True)
     id = StringProperty(title="Id", visible=False, allow_none=False)
     name = StringProperty(title="Name", allow_none=True)
