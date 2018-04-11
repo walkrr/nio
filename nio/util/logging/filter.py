@@ -1,6 +1,6 @@
 import logging
 
-from nio.util.logging.adapter import NIOAdapter
+from nio.util.nio_time import get_nio_time
 
 
 class NIOFilter(logging.Filter):
@@ -13,6 +13,6 @@ class NIOFilter(logging.Filter):
         using nio formatter
         """
         if not hasattr(record, 'niotime'):
-            record.niotime = NIOAdapter.get_nio_time()
+            record.niotime = get_nio_time()
             record.context = record.name
         return True

@@ -1,7 +1,8 @@
 import logging
 import sys
-from datetime import datetime
 from enum import Enum
+
+from nio.util.nio_time import get_nio_time
 
 
 class NIOAdapter(logging.LoggerAdapter):
@@ -61,18 +62,9 @@ class NIOAdapter(logging.LoggerAdapter):
             The (possibly modified) versions of the arguments passed in.
         """
 
-        self.extra["niotime"] = self.get_nio_time()
+        self.extra["niotime"] = get_nio_time()
         self.extra["context"] = self.logger.name
         return super().process(msg, kwargs)
-
-    @staticmethod
-    def get_nio_time():
-        """ Generate a nicely formatted ISO 8601 time string for a log entry
-
-        Returns:
-            A time string
-        """
-        return datetime.utcnow().isoformat() + "Z"
 
     @classmethod
     def name_to_level(cls, name):
