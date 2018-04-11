@@ -61,25 +61,18 @@ class NIOAdapter(logging.LoggerAdapter):
             The (possibly modified) versions of the arguments passed in.
         """
 
-        self.extra["niotime"] = self._time()
+        self.extra["niotime"] = self.get_nio_time()
         self.extra["context"] = self.logger.name
         return super().process(msg, kwargs)
 
-    def _time(self):
-        """ Generate a nicely formatted time string for a log entry
-
-        Args:
-            None
+    @staticmethod
+    def get_nio_time():
+        """ Generate a nicely formatted ISO 8601 time string for a log entry
 
         Returns:
             A time string
         """
-
-        now = datetime.utcnow()
-        return '%d-%02d-%02d %02d:%02d:%02d.%03d' % (
-            now.year, now.month, now.day,
-            now.hour, now.minute, now.second,
-            now.microsecond / 1000)
+        return datetime.utcnow().isoformat() + "Z"
 
     @classmethod
     def name_to_level(cls, name):
