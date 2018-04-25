@@ -16,7 +16,7 @@ class Project(object):
     def __init__(self):
         super().__init__()
         # A project has configured blocks. It is stored as a dictionary
-        # where the key is the block name and the value is a Block instance
+        # where the key is the block id and the value is a Block instance
         self.blocks = dict()
 
         # A project has configured services. It is stored as a dictionary

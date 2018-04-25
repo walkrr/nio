@@ -1,6 +1,6 @@
-from nio.properties import TimeDeltaProperty, BoolProperty
 from nio.modules.persistence import Persistence as PersistenceModule
 from nio.modules.scheduler import Job
+from nio.properties import TimeDeltaProperty, BoolProperty
 
 
 class Persistence(object):
@@ -39,14 +39,14 @@ class Persistence(object):
     def _load(self):
         """ Load the values from persistence
 
-        Item is loaded from persistence using block name, once item
+        Item is loaded from persistence using block id, once item
         is loaded, all persisted values are examined against loaded
         item, if it exists, such value is then set as an attribute
         in the block instance
         """
         self.logger.debug("Loading from persistence")
         # load whole item from persistence
-        item = self._persistence.load(self.name(), default={})
+        item = self._persistence.load(self.id(), default={})
         for persisted_var in self.persisted_values():
             if persisted_var in item:
                 self.logger.debug("Loaded value {} for attribute {}".format(
@@ -62,12 +62,12 @@ class Persistence(object):
         # to be persisted into a dictionary
         item = {persisted_var: getattr(self, persisted_var)
                 for persisted_var in self.persisted_values()}
-        # save generated dictionary under block's name
-        self._persistence.save(item, self.name())
+        # save generated dictionary under block's id
+        self._persistence.save(item, self.id())
 
     def configure(self, context):
         super().configure(context)
-        # Create a persistence object using the block's name
+        # Create a persistence object using the block's id
         self._persistence = PersistenceModule()
         if self.load_from_persistence():
             self._load()

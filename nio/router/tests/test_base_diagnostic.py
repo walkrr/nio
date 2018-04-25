@@ -14,7 +14,7 @@ class SenderBlock(Block):
 
     def __init__(self):
         super().__init__()
-        self.name = self.__class__.__name__.lower()
+        self.id = self.__class__.__name__.lower()
 
     def process_signals(self, signals, input_id=DEFAULT_TERMINAL):
         self.notify_signals(signals)
@@ -24,7 +24,7 @@ class ReceiverBlock(Block):
 
     def __init__(self):
         super().__init__()
-        self.name = self.__class__.__name__.lower()
+        self.id = self.__class__.__name__.lower()
         self.signal_cache = None
 
     def process_signals(self, signals, input_id=DEFAULT_TERMINAL):
@@ -36,8 +36,8 @@ class ReceiverBlock(Block):
 
 class BlockExecutionTest(BlockExecution):
 
-    def __init__(self, name, receivers):
-        self.name = name
+    def __init__(self, id, receivers):
+        self.id = id
         self.receivers = receivers
 
 
@@ -47,6 +47,7 @@ class TestBaseDiagnostics(NIOTestCase):
         """ Checking that router delivers signals and diagnostics """
 
         instance_id = "instance1"
+        service_id = "service1_id"
         service_name = "service1"
 
         block_router = BlockRouter()
@@ -59,10 +60,12 @@ class TestBaseDiagnostics(NIOTestCase):
         receiver_block.configure(context)
 
         # create context initialization data
-        blocks = dict(receiverblock=receiver_block,
-                      senderblock=sender_block)
-        execution = [BlockExecutionTest(name="senderblock",
-                                        receivers=["receiverblock"])]
+        receiver_block_id = receiver_block.id()
+        sender_block_id = sender_block.id()
+        blocks = {receiver_block_id: receiver_block,
+                  sender_block_id:sender_block}
+        execution = [BlockExecutionTest(id=sender_block.id(),
+                                        receivers=[receiver_block.id()])]
 
         signal_handler = Mock()
         router_context = RouterContext(execution, blocks,
@@ -72,6 +75,7 @@ class TestBaseDiagnostics(NIOTestCase):
                                        },
                                        mgmt_signal_handler=signal_handler,
                                        instance_id=instance_id,
+                                       service_id=service_id,
                                        service_name=service_name)
 
         block_router.do_configure(router_context)
@@ -99,13 +103,14 @@ class TestBaseDiagnostics(NIOTestCase):
         signal = signal_handler.call_args[0][0]
         self.assertEqual(signal.type, "RouterDiagnostic")
         self.assertEqual(signal.instance_id, instance_id)
+        self.assertEqual(signal.service_id, service_id)
         self.assertEqual(signal.service, service_name)
         self.assertEqual(len(signal.blocks_data), 1)
         block_data = signal.blocks_data[0]
         self.assertEqual(block_data["source_type"], sender_block.type())
-        self.assertEqual(block_data["source"], sender_block.name())
+        self.assertEqual(block_data["source"], sender_block.id())
         self.assertEqual(block_data["target_type"], receiver_block.type())
-        self.assertEqual(block_data["target"], receiver_block.name())
+        self.assertEqual(block_data["target"], receiver_block.id())
         self.assertEqual(block_data["count"], 1)
         # assert data was cleared after a diagnostic delivery
         self.assertEqual(

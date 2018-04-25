@@ -1,15 +1,16 @@
 from unittest.mock import patch, Mock
+
 from nio.block.base import Block
-from nio.block.terminator_block import TerminatorBlock
-from nio.block.generator_block import GeneratorBlock
 from nio.block.context import BlockContext
+from nio.block.generator_block import GeneratorBlock
 from nio.block.terminals import DEFAULT_TERMINAL
+from nio.block.terminator_block import TerminatorBlock
 from nio.properties.exceptions import AllowNoneViolation
-from nio.signal.base import Signal
 from nio.router.base import BlockRouter
 from nio.router.context import RouterContext
-from nio.testing.test_case import NIOTestCaseNoModules
+from nio.signal.base import Signal
 from nio.signal.status import BlockStatusSignal
+from nio.testing.test_case import NIOTestCaseNoModules
 from nio.util.runner import RunnerStatus
 
 
@@ -20,10 +21,9 @@ class TestBaseBlock(NIOTestCaseNoModules):
         blk = Block()
         blk.configure(BlockContext(
             BlockRouter(),
-            {"name": "BlockName", "log_level": "WARNING"},
-            {}))
+            {"id": "BlockId", "log_level": "WARNING"}))
         # Make sure the name property got set properly
-        self.assertEqual(blk.name(), "BlockName")
+        self.assertEqual(blk.id(), "BlockId")
 
     def test_invalid_configure(self):
         """Make sure a block is configured with valid information"""
@@ -36,11 +36,11 @@ class TestBaseBlock(NIOTestCaseNoModules):
             # The context's block router needs to be a BlockRouter
             Block().configure(BlockContext(JustAnObject, {}))
         with self.assertRaises(AllowNoneViolation):
-            # Block needs a name
-            Block().configure(BlockContext(BlockRouter(), {"name": None}))
+            # Block needs an id
+            Block().configure(BlockContext(BlockRouter(), {"id": None}))
         with self.assertRaises(TypeError):
-            # Wrong types (like log_level not being corrrect) raise TypeError
-            Block().configure(BlockContext(BlockRouter(), {"name": "BlockName",
+            # Wrong types (like log_level not being correct) raise TypeError
+            Block().configure(BlockContext(BlockRouter(), {"id": "BlockId",
                                                            "log_level": 42}))
 
     def test_notify_management_signal(self):
@@ -48,8 +48,7 @@ class TestBaseBlock(NIOTestCaseNoModules):
         blk = Block()
         blk.configure(BlockContext(
             BlockRouter(),
-            {"name": "BlockName", "log_level": "WARNING"},
-            {}))
+            {"id": "BlockId", "log_level": "WARNING"}))
         my_sig = Signal({"key": "val"})
         with patch.object(blk, '_block_router') as router_patch:
             blk.notify_management_signal(my_sig)
@@ -67,8 +66,7 @@ class TestBaseBlock(NIOTestCaseNoModules):
         block_router.configure(router_context)
         blk.configure(BlockContext(
             block_router,
-            {"name": "BlockName", "log_level": "WARNING"},
-            {}))
+            {"id": "BlockId", "log_level": "WARNING"}))
         my_sig = Signal({"key": "val"})
         blk.notify_management_signal(my_sig)
         service_mgmt_signal_handler.assert_called_once_with(my_sig)
@@ -76,12 +74,12 @@ class TestBaseBlock(NIOTestCaseNoModules):
     def test_notify_signals(self):
         """Test the block can notify signals properly"""
         blk = Block()
-        block_name = 'block1'
-        service_name = 'service1'
+        block_id = 'block1'
+        service_id = 'service1'
         blk.configure(BlockContext(
             BlockRouter(),
-            {"name": block_name},
-            service_name=service_name))
+            {"id": block_id},
+            service_id=service_id))
 
         my_sigs = [Signal({"key": "val"})]
         with patch.object(blk, '_block_router') as router_patch:
@@ -168,18 +166,22 @@ class TestBaseBlock(NIOTestCaseNoModules):
         blk = Block()
 
         block_name = 'block1'
+        service_id = 'service1_id'
         service_name = 'service1'
         blk.configure(BlockContext(
             BlockRouter(),
-            {"name": block_name},
+            {"id": "block_id",
+             "name": block_name},
+            service_id=service_id,
             service_name=service_name))
 
         warning = BlockStatusSignal(
-                    RunnerStatus.warning, message='It just broke...')
-        self.assertIsNone(warning.service_name)
+            RunnerStatus.warning, message='It just broke...')
+        self.assertIsNone(warning.service_id)
         self.assertIsNone(warning.block_name)
         blk.notify_management_signal(warning)
-        self.assertIsNotNone(warning.service_name)
+        self.assertIsNotNone(warning.service_id)
         self.assertIsNotNone(warning.block_name)
+        self.assertEqual(warning.service_id, service_id)
         self.assertEqual(warning.service_name, service_name)
         self.assertEqual(warning.block_name, block_name)

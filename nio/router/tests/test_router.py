@@ -96,10 +96,10 @@ class TestBaseRouter(NIOTestCase):
         router = BlockRouter()
         context = BlockContext(router, {})
         b1 = block_1()
-        b1.name = "b1"
+        b1.id = "b1"
         b1.configure(context)
         b2 = block_2()
-        b2.name = "b2"
+        b2.id = "b2"
         b2.configure(context)
 
         blocks = {
@@ -108,22 +108,22 @@ class TestBaseRouter(NIOTestCase):
         }
 
         b1_execution = BlockExecution()
-        b1_execution.name = "b1"
+        b1_execution.id = "b1"
 
         if block_1_output is None and block_2_input is None:
             # Both default terminals
-            # Just specify the name of the block for receiver
+            # Just specify the id of the block for receiver
             b1_execution.receivers = ["b2"]
         elif block_1_output is None and block_2_input is not None:
             # Default output, specified input
-            # Specify a dict for receiver containing input and block name
+            # Specify a dict for receiver containing input and block id
             b1_execution.receivers = [{
-                "name": "b2",
+                "id": "b2",
                 "input": block_2_input
             }]
         elif block_1_output is not None and block_2_input is None:
             # Specified output, default input
-            # Source block is a dict with output, receiver is block name
+            # Source block is a dict with output, receiver is block id
             b1_execution.receivers = {
                 block_1_output: ["b2"]
             }
@@ -132,7 +132,7 @@ class TestBaseRouter(NIOTestCase):
             # Source block is a dict with output, receiver is dict with input
             b1_execution.receivers = {
                 block_1_output: [{
-                    "name": "b2",
+                    "id": "b2",
                     "input": block_2_input
                 }]
             }
@@ -352,10 +352,10 @@ class TestBaseRouter(NIOTestCase):
         router = BlockRouter()
         context = BlockContext(router, {})
         source = SourceBlock()
-        source.name = "source"
+        source.id = "source"
         source.configure(context)
         dest = DestBlock()
-        dest.name = "dest"
+        dest.id = "dest"
         dest.configure(context)
 
         blocks = {
@@ -364,8 +364,8 @@ class TestBaseRouter(NIOTestCase):
         }
 
         source_execution = BlockExecution()
-        source_execution.name = "source"
-        # block receiver name is invalid, it expects a valid block name
+        source_execution.id = "source"
+        # block receiver id is invalid, it expects a valid block id
         source_execution.receivers = ["invalid"]
 
         router_context = RouterContext([source_execution], blocks)
@@ -384,10 +384,10 @@ class TestBaseRouter(NIOTestCase):
         router = BlockRouter()
         context = BlockContext(router, {})
         source = SourceBlock()
-        source.name = "source"
+        source.id = "source"
         source.configure(context)
         dest = DestBlock()
-        dest.name = "dest"
+        dest.id = "dest"
         dest.configure(context)
 
         blocks = {
@@ -396,7 +396,7 @@ class TestBaseRouter(NIOTestCase):
         }
 
         source_execution = BlockExecution()
-        source_execution.name = "source"
+        source_execution.id = "source"
         # make receivers format invalid
         source_execution.receivers = [{
             "input": DEFAULT_TERMINAL,
@@ -407,10 +407,10 @@ class TestBaseRouter(NIOTestCase):
         with self.assertRaises(KeyError):
             router.do_configure(router_context)
 
-        # make block name invalid to cause a MissingBlock
+        # make block id invalid to cause a MissingBlock
         source_execution.receivers = [{
             "input": DEFAULT_TERMINAL,
-            "name": "invalid"
+            "id": "invalid"
         }]
         router_context = RouterContext([source_execution], blocks)
         with self.assertRaises(MissingBlock):
@@ -505,15 +505,15 @@ class TestBaseRouter(NIOTestCase):
         router = BlockRouter()
         context = BlockContext(router, {})
         source = SourceBlock()
-        source.name = "source"
+        source.id = "source"
         source.configure(context)
 
         dest1 = DestBlock1()
-        dest1.name = "dest1"
+        dest1.id = "dest1"
         dest1.configure(context)
 
         dest2 = DestBlock2()
-        dest2.name = "dest2"
+        dest2.id = "dest2"
         dest2.configure(context)
 
         blocks = {
@@ -523,7 +523,7 @@ class TestBaseRouter(NIOTestCase):
         }
 
         source_execution = BlockExecution()
-        source_execution.name = "source"
+        source_execution.id = "source"
         source_execution.receivers = ["dest1", "dest2"]
 
         router_context = RouterContext([source_execution], blocks,

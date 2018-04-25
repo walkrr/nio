@@ -4,7 +4,7 @@
 class BlockContext(object):
 
     def __init__(self, block_router, properties,
-                 service_name='', command_url=''):
+                 service_id=None, service_name='', command_url=''):
         """ Initializes information needed for a Block
 
         This BlockContext will be passed to the `configure` method on each
@@ -17,6 +17,7 @@ class BlockContext(object):
 
             properties (dict): The block properties (metadata) that
                 will be deserialized and loaded as block properties.
+            service_id (str): The service this block belongs to
             service_name (str): The name of the service this block belongs to
             command_url (str): The URL at which this block can be commanded.
                 This URL will not have host or port information, as that may
@@ -27,5 +28,6 @@ class BlockContext(object):
 
         self.block_router = block_router
         self.properties = properties
+        self.service_id = service_id
         self.service_name = service_name
         self.command_url = command_url

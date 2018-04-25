@@ -8,7 +8,7 @@ from nio.util.versioning.check import compare_versions, \
 
 class PropertyHolder(object):
 
-    """ Support nio.properties.BaseProperty as class attribtes.
+    """ Support nio.properties.BaseProperty as class attributes.
 
     Functionality to group all properties of a given class.
     Provides methods to serialize and deserialize a given instance, and
@@ -193,14 +193,15 @@ class PropertyHolder(object):
         return getattr(cls, class_attribute)
 
     def _process_and_log_version(self, class_properties, properties, logger):
-        name = properties.get("name", "")
+        # get either 'id' or 'name' property of this holder
+        id = properties.get("id", properties.get("name", ""))
         try:
             self._handle_versions(class_properties, properties)
         except OlderThanMinVersion as e:
             if logger:
                 logger.warning('Instance {0} version: {1} is older than'
                                ' minimum: {2}'.format
-                               (name, e.instance_version, e.min_version))
+                               (id, e.instance_version, e.min_version))
         except (NoClassVersion, NoInstanceVersion):
             # pass on classes with no version info.
             # pass on instances with no version info in their config.

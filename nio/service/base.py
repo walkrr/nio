@@ -9,7 +9,6 @@ from nio.util.logging import get_nio_logger
 from nio.util.logging.levels import LogLevel
 from nio.util.runner import Runner
 from nio.util.threading import spawn
-from nio.util.versioning.dependency import DependsOn
 
 
 class BlockExecution(PropertyHolder):
@@ -23,7 +22,7 @@ class BlockExecution(PropertyHolder):
     This information is parsed/used by the Router which is able then, based on
     the sending block, to forward signals to its receivers
     """
-    name = StringProperty(title="Name")
+    id = StringProperty(title="Id")
     receivers = Property(title="Receivers")
 
 
@@ -38,7 +37,6 @@ class BlockMapping(PropertyHolder):
     mapping = StringProperty(title="Mapping")
 
 
-@DependsOn("nio", "2.0.0b1")
 @command('status', method="full_status")
 @command('heartbeat')
 @command('runproperties')
@@ -53,9 +51,10 @@ class Service(PropertyHolder, CommandHolder, Runner):
     by calling 'configure' and 'start'
     """
 
-    version = VersionProperty(version='0.1.0')
+    version = VersionProperty(version='1.0.0')
     type = StringProperty(title="Type", visible=False, readonly=True)
-    name = StringProperty(title="Name")
+    id = StringProperty(title="Id", visible=False, allow_none=False)
+    name = StringProperty(title="Name", allow_none=True)
 
     # indicates whether service is to be started when nio starts
     auto_start = BoolProperty(title="Auto Start", default=True)
@@ -168,7 +167,7 @@ class Service(PropertyHolder, CommandHolder, Runner):
 
         # reset logger after modules initialization
         # and properties setting
-        self.logger = get_nio_logger("service")
+        self.logger = get_nio_logger(self.label())
         self.logger.setLevel(self.log_level())
 
         # instantiate block router
@@ -185,7 +184,7 @@ class Service(PropertyHolder, CommandHolder, Runner):
             block = self._create_and_configure_block(
                 block_definition['type'],
                 block_context)
-            self._blocks[block.name()] = block
+            self._blocks[block.id()] = block
 
         # populate router context and configure block router
         router_context = RouterContext(self.execution(),
@@ -193,6 +192,7 @@ class Service(PropertyHolder, CommandHolder, Runner):
                                        context.router_settings,
                                        context.mgmt_signal_handler,
                                        context.instance_id,
+                                       self.id(),
                                        self.name())
         self._block_router.do_configure(router_context)
         self.mgmt_signal_handler = context.mgmt_signal_handler
@@ -204,16 +204,17 @@ class Service(PropertyHolder, CommandHolder, Runner):
         return BlockContext(
             self._block_router,
             block_properties,
-            service_context.properties.get('name', ''),
+            service_context.properties.get('id'),
+            service_context.properties.get('name', ""),
             self._create_commandable_url(service_context.properties,
-                                         block_properties.get('name', ''))
+                                         block_properties.get('id'))
         )
 
     def _create_commandable_url(self, service_properties, block_alias):
         """ Get the commandable url of a block given its alias """
 
         return '/services/{0}/{1}/'.format(
-            service_properties.get('name', ''), block_alias)
+            service_properties.get('id', ''), block_alias)
 
     def _create_and_configure_block(self, block_type, block_context):
         """ Instantiates and configures given block """
@@ -253,6 +254,19 @@ class Service(PropertyHolder, CommandHolder, Runner):
     def full_status(self):
         """Returns service plus block statuses for each block in the service"""
         status = {"service": self.status.name}
-        for name in self._blocks:
-            status.update({name: self._blocks[name].status.name})
+        for id in self._blocks:
+            status.update({id: self._blocks[id].status.name})
         return status
+
+    def label(self, include_id=False):
+        """ Provides a label to a service based on name and id properties
+
+        Args:
+            include_id: whether id is to be included in label
+        """
+        if self.name():
+            if include_id:
+                return "{}-{}".format(self.name(), self.id())
+            else:
+                return self.name()
+        return self.id()
