@@ -1,4 +1,4 @@
-# Changelog
+# Framework changelog
 
 ## [3.0](https://github.com/niolabs/nio/tree/3.0) (2018-04-25)
 
