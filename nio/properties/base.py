@@ -19,7 +19,7 @@ class BaseProperty(object):
     """
 
     def __init__(self, _type, title=None,
-                 visible=True, allow_none=False, default=None, **kwargs):
+                 advanced=False, visible=True, allow_none=False, default=None, **kwargs):
         self.type = _type
 
         # make sure title is valid
@@ -28,6 +28,7 @@ class BaseProperty(object):
         else:
             raise ValueError("Title must be a non-empty string")
 
+        self.advanced = advanced
         self.visible = visible
         self.allow_none = allow_none
         self.kwargs = kwargs
@@ -45,6 +46,7 @@ class BaseProperty(object):
         # Description needs to be serializble so save type as __name__
         self.description = dict(type=_type.__name__,
                                 title=title,
+                                advanced=advanced,
                                 visible=visible,
                                 allow_none=allow_none,
                                 default=default,

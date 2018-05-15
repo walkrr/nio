@@ -298,6 +298,7 @@ class TestProperties(NIOTestCaseNoModules):
 
         # check mandatory settings
         self.assertIn('title', description['property1'])
+        self.assertIn('advanced', description['property1'])
         self.assertIn('visible', description['property1'])
         self.assertIn('allow_none', description['property1'])
 
