@@ -26,11 +26,17 @@ class Publisher(ModuleProxy):
         """
         super().__init__(topic=topic, **kwargs)
 
-    def open(self):
+    def open(self, on_connected=None, on_disconnected=None):
         """ Opens publishing channel
 
         This method will setup the channel for sending, it is implementation
         specific, for example in a tcp like implementation it will open a port.
+
+        """
+        raise NotImplementedError()
+
+    def is_connected(self):
+        """ Determine if this publisher is connected and ready
 
         """
         raise NotImplementedError()
