@@ -28,7 +28,7 @@ class Base(PropertyHolder, CommandHolder, Runner):
     id = StringProperty(title="Id", visible=False, allow_none=False)
     name = StringProperty(title="Name", visible=False, allow_none=True)
     log_level = SelectProperty(enum=LogLevel,
-                               title="Log Level", default="NOTSET")
+                               title="Log Level", default="NOTSET", advanced=True)
 
     def __init__(self, status_change_callback=None):
         """ Create a new block instance.
