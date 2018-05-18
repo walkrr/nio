@@ -76,10 +76,9 @@ class PublisherProxy(object):
         if cls._publisher_ready_event.is_set():
             with cls._publisher_lock:
                 cls._publisher.send(signals)
-        elif cls._open_thread and isinstance(cls._open_thread.nio_exception,
-                                             PublisherNotReadyException):
-            # even though the thread is likely terminated,
-            # it still holds the exception, so do not let the exception
+        elif isinstance(cls._open_thread.nio_exception, Exception):
+            # even though the thread is likely terminated, it still holds
+            # the exception if there was one, so do not let the exception
             # to go unnoticed if still trying to publish
             raise cls._open_thread.nio_exception
 
