@@ -23,7 +23,7 @@ class Base(PropertyHolder, CommandHolder, Runner):
 
     """The base class for blocks to inherit from."""
 
-    version = VersionProperty(version='0.0.0')
+    version = VersionProperty(version='0.0.0', advanced=True)
     type = StringProperty(title="Type", visible=False, readonly=True)
     id = StringProperty(title="Id", visible=False, allow_none=False)
     name = StringProperty(title="Name", visible=False, allow_none=True)
