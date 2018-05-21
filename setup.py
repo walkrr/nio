@@ -11,8 +11,8 @@ if not version:
 
 setup(
     name='nio',
-    description='A framework for building blocks for n.io',
-    keywords=['nio', 'n.io'],
+    description='A framework for building blocks for the nio Platform',
+    keywords=['nio'],
     version=version,
     packages=find_packages(
         exclude=['*.tests', '*.tests.*', 'tests.*', 'tests']),
@@ -22,8 +22,9 @@ setup(
     tests_require=[
         'requests>=2.3.0'
     ],
-
-    author='n.io',
-    author_email='info@n.io',
-    url='http://n.io'
+	
+    licence='Proprietary',
+    author='niolabs',
+    author_email='support@n.io',
+    url='https://github.com/niolabs/nio'
 )
