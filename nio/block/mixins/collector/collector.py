@@ -20,7 +20,8 @@ class Collector(object):
     """
 
     collect = TimeDeltaProperty(
-        title='Collect Timeout', default={"seconds": 1})
+        title='Collect Timeout', default={"seconds": 1}, advanced=True
+    )
 
     def __init__(self):
         super().__init__()
