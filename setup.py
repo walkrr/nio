@@ -9,9 +9,14 @@ with open('nio/__init__.py', 'r') as fd:
 if not version:
     raise RuntimeError('Cannot find version information')
 
+def readme():
+    with open('README.md') as f:
+        return f.read()
+
 setup(
     name='nio',
-    description='A framework for building blocks for the nio Platform',
+    description='A framework for building blocks and modules for the nio Platform',
+    long_description=readme(),
     keywords=['nio'],
     version=version,
     packages=find_packages(
@@ -23,7 +28,11 @@ setup(
         'requests>=2.3.0'
     ],
 	
-    licence='Proprietary',
+    classifiers=[
+        'License :: OSI Approved :: Apache Software License',
+    ],
+
+    license='Apache 2.0',
     author='niolabs',
     author_email='support@n.io',
     url='https://github.com/niolabs/nio'
