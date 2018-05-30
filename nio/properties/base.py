@@ -18,8 +18,8 @@ class BaseProperty(object):
         description (dict): Property settings.
     """
 
-    def __init__(self, _type, title=None,
-                 advanced=False, visible=True, allow_none=False, default=None, **kwargs):
+    def __init__(self, _type, title=None, advanced=False, visible=True, 
+                    order=None, allow_none=False, default=None, **kwargs):
         self.type = _type
 
         # make sure title is valid
@@ -27,6 +27,11 @@ class BaseProperty(object):
             self.title = title
         else:
             raise ValueError("Title must be a non-empty string")
+
+        if isinstance(order, int) or order is None:
+            self.order = order
+        else:
+            raise ValueError("Order must be an integer")
 
         self.advanced = advanced
         self.visible = visible
@@ -47,6 +52,7 @@ class BaseProperty(object):
         self.description = dict(type=_type.__name__,
                                 title=title,
                                 advanced=advanced,
+                                order=order,
                                 visible=visible,
                                 allow_none=allow_none,
                                 default=default,
