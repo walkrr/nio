@@ -87,7 +87,7 @@ class Retry(object):
     """
 
     retry_options = ObjectProperty(RetryOptions, title="Retry Options",
-                                   advanced=True, default=RetryOptions())
+                                   advanced=True, order=100, default=RetryOptions())
 
     def configure(self, context):
         """ This implementation will use the configured backoff strategy """

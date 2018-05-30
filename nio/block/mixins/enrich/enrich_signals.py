@@ -13,7 +13,7 @@ class EnrichProperties(PropertyHolder):
 class EnrichSignals(object):
 
     enrich = ObjectProperty(EnrichProperties, title='Signal Enrichment',
-                            default=EnrichProperties())
+                            default=EnrichProperties(), order=100)
 
     def get_output_signal(self, signal_data, incoming_signal, copy=True):
         """ Get an output signal based on the block configuration.
