@@ -90,8 +90,9 @@ class Service(PropertyHolder, CommandHolder, Runner):
         self._blocks = {}
         self.mappings = []
 
-        self._blocks_async_start = False
-        self._blocks_async_stop = True
+        self._blocks_async_configure = None
+        self._blocks_async_start = None
+        self._blocks_async_stop = None
 
     def start(self):
         """Overrideable method to be called when the service starts.
@@ -174,17 +175,35 @@ class Service(PropertyHolder, CommandHolder, Runner):
         self.logger.debug("Instantiating block router: {0}.{1}".
                           format(context.block_router_type.__module__,
                                  context.block_router_type.__name__))
+        self.mgmt_signal_handler = context.mgmt_signal_handler
+        self._blocks_async_configure = context.blocks_async_configure
+        self._blocks_async_start = context.blocks_async_start
+        self._blocks_async_stop = context.blocks_async_stop
         self._block_router = context.block_router_type()
 
         # create and configure blocks
+        configure_threads = []
         for block_definition in context.blocks:
             block_context = self._create_block_context(
                 block_definition['properties'],
                 context)
-            block = self._create_and_configure_block(
-                block_definition['type'],
-                block_context)
+            # create block instance
+            block = block_definition['type']()
+            # configure it
+            if self._blocks_async_configure:
+                # guarantee 'id' property is assigned to be able to reference
+                # id() property down below
+                block.id = block_context.properties["id"]
+                configure_threads.append(
+                    spawn(block.do_configure, block_context))
+            else:
+                block.do_configure(block_context)
+            # register it
             self._blocks[block.id()] = block
+        # if configuration was async, ensure they are all done
+        if configure_threads:
+            for thread in configure_threads:
+                thread.join()
 
         # populate router context and configure block router
         router_context = RouterContext(self.execution(),
@@ -195,9 +214,6 @@ class Service(PropertyHolder, CommandHolder, Runner):
                                        self.id(),
                                        self.name())
         self._block_router.do_configure(router_context)
-        self.mgmt_signal_handler = context.mgmt_signal_handler
-        self._blocks_async_start = context.blocks_async_start
-        self._blocks_async_stop = context.blocks_async_stop
 
     def _create_block_context(self, block_properties, service_context):
         """Populates block context to pass to the block's configure method"""
@@ -215,12 +231,6 @@ class Service(PropertyHolder, CommandHolder, Runner):
 
         return '/services/{0}/{1}/'.format(
             service_properties.get('id', ''), block_alias)
-
-    def _create_and_configure_block(self, block_type, block_context):
-        """ Instantiates and configures given block """
-        block = block_type()
-        block.do_configure(block_context)
-        return block
 
     @classmethod
     def get_description(cls):
