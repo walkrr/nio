@@ -74,7 +74,7 @@ class TestBaseService(NIOTestCase):
         self.assertEqual(status_values[1], "stopped")
         self.assertEqual(status_values[2], "stopped")
 
-    def test_start_stop_blocks_async(self):
+    def test_blocks_async(self):
         """ Makes sure blocks are started/stopped according to 'async' setting
         """
         service = Service()
@@ -82,37 +82,45 @@ class TestBaseService(NIOTestCase):
                    "properties": {'id': 'block1'}},
                   {"type": Block,
                    "properties": {'id': 'block2'}}]
-        service.do_configure(ServiceContext(
-            {"id": "ServiceId", "log_level": "WARNING"},
-            blocks=blocks,
-            block_router_type=BlockRouter,
-            blocks_async_start=True,
-            blocks_async_stop=True
-        ))
 
         with patch("nio.service.base.spawn") as spawn_patched:
+            service.do_configure(ServiceContext(
+                {"id": "ServiceId", "log_level": "WARNING"},
+                blocks=blocks,
+                block_router_type=BlockRouter,
+                blocks_async_configure=True,
+                blocks_async_start=True,
+                blocks_async_stop=True
+            ))
+            # assert one spawn call per block configured
+            self.assertEqual(spawn_patched.call_count, 2)
+
             service.do_start()
             # assert one spawn call per block started
-            self.assertEqual(spawn_patched.call_count, 2)
+            self.assertEqual(spawn_patched.call_count, 4)
 
             service.do_stop()
             # assert one spawn call per block stopped
-            self.assertEqual(spawn_patched.call_count, 4)
+            self.assertEqual(spawn_patched.call_count, 6)
 
         service = Service()
         blocks = [{"type": Block,
                    "properties": {'id': 'block1'}},
                   {"type": Block,
                    "properties": {'id': 'block2'}}]
-        service.do_configure(ServiceContext(
-            {"id": "ServiceId", "log_level": "WARNING"},
-            blocks=blocks,
-            block_router_type=BlockRouter,
-            blocks_async_start=True,
-            blocks_async_stop=False
-        ))
 
         with patch("nio.service.base.spawn") as spawn_patched:
+            service.do_configure(ServiceContext(
+                {"id": "ServiceId", "log_level": "WARNING"},
+                blocks=blocks,
+                block_router_type=BlockRouter,
+                blocks_async_configure=False,
+                blocks_async_start=True,
+                blocks_async_stop=False
+            ))
+            # assert no spawn calls per block configured
+            self.assertEqual(spawn_patched.call_count, 0)
+
             service.do_start()
             # assert one spawn call per block started
             self.assertEqual(spawn_patched.call_count, 2)
@@ -126,22 +134,26 @@ class TestBaseService(NIOTestCase):
                    "properties": {'id': 'block1'}},
                   {"type": Block,
                    "properties": {'id': 'block2'}}]
-        service.do_configure(ServiceContext(
-            {"id": "ServiceId", "log_level": "WARNING"},
-            blocks=blocks,
-            block_router_type=BlockRouter,
-            blocks_async_start=False,
-            blocks_async_stop=True
-        ))
 
         with patch("nio.service.base.spawn") as spawn_patched:
+            service.do_configure(ServiceContext(
+                {"id": "ServiceId", "log_level": "WARNING"},
+                blocks=blocks,
+                block_router_type=BlockRouter,
+                blocks_async_configure=True,
+                blocks_async_start=False,
+                blocks_async_stop=True
+            ))
+            # assert one spawn call per block configured
+            self.assertEqual(spawn_patched.call_count, 2)
+
             service.do_start()
             # start is not async, no spawn calls expected
-            self.assertEqual(spawn_patched.call_count, 0)
+            self.assertEqual(spawn_patched.call_count, 2)
 
             service.do_stop()
             # assert one spawn call per block stopped
-            self.assertEqual(spawn_patched.call_count, 2)
+            self.assertEqual(spawn_patched.call_count, 4)
 
     def test_commands(self):
         """ Asserts commands functionality """
