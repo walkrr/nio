@@ -86,9 +86,9 @@ class PublisherHandler(logging.Handler):
             epoch (int): number of seconds
 
         Returns:
-            Time formatted str (same format as nio time)
+            ISO 8601-conformant time string
 
         """
-        d = datetime.utcfromtimestamp(epoch)
+        d = datetime.utcfromtimestamp(epoch).isoformat() + "Z"
         # convert to str and trim from microseconds to milliseconds ([:-3])
-        return d.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+        return d
