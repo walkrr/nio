@@ -29,6 +29,12 @@ class Publisher(ModuleProxy):
     def open(self, on_connected=None, on_disconnected=None):
         """ Opens publishing channel
 
+        Args:
+            on_connected (callable): function receiving notification when
+                connection is established
+            on_disconnected (callable): function receiving notification when
+                a disconnection occurs
+
         This method will setup the channel for sending, it is implementation
         specific, for example in a tcp like implementation it will open a port.
 
