@@ -4,6 +4,8 @@ from nio.util.logging.handlers.publisher.proxy import PublisherProxy
 
 from nio.testing.test_case import NIOTestCase
 from nio.util.logging.handlers.publisher.tests import LogRecordTest, lineno
+from datetime import datetime
+from time import monotonic
 
 
 class TestHandler(NIOTestCase):
@@ -53,3 +55,11 @@ class TestHandler(NIOTestCase):
     def _on_logger_signal(self, signals):
         for signal in signals:
             self._received_messages.append(signal.message)
+
+    def test_timestamp_format(self):
+        epoch = monotonic()
+        log_time = self._handler._get_time_as_str(epoch)
+        # make sure it has expected format
+        utc_dt = datetime.strptime(log_time,
+                                   '%Y-%m-%dT%H:%M:%S.%fZ')
+        self.assertIsInstance(utc_dt, datetime)
