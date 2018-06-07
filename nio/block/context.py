@@ -4,7 +4,8 @@
 class BlockContext(object):
 
     def __init__(self, block_router, properties,
-                 service_id=None, service_name='', command_url=''):
+                 service_id=None, service_name='', command_url='',
+                 mgmt_signal_handler=None):
         """ Initializes information needed for a Block
 
         This BlockContext will be passed to the `configure` method on each
@@ -23,6 +24,8 @@ class BlockContext(object):
                 This URL will not have host or port information, as that may
                 be different based on public/private IP. It will look like
                 "/services/ServiceName/BlockAlias/"
+            mgmt_signal_handler (callable): function to use to notify
+                management signals, receives signal as only parameter
 
         """
 
@@ -31,3 +34,4 @@ class BlockContext(object):
         self.service_id = service_id
         self.service_name = service_name
         self.command_url = command_url
+        self.mgmt_signal_handler = mgmt_signal_handler

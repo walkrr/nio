@@ -52,6 +52,29 @@ class TestFlagsEnum(NIOTestCase):
         self.assertFalse(status.is_set(Status.stopping))
         self.assertFalse(status.is_set(Status.deliver_signal_error))
 
+    def test_replace(self):
+        # assert that replacing occurs and callback is called only once
+        change_callback = Mock()
+        status = FlagsEnum(Status, status_change_callback=change_callback)
+
+        status.add(Status.started)
+        self.assertTrue(status.is_set(Status.started))
+        self.assertFalse(status.is_set(Status.stopping))
+        self.assertEqual(change_callback.call_count, 1)
+
+        status.replace(Status.started, Status.stopping)
+        self.assertFalse(status.is_set(Status.started))
+        self.assertTrue(status.is_set(Status.stopping))
+        # 2 flags changed, callback triggered only once
+        self.assertEqual(change_callback.call_count, 2)
+
+        # assert that repeating the operation causes nothing to take place
+        status.replace(Status.started, Status.stopping)
+        self.assertFalse(status.is_set(Status.started))
+        self.assertTrue(status.is_set(Status.stopping))
+        # callback is not invoked
+        self.assertEqual(change_callback.call_count, 2)
+
     def test_default_flag(self):
         # assert that it can be initialized with a flag
 

@@ -7,7 +7,8 @@ from nio.properties import PropertyHolder, VersionProperty, \
 from nio.router.context import RouterContext
 from nio.util.logging import get_nio_logger
 from nio.util.logging.levels import LogLevel
-from nio.util.runner import Runner
+from nio.util.flags_enum import FlagsEnum
+from nio.util.runner import Runner, RunnerStatus
 from nio.util.threading import spawn
 
 
@@ -223,7 +224,8 @@ class Service(PropertyHolder, CommandHolder, Runner):
             service_context.properties.get('id'),
             service_context.properties.get('name', ""),
             self._create_commandable_url(service_context.properties,
-                                         block_properties.get('id'))
+                                         block_properties.get('id')),
+            self.mgmt_signal_handler
         )
 
     def _create_commandable_url(self, service_properties, block_alias):
@@ -263,9 +265,23 @@ class Service(PropertyHolder, CommandHolder, Runner):
 
     def full_status(self):
         """Returns service plus block statuses for each block in the service"""
-        status = {"service": self.status.name}
-        for id in self._blocks:
-            status.update({id: self._blocks[id].status.name})
+
+        # build a general-like service status.
+        service_and_blocks_status = FlagsEnum(RunnerStatus)
+        # initialize it with the service status itself
+        service_and_blocks_status.flags = self.status.flags
+        # go trough its blocks and grab their warning and error statuses if any
+        for block_id in self._blocks:
+            if self._blocks[block_id].status.is_set(RunnerStatus.warning):
+                service_and_blocks_status.add(RunnerStatus.warning)
+            elif self._blocks[block_id].status.is_set(RunnerStatus.error):
+                service_and_blocks_status.add(RunnerStatus.error)
+
+        status = {"service": self.status.name,
+                  "service_and_blocks": service_and_blocks_status.name}
+        for block_id in self._blocks:
+            status.update({self._blocks[block_id].label():
+                           self._blocks[block_id].status.name})
         return status
 
     def label(self, include_id=False):

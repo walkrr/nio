@@ -55,23 +55,6 @@ class TestNotifyManagementSignals(NIOTestCase):
     mappings specified and that the signals make it all the way through
     """
 
-    def test_notify_status_change(self):
-        """Test block statuses get updated on management signal notification"""
-        context = ServiceContext(properties, blocks, BlockRouter)
-        service = Service()
-        service.do_configure(context)
-        self.assertEqual(service._blocks['notifierblock'].status,
-                         RunnerStatus.configured)
-        service.do_start()
-
-        error_signal = BlockStatusSignal(RunnerStatus.error, 'It just broke')
-        notifier_block = service._blocks['notifierblock']
-        notifier_block.notify_management_signal(error_signal)
-
-        self.assertTrue(service._blocks['notifierblock']._status.
-                        is_set(RunnerStatus.error))
-        service.do_stop()
-
     def test_non_management_signals_no_effect(self):
         """Test nothing happens when non management signals are notified"""
         context = ServiceContext(properties, blocks, BlockRouter)
@@ -113,11 +96,8 @@ class TestNotifyManagementSignals(NIOTestCase):
         self.assertEqual(service._blocks['receiverblock'].signals_processed, 4)
         self.assertEqual(service._blocks['notifierblock'].signals_processed, 4)
 
-        error_signal = BlockStatusSignal(RunnerStatus.error, 'Broken')
         notifier_block = service._blocks['notifierblock']
-        notifier_block.notify_management_signal(error_signal)
-        self.assertTrue(service._blocks['notifierblock']._status.
-                        is_set(RunnerStatus.error))
+        notifier_block.status.add(RunnerStatus.error)
 
         service._blocks['senderblock'].process_signals(signals)
 

@@ -46,21 +46,22 @@ class TestBaseService(NIOTestCase):
         ))
         # verify that statuses were updated
         status = service.full_status()
-        status_values = list(status.values())
-        self.assertEqual(len(status_values), 3)
-        self.assertEqual(status_values[0], "configured")
-        self.assertEqual(status_values[1], "configured")
-        self.assertEqual(status_values[2], "configured")
+        # 4 statuses, 2 blocks, 1 service, 1 service_and_blocks
+        self.assertEqual(len(status), 4)
+        # assert all statuses
+        self.assertIn("service", status)
+        self.assertIn("service_and_blocks", status)
+        self.assertIn("block1", status)
+        self.assertIn("block2", status)
+        for _, item_status in status.items():
+            self.assertEqual(item_status, "configured")
 
         service.do_start()
-
         # verify that statuses were updated
         status = service.full_status()
-        status_values = list(status.values())
-        self.assertEqual(len(status_values), 3)
-        self.assertEqual(status_values[0], "started")
-        self.assertEqual(status_values[1], "started")
-        self.assertEqual(status_values[2], "started")
+        self.assertEqual(len(status), 4)
+        for _, item_status in status.items():
+            self.assertEqual(item_status, "started")
 
         self.assertEqual(len(service.blocks), 2)
 
@@ -68,11 +69,9 @@ class TestBaseService(NIOTestCase):
 
         # verify that statuses were updated
         status = service.full_status()
-        status_values = list(status.values())
-        self.assertEqual(len(status_values), 3)
-        self.assertEqual(status_values[0], "stopped")
-        self.assertEqual(status_values[1], "stopped")
-        self.assertEqual(status_values[2], "stopped")
+        self.assertEqual(len(status), 4)
+        for _, item_status in status.items():
+            self.assertEqual(item_status, "stopped")
 
     def test_blocks_async(self):
         """ Makes sure blocks are started/stopped according to 'async' setting

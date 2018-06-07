@@ -77,7 +77,8 @@ class Runner(object):
         self.status = RunnerStatus.configuring
         try:
             self.configure(context)
-            self.status = RunnerStatus.configured
+            self.status.replace(RunnerStatus.configuring,
+                                RunnerStatus.configured)
         except Exception:
             self.logger.exception("Failed to configure")
             self.status.add(RunnerStatus.error)
@@ -89,10 +90,10 @@ class Runner(object):
         Ensures status is correctly set based on the outcome of the operation
 
         """
-        self.status = RunnerStatus.starting
+        self.status.replace(RunnerStatus.configured, RunnerStatus.starting)
         try:
             self.start()
-            self.status = RunnerStatus.started
+            self.status.replace(RunnerStatus.starting, RunnerStatus.started)
         except Exception:
             self.logger.exception("Failed to start")
             self.status.add(RunnerStatus.error)
@@ -109,10 +110,10 @@ class Runner(object):
             self.logger.info("Already stopping or stopped")
             return
 
-        self.status = RunnerStatus.stopping
+        self.status.replace(RunnerStatus.started, RunnerStatus.stopping)
         try:
             self.stop()
-            self.status = RunnerStatus.stopped
+            self.status.replace(RunnerStatus.stopping, RunnerStatus.stopped)
         except Exception:
             self.logger.exception("Failed to stop")
             self.status.add(RunnerStatus.error)
