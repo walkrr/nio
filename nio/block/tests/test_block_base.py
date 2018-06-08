@@ -148,9 +148,8 @@ class TestBaseBlock(NIOTestCaseNoModules):
         mgmt_sig = mgmt_signal_handler.call_args[0][0]
         self.assertEqual(mgmt_sig.status, RunnerStatus.warning)
 
-        # Setting the error status should keep the original status, clear the
-        # warning status, and add the error status
-        blk.set_status('error')
+        # Try with a RunnerStatus this time
+        blk.set_status(RunnerStatus.error)
         self.assertTrue(blk.status.is_set(RunnerStatus.configured))
         self.assertFalse(blk.status.is_set(RunnerStatus.warning))
         self.assertTrue(blk.status.is_set(RunnerStatus.error))
@@ -169,6 +168,11 @@ class TestBaseBlock(NIOTestCaseNoModules):
         mgmt_sig = mgmt_signal_handler.call_args[0][0]
         self.assertEqual(mgmt_sig.status, RunnerStatus.configured)
 
+        # Make sure we default to a created status if the block has no status
+        blk.status.clear()
+        blk.set_status('ok')
+        self.assertTrue(blk.status.is_set(RunnerStatus.created))
+
     def test_replace_status_with_helper(self):
         """ Test that the block replaces status if a RunnerStatus is given """
         mgmt_signal_handler = Mock()
@@ -183,7 +187,7 @@ class TestBaseBlock(NIOTestCaseNoModules):
         self.assertFalse(blk.status.is_set(RunnerStatus.error))
         self.assertEqual(mgmt_signal_handler.call_count, 0)
         # Setting warning status should replace the original status
-        blk.set_status(RunnerStatus.warning)
+        blk.set_status('warning', replace_existing=True)
         self.assertFalse(blk.status.is_set(RunnerStatus.configured))
         self.assertTrue(blk.status.is_set(RunnerStatus.warning))
         self.assertFalse(blk.status.is_set(RunnerStatus.error))
@@ -195,7 +199,7 @@ class TestBaseBlock(NIOTestCaseNoModules):
 
         # Setting the error status should keep the original status, clear the
         # warning status, and add the error status
-        blk.set_status(RunnerStatus.error)
+        blk.set_status(RunnerStatus.error, replace_existing=True)
         self.assertFalse(blk.status.is_set(RunnerStatus.configured))
         self.assertFalse(blk.status.is_set(RunnerStatus.warning))
         self.assertTrue(blk.status.is_set(RunnerStatus.error))
@@ -206,7 +210,7 @@ class TestBaseBlock(NIOTestCaseNoModules):
         self.assertEqual(mgmt_sig.status, RunnerStatus.error)
 
         # "reset" the status by passing a valid RunnerStatus
-        blk.set_status(RunnerStatus.started)
+        blk.set_status(RunnerStatus.started, replace_existing=True)
         self.assertFalse(blk.status.is_set(RunnerStatus.configured))
         self.assertFalse(blk.status.is_set(RunnerStatus.warning))
         self.assertFalse(blk.status.is_set(RunnerStatus.error))
