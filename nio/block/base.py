@@ -155,6 +155,8 @@ class Base(PropertyHolder, CommandHolder, Runner):
                 # Default to a created status if the block has no statues left
                 status = RunnerStatus.created
                 for flag, flag_set in self.status.flags.items():
+                    if flag in ('warning', 'error'):
+                        continue
                     if flag_set:
                         status = RunnerStatus[flag]
                         break
