@@ -124,6 +124,138 @@ class TestBaseBlock(NIOTestCaseNoModules):
         with self.assertRaises(TypeError):
             blk.notify_signals(dict_signal, "default")
 
+    def test_add_to_status_with_helper(self):
+        """ Test the block adds to its status with the helper method """
+        mgmt_signal_handler = Mock()
+        blk = Block()
+        blk.do_configure(BlockContext(
+            BlockRouter(),
+            {"id": "BlockId", "log_level": "WARNING"},
+            mgmt_signal_handler=mgmt_signal_handler)
+        )
+        self.assertTrue(blk.status.is_set(RunnerStatus.configured))
+        self.assertFalse(blk.status.is_set(RunnerStatus.warning))
+        self.assertFalse(blk.status.is_set(RunnerStatus.error))
+        self.assertEqual(mgmt_signal_handler.call_count, 0)
+        # Setting warning status should keep the original status but add
+        # the warning status
+        blk.set_status('warning')
+        self.assertTrue(blk.status.is_set(RunnerStatus.configured))
+        self.assertTrue(blk.status.is_set(RunnerStatus.warning))
+        self.assertFalse(blk.status.is_set(RunnerStatus.error))
+        # Make sure our management signal was notified
+        self.assertEqual(mgmt_signal_handler.call_count, 1)
+        mgmt_sig = mgmt_signal_handler.call_args[0][0]
+        self.assertEqual(mgmt_sig.status, RunnerStatus.warning)
+
+        # Setting the error status should keep the original status, clear the
+        # warning status, and add the error status
+        blk.set_status('error')
+        self.assertTrue(blk.status.is_set(RunnerStatus.configured))
+        self.assertFalse(blk.status.is_set(RunnerStatus.warning))
+        self.assertTrue(blk.status.is_set(RunnerStatus.error))
+        # Make sure our management signal was notified
+        self.assertEqual(mgmt_signal_handler.call_count, 2)
+        mgmt_sig = mgmt_signal_handler.call_args[0][0]
+        self.assertEqual(mgmt_sig.status, RunnerStatus.error)
+
+        # Back to ok status should only have the original status again
+        blk.set_status('ok')
+        self.assertTrue(blk.status.is_set(RunnerStatus.configured))
+        self.assertFalse(blk.status.is_set(RunnerStatus.warning))
+        self.assertFalse(blk.status.is_set(RunnerStatus.error))
+        # Make sure our management signal was notified
+        self.assertEqual(mgmt_signal_handler.call_count, 3)
+        mgmt_sig = mgmt_signal_handler.call_args[0][0]
+        self.assertEqual(mgmt_sig.status, RunnerStatus.configured)
+
+    def test_replace_status_with_helper(self):
+        """ Test that the block replaces status if a RunnerStatus is given """
+        mgmt_signal_handler = Mock()
+        blk = Block()
+        blk.do_configure(BlockContext(
+            BlockRouter(),
+            {"id": "BlockId", "log_level": "WARNING"},
+            mgmt_signal_handler=mgmt_signal_handler)
+        )
+        self.assertTrue(blk.status.is_set(RunnerStatus.configured))
+        self.assertFalse(blk.status.is_set(RunnerStatus.warning))
+        self.assertFalse(blk.status.is_set(RunnerStatus.error))
+        self.assertEqual(mgmt_signal_handler.call_count, 0)
+        # Setting warning status should replace the original status
+        blk.set_status(RunnerStatus.warning)
+        self.assertFalse(blk.status.is_set(RunnerStatus.configured))
+        self.assertTrue(blk.status.is_set(RunnerStatus.warning))
+        self.assertFalse(blk.status.is_set(RunnerStatus.error))
+        self.assertEqual(blk.status, RunnerStatus.warning)
+        # Make sure our management signal was notified
+        self.assertEqual(mgmt_signal_handler.call_count, 1)
+        mgmt_sig = mgmt_signal_handler.call_args[0][0]
+        self.assertEqual(mgmt_sig.status, RunnerStatus.warning)
+
+        # Setting the error status should keep the original status, clear the
+        # warning status, and add the error status
+        blk.set_status(RunnerStatus.error)
+        self.assertFalse(blk.status.is_set(RunnerStatus.configured))
+        self.assertFalse(blk.status.is_set(RunnerStatus.warning))
+        self.assertTrue(blk.status.is_set(RunnerStatus.error))
+        self.assertEqual(blk.status, RunnerStatus.error)
+        # Make sure our management signal was notified
+        self.assertEqual(mgmt_signal_handler.call_count, 2)
+        mgmt_sig = mgmt_signal_handler.call_args[0][0]
+        self.assertEqual(mgmt_sig.status, RunnerStatus.error)
+
+        # "reset" the status by passing a valid RunnerStatus
+        blk.set_status(RunnerStatus.started)
+        self.assertFalse(blk.status.is_set(RunnerStatus.configured))
+        self.assertFalse(blk.status.is_set(RunnerStatus.warning))
+        self.assertFalse(blk.status.is_set(RunnerStatus.error))
+        self.assertTrue(blk.status.is_set(RunnerStatus.started))
+        # Make sure our management signal was notified
+        self.assertEqual(mgmt_signal_handler.call_count, 3)
+        mgmt_sig = mgmt_signal_handler.call_args[0][0]
+        self.assertEqual(mgmt_sig.status, RunnerStatus.started)
+
+    def test_status_message(self):
+        """ Make sure messages get included in status mgmt signals """
+        mgmt_signal_handler = Mock()
+        blk = Block()
+        blk.do_configure(BlockContext(
+            BlockRouter(),
+            {"id": "BlockId", "log_level": "WARNING"},
+            mgmt_signal_handler=mgmt_signal_handler)
+        )
+        blk.set_status('warning', 'something bad happened')
+        self.assertEqual(mgmt_signal_handler.call_count, 1)
+        mgmt_sig = mgmt_signal_handler.call_args[0][0]
+        self.assertEqual(mgmt_sig.status, RunnerStatus.warning)
+        self.assertEqual(mgmt_sig.message, 'something bad happened')
+
+        # can default to no message (empty string) if not provided
+        blk.set_status('ok')
+        self.assertEqual(mgmt_signal_handler.call_count, 2)
+        mgmt_sig = mgmt_signal_handler.call_args[0][0]
+        self.assertEqual(mgmt_sig.status, RunnerStatus.configured)
+        self.assertEqual(mgmt_sig.message, '')
+
+    def test_set_bad_status(self):
+        mgmt_signal_handler = Mock()
+        blk = Block()
+        blk.do_configure(BlockContext(
+            BlockRouter(),
+            {"id": "BlockId", "log_level": "WARNING"},
+            mgmt_signal_handler=mgmt_signal_handler)
+        )
+        # Non RunnerStatus not allowed
+        with self.assertRaises(TypeError):
+            blk.set_status(True)
+        # Must have string message
+        with self.assertRaises(TypeError):
+            blk.set_status('ok', 555)
+        # Only 'ok', 'warning', and 'error' are valid statuses
+        with self.assertRaises(ValueError):
+            blk.set_status('looks like a status?')
+
     def test_import_locations(self):
         """Make sure the block can be imported from the nio root"""
         from nio import Block as nioBlock

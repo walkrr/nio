@@ -15,7 +15,7 @@ from nio.signal.base import Signal
 from nio.signal.status import BlockStatusSignal
 from nio.util.logging import get_nio_logger
 from nio.util.logging.levels import LogLevel
-from nio.util.runner import Runner
+from nio.util.runner import Runner, RunnerStatus
 
 
 @command('properties')
@@ -111,6 +111,76 @@ class Base(PropertyHolder, CommandHolder, Runner):
         in the service process.
         """
         pass  # pragma: no cover
+
+    def set_status(self, status, message=""):
+        """ Set this block's status and notify the management channel.
+
+        This is a method that a block developer can use to set their block's
+        status. A block in warning or error status may be noted in the
+        system designer or in monitoring tools.
+
+        In general a block in warning status has a problematic condition but
+        may be able to recover on its own (e.g., retrying a connection). A
+        block in error status is in a state that will require a human to
+        resolve the error; either by fixing the error condition or restarting
+        the service.
+
+        Note: By specifying a string based status the status will be added to
+        as opposed to replaced. In other words, if your block is in a status
+        of 'started' and you call `self.set_status('error')` the new block
+        status will be 'started, error'. If instead you call 
+        `self.set_status(RunnerStatus.error)` the new block status will be
+        'error' only.
+
+        Args:
+            status (str or RunnerStatus): A nio.util.runner.RunnerStatus to
+                set the block's statut to. Optionally takes a string if the
+                string is one of (error, warning, ok). Specifying 'error' or
+                'warning' will set those status flags on the block. Specifying
+                'ok' as a status string will clear both error and warning
+                status flags.
+            message (str): An optional string message to include in the
+                notification of the status change.
+
+        Returns:
+            RunnerStatus: The current block's status after setting.
+
+        Raises:
+            ValueError: If a string other than "ok", "warning", or "error" is
+                provided as the status
+            TypeError: If an invalid status type or message type is specified
+        """
+        if isinstance(status, str):
+            if status.lower() == 'ok':
+                self.status.remove(RunnerStatus.error)
+                self.status.remove(RunnerStatus.warning)
+                status_to_notify = self.status
+            elif status.lower() == 'warn' or status.lower() == 'warning':
+                self.status.remove(RunnerStatus.error)
+                self.status.add(RunnerStatus.warning)
+                status_to_notify = RunnerStatus.warning
+            elif status.lower() == 'error':
+                self.status.remove(RunnerStatus.warning)
+                self.status.add(RunnerStatus.error)
+                status_to_notify = RunnerStatus.error
+            else:
+                raise ValueError("Only 'ok', 'warning', or 'error' are "
+                                 "supported status strings")
+        elif isinstance(status, RunnerStatus):
+            self.status.set(status)
+            status_to_notify = status
+        else:
+            raise TypeError(
+                "Block status can only be set to string or RunnerStatus")
+
+        if not isinstance(message, str):
+            raise TypeError("Only string based status messages are allowed")
+
+        # Notify the new status to the management channel for other services
+        # to handle
+        signal = BlockStatusSignal(status_to_notify, message=message)
+        self.notify_management_signal(signal)
+        return self.status
 
     def notify_signals(self, signals, output_id=None):
         """Notify signals to router.
