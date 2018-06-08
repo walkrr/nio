@@ -9,11 +9,25 @@ class Subscriber(object):
         self.handler = handler
         self.topic = topic
 
-    def open(self):
+    def open(self, on_connected=None, on_disconnected=None):
         """ Subscribes handler to matching publishers
+
+        Args:
+            on_connected (callable): function receiving notification when
+                connection is established
+            on_disconnected (callable): function receiving notification when
+                a disconnection occurs
 
         """
         PubSubManager.add_subscriber(self)
+        # on_connected, on_disconnected is not applicable,
+        # testing communication module is always connected
+
+    def is_connected(self):
+        """ Determine if this subscriber is connected and ready
+
+        """
+        return True
 
     def close(self):
         """ Closes publisher.
