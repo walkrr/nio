@@ -18,11 +18,12 @@ class TestBlockTestCase(NIOBlockTestCase):
         self._signals_notified = True
         super().signals_notified(block, signals, output_id)
 
-    def management_signal_notified(self, block, signal):
+    def management_signal_notified(self, signal):
         """ Override a management signal notification handler """
+        # allow mgmt signal counting
+        super().management_signal_notified(signal)
+        # make it known that it was notified
         self._management_notified = True
-        self.assertEqual(signal.block_name, block.name())
-        self.assertEqual(signal.service_id, block._service_id)
 
     def test_allows_signal_notify(self):
         """ Makes sure a test can assert how many signals were notified """
@@ -53,12 +54,10 @@ class TestBlockTestCase(NIOBlockTestCase):
         self.assert_block_status(b2, '')
 
         b1.notify_management_signal(BlockStatusSignal(RunnerStatus.error))
-        self.assert_block_status(b1, RunnerStatus.error)
         self.assert_num_mgmt_signals_notified(1, b1)
         self.assert_num_mgmt_signals_notified(0, b2)
 
         b2.notify_management_signal(BlockStatusSignal(RunnerStatus.warning))
-        self.assert_block_status(b2, RunnerStatus.warning)
         self.assert_num_mgmt_signals_notified(1, b1)
         self.assert_num_mgmt_signals_notified(1, b2)
 

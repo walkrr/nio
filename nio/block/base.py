@@ -52,7 +52,9 @@ class Base(PropertyHolder, CommandHolder, Runner):
         self.type = self.__class__.__name__
 
         self._block_router = None
+        self._service_id = None
         self._service_name = None
+        self._mgmt_signal_handler = None
         self._default_input = Terminal.get_default_terminal_on_class(
             self.__class__, TerminalType.input)
         self._default_output = Terminal.get_default_terminal_on_class(
@@ -90,6 +92,7 @@ class Base(PropertyHolder, CommandHolder, Runner):
         self.logger.setLevel(self.log_level())
         self._service_id = context.service_id
         self._service_name = context.service_name
+        self._mgmt_signal_handler = context.mgmt_signal_handler
 
     def start(self):
         """Overrideable method to be called when the block starts.
@@ -145,19 +148,19 @@ class Base(PropertyHolder, CommandHolder, Runner):
             signal: signal to notify
 
         This is a special type of signal notification that does not actually
-        propogate signals in the service. Instead, it is used to communicate
+        propagate signals in the service. Instead, it is used to communicate
         some information to the block router about the block. For example,
         the block can report itself in an error state and thus prevent other
         signals from being delivered to it.
         """
-        if isinstance(signal, BlockStatusSignal):
-            # set service block is part of
-            signal.service_id = self._service_id
-            signal.service_name = self._service_name
-            signal.block_id = self.id()
-            signal.block_name = self.name()
-            self.status.add(signal.status)
-        self._block_router.notify_management_signal(self, signal)
+        if self._mgmt_signal_handler:
+            if isinstance(signal, BlockStatusSignal):
+                # add service and block info
+                signal.service_id = self._service_id
+                signal.service_name = self._service_name
+                signal.block_id = self.id()
+                signal.block_name = self.name()
+            self._mgmt_signal_handler(signal)
 
     def process_signals(self, signals, input_id=DEFAULT_TERMINAL):
         """Overrideable method to be called when signals are delivered.

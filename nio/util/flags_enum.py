@@ -91,6 +91,27 @@ class FlagsEnum(object):
             if self._status_change_callback:
                 self._status_change_callback(old_status, self)
 
+    def replace(self, old_flag, new_flag):
+        self._validate_flag(old_flag)
+        self._validate_flag(new_flag)
+
+        # save old status to send along with changed status
+        old_status = copy.deepcopy(self)
+
+        status_changed = False
+        # remove old flag
+        if self._flags[old_flag.name]:
+            self._flags[old_flag.name] = False
+            status_changed = True
+
+        # add new flag
+        if not self._flags[new_flag.name]:
+            self._flags[new_flag.name] = True
+            status_changed = True
+
+        if status_changed and self._status_change_callback:
+            self._status_change_callback(old_status, self)
+
     def remove(self, flag):
         """ Removes a flag value from the current set of flags
 

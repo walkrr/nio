@@ -4,7 +4,6 @@ from copy import deepcopy
 
 from nio.router.diagnostic import DiagnosticManager
 from nio.signal.base import Signal
-from nio.signal.management import ManagementSignal
 from nio.util.runner import Runner, RunnerStatus
 
 
@@ -82,7 +81,6 @@ class BlockRouter(Runner):
         self._receivers = None
         self._clone_signals = False
         self._check_signal_type = True
-        self._mgmt_signal_handler = None
         self._diagnostics = True
         self._diagnostic_manager = None
 
@@ -97,7 +95,6 @@ class BlockRouter(Runner):
             context (RouterContext): Context where settings are stored
         """
 
-        self._mgmt_signal_handler = context.mgmt_signal_handler
         self._clone_signals = \
             context.settings.get("clone_signals", True)
         if self._clone_signals:
@@ -240,23 +237,6 @@ class BlockRouter(Runner):
     def _on_status_change_callback(self, old_status, new_status):
         self.logger.info("Block Router status changed from: {} to: {}".
                          format(old_status.name, new_status.name))
-
-    def notify_management_signal(self, block, signal):
-        """The method to be called when notifying management signals
-
-        This is called, most likely, when a block wants to notify its
-        own error state.
-
-        Args:
-            block (Block): The block that is notifying.
-            signal (ManagementSignal): The management signal to notify
-
-        Return:
-            None
-
-        """
-        if self._mgmt_signal_handler:
-            self._mgmt_signal_handler(signal)
 
     def notify_signals(self, block, signals, output_id):
         """This method is called when a block is notifying signals.
@@ -403,6 +383,7 @@ class BlockRouter(Runner):
                 # Only send the signals to the block, no input_id
                 block_receiver.block.process_signals(signals)
         except:
+            # TODO: define logic to set router back to normal
             self.status.add(RunnerStatus.error)
             self.logger.exception("{}.process_signals failed".
                                   format(block_receiver.block.label()))

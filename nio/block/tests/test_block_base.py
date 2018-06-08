@@ -44,16 +44,17 @@ class TestBaseBlock(NIOTestCaseNoModules):
                                                            "log_level": 42}))
 
     def test_notify_management_signal(self):
-        """Test the block can notify management signals properly to router """
+        """Test the block can notify management signals properly """
+        mgmt_signal_handler = Mock()
         blk = Block()
         blk.configure(BlockContext(
             BlockRouter(),
-            {"id": "BlockId", "log_level": "WARNING"}))
+            {"id": "BlockId", "log_level": "WARNING"},
+            mgmt_signal_handler=mgmt_signal_handler)
+        )
         my_sig = Signal({"key": "val"})
-        with patch.object(blk, '_block_router') as router_patch:
-            blk.notify_management_signal(my_sig)
-            router_patch.notify_management_signal.assert_called_once_with(
-                blk, my_sig)
+        blk.notify_management_signal(my_sig)
+        mgmt_signal_handler.assert_called_once_with(my_sig)
 
     def test_service_notify_management_signal(self):
         """ Test the block can notify management signals to the service """
@@ -66,7 +67,9 @@ class TestBaseBlock(NIOTestCaseNoModules):
         block_router.configure(router_context)
         blk.configure(BlockContext(
             block_router,
-            {"id": "BlockId", "log_level": "WARNING"}))
+            {"id": "BlockId", "log_level": "WARNING"},
+            mgmt_signal_handler=service_mgmt_signal_handler)
+        )
         my_sig = Signal({"key": "val"})
         blk.notify_management_signal(my_sig)
         service_mgmt_signal_handler.assert_called_once_with(my_sig)
@@ -173,8 +176,9 @@ class TestBaseBlock(NIOTestCaseNoModules):
             {"id": "block_id",
              "name": block_name},
             service_id=service_id,
-            service_name=service_name))
-
+            service_name=service_name,
+            mgmt_signal_handler=Mock())
+        )
         warning = BlockStatusSignal(
             RunnerStatus.warning, message='It just broke...')
         self.assertIsNone(warning.service_id)

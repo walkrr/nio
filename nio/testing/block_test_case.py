@@ -2,12 +2,13 @@
   NIO block support base class
 
 """
+from uuid import uuid4
+
 from collections import defaultdict
 from nio.testing.test_case import NIOTestCase
 from nio.router.base import BlockRouter
 from nio.block.context import BlockContext
 from nio.block.terminals import DEFAULT_TERMINAL
-from nio.signal.status import StatusSignal
 
 
 class BlockRouterForTesting(BlockRouter):
@@ -22,7 +23,6 @@ class BlockRouterForTesting(BlockRouter):
         super().__init__()
         self._test_case = None
         self._block_signal_counts = {}
-        self._block_mgmt_signal_counts = defaultdict(int)
         self._block_status = {}
 
     def configure(self, test_case):
@@ -54,23 +54,6 @@ class BlockRouterForTesting(BlockRouter):
         self._block_signal_counts[block][output_id] += len(signals)
 
         self._test_case._internal_signals_notified(block, signals, output_id)
-
-    def notify_management_signal(self, block, signal):
-        """ Receives management signal.
-
-        Keeps track of the signal count per block
-        Forwards signal to test_case's 'management_signal_notified' method
-
-        Args:
-            block (Block): notifier block
-            signal (Signal): signal being notified
-
-        """
-        if isinstance(signal, StatusSignal):
-            self._block_status[block] = signal.status
-
-        self._block_mgmt_signal_counts[block] += 1
-        self._test_case.management_signal_notified(block, signal)
 
     def get_signals_from_block(self, block=None, output_id=DEFAULT_TERMINAL):
         """ Provides signal count per block or for all blocks
@@ -119,6 +102,8 @@ class NIOBlockTestCase(NIOTestCase):
         self.notified_signals = defaultdict(list)
         # support internal test case control over signal notifications
         self._last_output_notified = None
+        # keep track of mgmt signals notified per block
+        self._block_mgmt_signal_counts = defaultdict(int)
 
     def setUp(self):
         super().setUp()
@@ -133,12 +118,13 @@ class NIOBlockTestCase(NIOTestCase):
 
         """
         # Blocks should always have an 'id', but we'll let it pass in tests
-        block_properties["id"] = block_properties.get("id", "default")
+        block_properties["id"] = block_properties.get("id", uuid4().hex)
         block.configure(BlockContext(
             self._router,
             block_properties,
             'TestSuite',
-            ''))
+            '',
+            mgmt_signal_handler=self.management_signal_notified))
 
     @property
     def last_notified(self):
@@ -202,14 +188,14 @@ class NIOBlockTestCase(NIOTestCase):
         """
         self.notified_signals[output_id].append(signals)
 
-    def management_signal_notified(self, block, signal):
+    def management_signal_notified(self, signal):
         """ Receives block management signal notification
 
         Args:
-            block (Block): notifying block
             signal (Signal): signal being notified
         """
-        pass
+        # update per block signal counting
+        self._block_mgmt_signal_counts[signal.block_id] += 1
 
     def assert_num_signals_notified(self, num, block=None,
                                     output_id=DEFAULT_TERMINAL):
@@ -234,10 +220,10 @@ class NIOBlockTestCase(NIOTestCase):
         """
         if block:
             self.assertEqual(
-                num, self._router._block_mgmt_signal_counts[block])
+                num, self._block_mgmt_signal_counts[block.id()])
         else:
             self.assertEqual(
-                num, sum(self._router._block_mgmt_signal_counts.values()))
+                num, sum(self._block_mgmt_signal_counts.values()))
 
     def assert_signal_notified(self, signal, position=None,
                                output_id=DEFAULT_TERMINAL):
