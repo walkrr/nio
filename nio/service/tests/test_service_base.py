@@ -46,22 +46,25 @@ class TestBaseService(NIOTestCase):
         ))
         # verify that statuses were updated
         status = service.full_status()
-        # 4 statuses, 2 blocks, 1 service, 1 service_and_blocks
-        self.assertEqual(len(status), 4)
+        # 3 statuses, 1 blocks, 1 service, 1 service_and_blocks
+        self.assertEqual(len(status), 3)
         # assert all statuses
-        self.assertIn("service", status)
-        self.assertIn("service_and_blocks", status)
-        self.assertIn("block1", status)
-        self.assertIn("block2", status)
-        for _, item_status in status.items():
-            self.assertEqual(item_status, "configured")
+        self.assertEqual(status["service"], "configured")
+        self.assertEqual(status["service_and_blocks"], "configured")
+        self.assertEqual(len(status["blocks"]), 2)
+        self.assertEqual(status["blocks"]["block1"], "configured")
+        self.assertEqual(status["blocks"]["block2"], "configured")
 
         service.do_start()
         # verify that statuses were updated
         status = service.full_status()
-        self.assertEqual(len(status), 4)
-        for _, item_status in status.items():
-            self.assertEqual(item_status, "started")
+        self.assertEqual(len(status), 3)
+        # assert all statuses
+        self.assertEqual(status["service"], "started")
+        self.assertEqual(status["service_and_blocks"], "started")
+        self.assertEqual(len(status["blocks"]), 2)
+        self.assertEqual(status["blocks"]["block1"], "started")
+        self.assertEqual(status["blocks"]["block2"], "started")
 
         self.assertEqual(len(service.blocks), 2)
 
@@ -69,9 +72,13 @@ class TestBaseService(NIOTestCase):
 
         # verify that statuses were updated
         status = service.full_status()
-        self.assertEqual(len(status), 4)
-        for _, item_status in status.items():
-            self.assertEqual(item_status, "stopped")
+        self.assertEqual(len(status), 3)
+        # assert all statuses
+        self.assertEqual(status["service"], "stopped")
+        self.assertEqual(status["service_and_blocks"], "stopped")
+        self.assertEqual(len(status["blocks"]), 2)
+        self.assertEqual(status["blocks"]["block1"], "stopped")
+        self.assertEqual(status["blocks"]["block2"], "stopped")
 
     def test_blocks_async(self):
         """ Makes sure blocks are started/stopped according to 'async' setting

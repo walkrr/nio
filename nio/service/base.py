@@ -278,10 +278,14 @@ class Service(PropertyHolder, CommandHolder, Runner):
                 service_and_blocks_status.add(RunnerStatus.error)
 
         status = {"service": self.status.name,
-                  "service_and_blocks": service_and_blocks_status.name}
+                  "service_and_blocks": service_and_blocks_status.name,
+                  "blocks": {}}
+        # create a dict for all blocks using block label as key
+        blocks = {}
         for block_id in self._blocks:
-            status.update({self._blocks[block_id].label():
-                           self._blocks[block_id].status.name})
+            blocks[self._blocks[block_id].label()] = \
+                self._blocks[block_id].status.name
+        status["blocks"] = blocks
         return status
 
     def label(self, include_id=False):
