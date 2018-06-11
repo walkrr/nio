@@ -138,6 +138,8 @@ class TestPropertyHolder(NIOTestCaseNoModules):
         description = AdditionalDescriptionClass.get_description()
         # check mandatory settings
         self.assertIn('title', description['property'])
+        self.assertIn('advanced', description['property'])
+        self.assertIn('order', description['property'])
         self.assertIn('visible', description['property'])
         self.assertIn('allow_none', description['property'])
         self.assertIn('default', description['property'])

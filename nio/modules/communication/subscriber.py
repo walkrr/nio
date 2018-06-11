@@ -20,13 +20,25 @@ class Subscriber(ModuleProxy):
         """
         super().__init__(handler, topic=topic, **kwargs)
 
-    def open(self):
+    def open(self, on_connected=None, on_disconnected=None):
         """ Open a subscriber
 
+        Args:
+            on_connected (callable): function receiving notification when
+                connection is established
+            on_disconnected (callable): function receiving notification when
+                a disconnection occurs
+
         When opening a subscriber the system will look for matches against
-        existing publishers, when a match is found, a 'connection' is made
+        existing publishers, when a match is found, a match is made
         so that signals published by matching publisher are received by this
         subscriber
+
+        """
+        raise NotImplementedError()
+
+    def is_connected(self):
+        """ Determine if this subscriber is connected and ready
 
         """
         raise NotImplementedError()

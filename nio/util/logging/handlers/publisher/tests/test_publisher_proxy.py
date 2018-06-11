@@ -2,7 +2,8 @@ from unittest.mock import patch
 
 from nio import Signal
 from nio.testing.test_case import NIOTestCase
-from nio.util.logging.handlers.publisher.proxy import PublisherProxy
+from nio.util.logging.handlers.publisher.proxy import PublisherProxy, \
+    PublisherNotReadyException
 
 
 class TestPublisherProxy(NIOTestCase):
@@ -28,6 +29,10 @@ class TestPublisherProxy(NIOTestCase):
             # assert that when a Publisher can't be created, the event
             # remains unset
             self.assertFalse(PublisherProxy._publisher_ready_event.wait(0.1))
+
+            # assert than when trying to publish the exception is raised
+            with self.assertRaises(PublisherNotReadyException):
+                PublisherProxy.publish([Signal()])
 
         PublisherProxy.close()
 

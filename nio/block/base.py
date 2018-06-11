@@ -15,7 +15,7 @@ from nio.signal.base import Signal
 from nio.signal.status import BlockStatusSignal
 from nio.util.logging import get_nio_logger
 from nio.util.logging.levels import LogLevel
-from nio.util.runner import Runner
+from nio.util.runner import Runner, RunnerStatus
 
 
 @command('properties')
@@ -23,12 +23,12 @@ class Base(PropertyHolder, CommandHolder, Runner):
 
     """The base class for blocks to inherit from."""
 
-    version = VersionProperty(version='0.0.0')
+    version = VersionProperty(version='0.0.0', advanced=True)
     type = StringProperty(title="Type", visible=False, readonly=True)
     id = StringProperty(title="Id", visible=False, allow_none=False)
     name = StringProperty(title="Name", visible=False, allow_none=True)
     log_level = SelectProperty(enum=LogLevel,
-                               title="Log Level", default="NOTSET")
+                               title="Log Level", default="NOTSET", advanced=True)
 
     def __init__(self, status_change_callback=None):
         """ Create a new block instance.
@@ -52,7 +52,9 @@ class Base(PropertyHolder, CommandHolder, Runner):
         self.type = self.__class__.__name__
 
         self._block_router = None
+        self._service_id = None
         self._service_name = None
+        self._mgmt_signal_handler = None
         self._default_input = Terminal.get_default_terminal_on_class(
             self.__class__, TerminalType.input)
         self._default_output = Terminal.get_default_terminal_on_class(
@@ -90,6 +92,7 @@ class Base(PropertyHolder, CommandHolder, Runner):
         self.logger.setLevel(self.log_level())
         self._service_id = context.service_id
         self._service_name = context.service_name
+        self._mgmt_signal_handler = context.mgmt_signal_handler
 
     def start(self):
         """Overrideable method to be called when the block starts.
@@ -108,6 +111,85 @@ class Base(PropertyHolder, CommandHolder, Runner):
         in the service process.
         """
         pass  # pragma: no cover
+
+    def set_status(self, status, message="", replace_existing=False):
+        """ Set this block's status and notify the management channel.
+
+        This is a method that a block developer can use to set their block's
+        status. A block in warning or error status may be noted in the
+        system designer or in monitoring tools.
+
+        In general a block in warning status has a problematic condition but
+        may be able to recover on its own (e.g., retrying a connection). A
+        block in error status is in a state that will require a human to
+        resolve the error; either by fixing the error condition or restarting
+        the service.
+
+        Args:
+            status (str or RunnerStatus): A nio.util.runner.RunnerStatus to
+                set the block's statut to. Optionally takes a string if the
+                string is one of (error, warning, ok). Specifying 'error' or
+                'warning' will set those status flags on the block. Specifying
+                any non-error status as a status will clear both any error or
+                warning status flags on the block.
+            message (str): An optional string message to include in the
+                notification of the status change.
+            replace_existing (bool): Whether or not to replace the existing
+                block status when setting the new status. If False, the new
+                status will be added to the block if it is a warning or error
+                status. Any non-error/warning status will clear any error or
+                warning status that was on the block before.
+
+        Returns:
+            RunnerStatus: The current block's status after setting.
+
+        Raises:
+            ValueError: If a string other than "ok", "warning", or "error" is
+                provided as the status
+            TypeError: If an invalid status type or message type is specified
+        """
+        if isinstance(status, str):
+            if status.lower() == 'ok':
+                # An ok status means we want the first non-error status that
+                # is on the block right now.
+                # Default to a created status if the block has no statues left
+                status = RunnerStatus.created
+                for flag, flag_set in self.status.flags.items():
+                    if flag in ('warning', 'error'):
+                        continue
+                    if flag_set:
+                        status = RunnerStatus[flag]
+                        break
+            elif status.lower() == 'warn' or status.lower() == 'warning':
+                status = RunnerStatus.warning
+            elif status.lower() == 'error':
+                status = RunnerStatus.error
+            else:
+                raise ValueError("Only 'ok', 'warning', or 'error' are "
+                                 "supported status strings")
+        elif not isinstance(status, RunnerStatus):
+            raise TypeError(
+                "Block status can only be set to string or RunnerStatus")
+
+        if not isinstance(message, str):
+            raise TypeError("Only string based status messages are allowed")
+
+        # Clear old error/warn status if a non-error/warn status is passed
+        if status != RunnerStatus.error:
+            self.status.remove(RunnerStatus.error)
+        if status != RunnerStatus.warning:
+            self.status.remove(RunnerStatus.warning)
+
+        if replace_existing:
+            self.status.set(status)
+        else:
+            self.status.add(status)
+
+        # Notify the new status to the management channel for other services
+        # to handle
+        signal = BlockStatusSignal(status, message=message)
+        self.notify_management_signal(signal)
+        return self.status
 
     def notify_signals(self, signals, output_id=None):
         """Notify signals to router.
@@ -145,19 +227,19 @@ class Base(PropertyHolder, CommandHolder, Runner):
             signal: signal to notify
 
         This is a special type of signal notification that does not actually
-        propogate signals in the service. Instead, it is used to communicate
+        propagate signals in the service. Instead, it is used to communicate
         some information to the block router about the block. For example,
         the block can report itself in an error state and thus prevent other
         signals from being delivered to it.
         """
-        if isinstance(signal, BlockStatusSignal):
-            # set service block is part of
-            signal.service_id = self._service_id
-            signal.service_name = self._service_name
-            signal.block_id = self.id()
-            signal.block_name = self.name()
-            self.status.add(signal.status)
-        self._block_router.notify_management_signal(self, signal)
+        if self._mgmt_signal_handler:
+            if isinstance(signal, BlockStatusSignal):
+                # add service and block info
+                signal.service_id = self._service_id
+                signal.service_name = self._service_name
+                signal.block_id = self.id()
+                signal.block_name = self.name()
+            self._mgmt_signal_handler(signal)
 
     def process_signals(self, signals, input_id=DEFAULT_TERMINAL):
         """Overrideable method to be called when signals are delivered.

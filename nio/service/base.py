@@ -7,7 +7,8 @@ from nio.properties import PropertyHolder, VersionProperty, \
 from nio.router.context import RouterContext
 from nio.util.logging import get_nio_logger
 from nio.util.logging.levels import LogLevel
-from nio.util.runner import Runner
+from nio.util.flags_enum import FlagsEnum
+from nio.util.runner import Runner, RunnerStatus
 from nio.util.threading import spawn
 
 
@@ -90,8 +91,9 @@ class Service(PropertyHolder, CommandHolder, Runner):
         self._blocks = {}
         self.mappings = []
 
-        self._blocks_async_start = False
-        self._blocks_async_stop = True
+        self._blocks_async_configure = None
+        self._blocks_async_start = None
+        self._blocks_async_stop = None
 
     def start(self):
         """Overrideable method to be called when the service starts.
@@ -174,17 +176,35 @@ class Service(PropertyHolder, CommandHolder, Runner):
         self.logger.debug("Instantiating block router: {0}.{1}".
                           format(context.block_router_type.__module__,
                                  context.block_router_type.__name__))
+        self.mgmt_signal_handler = context.mgmt_signal_handler
+        self._blocks_async_configure = context.blocks_async_configure
+        self._blocks_async_start = context.blocks_async_start
+        self._blocks_async_stop = context.blocks_async_stop
         self._block_router = context.block_router_type()
 
         # create and configure blocks
+        configure_threads = []
         for block_definition in context.blocks:
             block_context = self._create_block_context(
                 block_definition['properties'],
                 context)
-            block = self._create_and_configure_block(
-                block_definition['type'],
-                block_context)
+            # create block instance
+            block = block_definition['type']()
+            # configure it
+            if self._blocks_async_configure:
+                # guarantee 'id' property is assigned to be able to reference
+                # id() property down below
+                block.id = block_context.properties["id"]
+                configure_threads.append(
+                    spawn(block.do_configure, block_context))
+            else:
+                block.do_configure(block_context)
+            # register it
             self._blocks[block.id()] = block
+        # if configuration was async, ensure they are all done
+        if configure_threads:
+            for thread in configure_threads:
+                thread.join()
 
         # populate router context and configure block router
         router_context = RouterContext(self.execution(),
@@ -195,9 +215,6 @@ class Service(PropertyHolder, CommandHolder, Runner):
                                        self.id(),
                                        self.name())
         self._block_router.do_configure(router_context)
-        self.mgmt_signal_handler = context.mgmt_signal_handler
-        self._blocks_async_start = context.blocks_async_start
-        self._blocks_async_stop = context.blocks_async_stop
 
     def _create_block_context(self, block_properties, service_context):
         """Populates block context to pass to the block's configure method"""
@@ -207,7 +224,8 @@ class Service(PropertyHolder, CommandHolder, Runner):
             service_context.properties.get('id'),
             service_context.properties.get('name', ""),
             self._create_commandable_url(service_context.properties,
-                                         block_properties.get('id'))
+                                         block_properties.get('id')),
+            self.mgmt_signal_handler
         )
 
     def _create_commandable_url(self, service_properties, block_alias):
@@ -215,12 +233,6 @@ class Service(PropertyHolder, CommandHolder, Runner):
 
         return '/services/{0}/{1}/'.format(
             service_properties.get('id', ''), block_alias)
-
-    def _create_and_configure_block(self, block_type, block_context):
-        """ Instantiates and configures given block """
-        block = block_type()
-        block.do_configure(block_context)
-        return block
 
     @classmethod
     def get_description(cls):
@@ -253,9 +265,27 @@ class Service(PropertyHolder, CommandHolder, Runner):
 
     def full_status(self):
         """Returns service plus block statuses for each block in the service"""
-        status = {"service": self.status.name}
-        for id in self._blocks:
-            status.update({id: self._blocks[id].status.name})
+
+        # build a general-like service status.
+        service_and_blocks_status = FlagsEnum(RunnerStatus)
+        # initialize it with the service status itself
+        service_and_blocks_status.flags = self.status.flags
+        # go trough its blocks and grab their warning and error statuses if any
+        for block_id in self._blocks:
+            if self._blocks[block_id].status.is_set(RunnerStatus.warning):
+                service_and_blocks_status.add(RunnerStatus.warning)
+            elif self._blocks[block_id].status.is_set(RunnerStatus.error):
+                service_and_blocks_status.add(RunnerStatus.error)
+
+        status = {"service": self.status.name,
+                  "service_and_blocks": service_and_blocks_status.name,
+                  "blocks": {}}
+        # create a dict for all blocks using block label as key
+        blocks = {}
+        for block_id in self._blocks:
+            blocks[self._blocks[block_id].label()] = \
+                self._blocks[block_id].status.name
+        status["blocks"] = blocks
         return status
 
     def label(self, include_id=False):
