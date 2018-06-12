@@ -52,8 +52,8 @@ class TestBaseService(NIOTestCase):
         self.assertEqual(status["service"], "configured")
         self.assertEqual(status["service_and_blocks"], "configured")
         self.assertEqual(len(status["blocks"]), 2)
-        self.assertEqual(status["blocks"]["block1"], "configured")
-        self.assertEqual(status["blocks"]["block2"], "configured")
+        self.assertEqual(status["blocks"]["block1"]["status"], "configured")
+        self.assertEqual(status["blocks"]["block2"]["status"], "configured")
 
         service.do_start()
         # verify that statuses were updated
@@ -63,8 +63,8 @@ class TestBaseService(NIOTestCase):
         self.assertEqual(status["service"], "started")
         self.assertEqual(status["service_and_blocks"], "started")
         self.assertEqual(len(status["blocks"]), 2)
-        self.assertEqual(status["blocks"]["block1"], "started")
-        self.assertEqual(status["blocks"]["block2"], "started")
+        self.assertEqual(status["blocks"]["block1"]["status"], "started")
+        self.assertEqual(status["blocks"]["block2"]["status"], "started")
 
         self.assertEqual(len(service.blocks), 2)
 
@@ -77,8 +77,22 @@ class TestBaseService(NIOTestCase):
         self.assertEqual(status["service"], "stopped")
         self.assertEqual(status["service_and_blocks"], "stopped")
         self.assertEqual(len(status["blocks"]), 2)
-        self.assertEqual(status["blocks"]["block1"], "stopped")
-        self.assertEqual(status["blocks"]["block2"], "stopped")
+        self.assertEqual(status["blocks"]["block1"]["status"], "stopped")
+        self.assertEqual(status["blocks"]["block2"]["status"], "stopped")
+
+        # simulate a warning status
+        service.blocks["block1"].set_status('warning', "a warning msg")
+
+        status = service.full_status()
+        self.assertEqual(status["service"], "stopped")
+        self.assertIn("warning", status["service_and_blocks"])
+        self.assertIn("stopped", status["service_and_blocks"])
+        self.assertEqual(len(status["blocks"]), 2)
+        # assert block1 statuses
+        self.assertIn("warning", status["blocks"]["block1"]["status"])
+        self.assertIn("stopped", status["blocks"]["block1"]["status"])
+        self.assertEqual(status["blocks"]["block1"]["warning"], "a warning msg")
+        self.assertEqual(status["blocks"]["block2"]["status"], "stopped")
 
     def test_blocks_async(self):
         """ Makes sure blocks are started/stopped according to 'async' setting

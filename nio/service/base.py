@@ -283,8 +283,16 @@ class Service(PropertyHolder, CommandHolder, Runner):
         # create a dict for all blocks using block label as key
         blocks = {}
         for block_id in self._blocks:
-            blocks[self._blocks[block_id].label()] = \
-                self._blocks[block_id].status.name
+            block_status = {"status": self._blocks[block_id].status.name}
+            if self._blocks[block_id].status.is_set(RunnerStatus.warning):
+                block_status["warning"] = \
+                    self._blocks[block_id]._messages[RunnerStatus.warning]
+            if self._blocks[block_id].status.is_set(RunnerStatus.error):
+                block_status["error"] = \
+                    self._blocks[block_id]._messages[RunnerStatus.error]
+
+            blocks[self._blocks[block_id].label()] = block_status
+
         status["blocks"] = blocks
         return status
 
