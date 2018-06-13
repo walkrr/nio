@@ -3,6 +3,8 @@
 A block contains modular functionality to be used inside of Services. To create
 a custom block, extend this Block class and override the appropriate methods.
 """
+from collections import defaultdict
+
 from nio.block.context import BlockContext
 from nio.block.terminals import Terminal, TerminalType, input, output, \
     DEFAULT_TERMINAL
@@ -59,6 +61,7 @@ class Base(PropertyHolder, CommandHolder, Runner):
             self.__class__, TerminalType.input)
         self._default_output = Terminal.get_default_terminal_on_class(
             self.__class__, TerminalType.output)
+        self._messages = defaultdict(str)
 
     def configure(self, context):
         """Overrideable method to be called when the block configures.
@@ -177,8 +180,17 @@ class Base(PropertyHolder, CommandHolder, Runner):
         # Clear old error/warn status if a non-error/warn status is passed
         if status != RunnerStatus.error:
             self.status.remove(RunnerStatus.error)
+            if RunnerStatus.error in self._messages:
+                del self._messages[RunnerStatus.error]
+        else:
+            self._messages[RunnerStatus.error] = message
+
         if status != RunnerStatus.warning:
             self.status.remove(RunnerStatus.warning)
+            if RunnerStatus.warning in self._messages:
+                del self._messages[RunnerStatus.warning]
+        else:
+            self._messages[RunnerStatus.warning] = message
 
         if replace_existing:
             self.status.set(status)
