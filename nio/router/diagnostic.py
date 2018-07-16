@@ -38,7 +38,7 @@ class DiagnosticManager(Runner):
         super().start()
 
         # initialize collection start time
-        self._start_time = datetime.utcnow().timestamp()
+        self._start_time = self._create_timestamp()
         # create job to periodically send updates
         if self._interval > 0:
             self._job = \
@@ -64,7 +64,7 @@ class DiagnosticManager(Runner):
 
     def _send_diagnostic(self):
         with self._blocks_data_lock:
-            end_time = datetime.utcnow().timestamp()
+            end_time = self._create_timestamp()
             if self._blocks_data and self._mgmt_signal_handler:
                 blocks_data = []
                 for source_key, target_data in self._blocks_data.items():
@@ -97,6 +97,18 @@ class DiagnosticManager(Runner):
                 )
                 self._blocks_data.clear()
             self._start_time = end_time
+
+    @staticmethod
+    def _create_timestamp():
+        """ Creates a calculated UTC timestamp.
+
+        This is needed because datetime.utcnow().timestamp() does not
+        play nice with timezones, so we calculate it manually.
+
+        Returns:
+            timestamp
+        """
+        return (datetime.utcnow() - datetime(1970,1,1)).total_seconds()
 
     @staticmethod
     def _create_key(_type, name):
