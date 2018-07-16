@@ -1,5 +1,6 @@
 from threading import Event
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
+from datetime import datetime
 
 from nio.router.context import RouterContext
 from nio.router.diagnostic import DiagnosticManager
@@ -78,6 +79,18 @@ class TestDiagnostic(NIOTestCase):
                 raise ValueError("Invalid target")
 
         dm.do_stop()
+
+    def test_timestamp_creation(self):
+        dm = DiagnosticManager()
+
+        mock_now = datetime(1970,1,2)
+        mock_epoch = datetime(1970,1,1)
+        with patch('nio.router.diagnostic.datetime') as mock_dt:
+            mock_dt.utcnow.return_value = mock_now
+            mock_dt.return_value = mock_epoch
+            
+            ts = dm._create_timestamp()
+            self.assertEqual(ts, 86400)
 
     def test_times(self):
         """ Assert diagnostic start_time/end_time values.
