@@ -47,24 +47,40 @@ class Persistence(object):
         """
         self.logger.debug("Loading from persistence")
         # load whole item from persistence
-        item = self._persistence.load(self.id(), default={})
-        for persisted_var in self.persisted_values():
-            if persisted_var in item:
-                self.logger.debug("Loaded value {} for attribute {}".format(
-                    item[persisted_var], persisted_var))
-                # Set the loaded value to the attribute on this class
-                setattr(self, persisted_var, item[persisted_var])
+        data = self._persistence.load(self.id(), default={})
+        if not data:
+            return
+
+        try:
+            self.deserialize(data)
+        except NotImplementedError:
+            # allow backwards compatibility or persisted_values way
+            for persisted_var in self.persisted_values():
+                if persisted_var in data:
+                    self.logger.debug("Loaded value {} for attribute {}".format(
+                        data[persisted_var], persisted_var))
+                    # Set the loaded value to the attribute on this class
+                    setattr(self, persisted_var, data[persisted_var])
+        except:
+            # log exception while loading and let it continue
+            self.logger.exception(
+                "Failed to deserialize block with data: {}".format(data))
 
     def _save(self):
         """ Save the values to persistence
         """
         self.logger.debug("Saving to persistence")
-        # generate item to be persisted by gathering all variables
-        # to be persisted into a dictionary
-        item = {persisted_var: getattr(self, persisted_var)
-                for persisted_var in self.persisted_values()}
+        try:
+            data = self.serialize()
+        except NotImplementedError:
+            # allow backwards compatibility or persisted_values way
+            # generate item to be persisted by gathering all variables
+            # to be persisted into a dictionary
+            data = {persisted_var: getattr(self, persisted_var)
+                    for persisted_var in self.persisted_values()}
+
         # save generated dictionary under block's id
-        self._persistence.save(item, self.id())
+        self._persistence.save(data, self.id())
 
     def configure(self, context):
         super().configure(context)
@@ -88,3 +104,22 @@ class Persistence(object):
         # Do one last save before stopping
         self._save()
         super().stop()
+
+    def serialize(self):
+        """ Serializes block data
+
+        Block developer should override this method by saving data it expects
+        to have available next time the service is started
+
+        Note: 'deserialize' method will read this data and populate block
+        accordingly
+        """
+        raise NotImplementedError
+
+    def deserialize(self, data):
+        """ De-serializes block data
+
+        Block developer should override this method by parsing data in order
+        to populate block accordingly
+        """
+        raise NotImplementedError
