@@ -138,14 +138,14 @@ class SerializingBlock(Persistence, Block):
         self._attr3 = "attr3 default"
         self._not_to_be_saved = 'not_to_be_saved'
 
-    def serialize(self):
+    def persistence_serialize(self):
         """ Overridden to define what is persisted """
         return {
             "attr1": self._attr1,
             "attr2": self._attr2
         }
 
-    def deserialize(self, data):
+    def persistence_deserialize(self, data):
         """ Overridden to define what is loaded """
         self._attr1 = data["attr1"]
         self._attr2 = data["attr2"]
@@ -170,6 +170,10 @@ class TestSerialize(NIOBlockTestCase):
         block_id = "test_block1"
 
         self.configure_block(block, {"id": block_id})
+        # assert defaults meaning nothing was overwritten
+        self.assertEqual(block._attr1, "attr1 default")
+        self.assertEqual(block._attr2, "attr2 default")
+        self.assertEqual(block._attr3, "attr3 default")
         self.assertEqual(block._not_to_be_saved, "not_to_be_saved")
 
     def test_load_and_saves_properly(self):
@@ -213,3 +217,36 @@ class TestSerialize(NIOBlockTestCase):
         self.assertEqual(len(item), 2)
         self.assertEqual(item['attr1'], "new value")
         self.assertEqual(item['attr2'], 4)
+
+    def test_overriden(self):
+        """ Asserts warning when colliding functionality exists
+
+        When defining either serialize/deserialize and persisted_values, a
+        warning is issued since 'persisted_values' is ignored
+        """
+        block = SerializingBlock()
+
+        self.assertTrue(block._is_method_overridden("persistence_serialize"))
+        self.assertTrue(block._is_method_overridden("persistence_deserialize"))
+        self.assertTrue(block._is_method_overridden("persisted_values"))
+
+        block.logger = MagicMock()
+        self.assertEqual(block.logger.warning.call_count, 0)
+        block._warn_on_override("persistence_serialize", "persisted_values")
+        self.assertEqual(block.logger.warning.call_count, 1)
+        block._warn_on_override("persistence_deserialize", "persisted_values")
+        self.assertEqual(block.logger.warning.call_count, 2)
+
+        block = PersistingBlock()
+        self.assertFalse(block._is_method_overridden("persistence_serialize"))
+        self.assertFalse(block._is_method_overridden("persistence_deserialize"))
+        self.assertTrue(block._is_method_overridden("persisted_values"))
+
+        # assert no warnings since this is an old style block where
+        # serialize/deserialize methods are not defined
+        block.logger = MagicMock()
+        self.assertEqual(block.logger.warning.call_count, 0)
+        block._warn_on_override("persistence_serialize", "persisted_values")
+        self.assertEqual(block.logger.warning.call_count, 0)
+        block._warn_on_override("persistence_deserialize", "persisted_values")
+        self.assertEqual(block.logger.warning.call_count, 0)

@@ -23,6 +23,8 @@ class Persistence(object):
         super().__init__()
         self._persistence = None
         self._backup_job = None
+        self._warn_on_override("persistence_serialize", "persisted_values")
+        self._warn_on_override("persistence_deserialize", "persisted_values")
 
     def persisted_values(self):
         """ Return a list containing the values to be persisted.
@@ -52,7 +54,7 @@ class Persistence(object):
             return
 
         try:
-            self.deserialize(data)
+            self.persistence_deserialize(data)
         except NotImplementedError:
             # allow backwards compatibility or persisted_values way
             for persisted_var in self.persisted_values():
@@ -71,7 +73,7 @@ class Persistence(object):
         """
         self.logger.debug("Saving to persistence")
         try:
-            data = self.serialize()
+            data = self.persistence_serialize()
         except NotImplementedError:
             # allow backwards compatibility or persisted_values way
             # generate item to be persisted by gathering all variables
@@ -105,21 +107,45 @@ class Persistence(object):
         self._save()
         super().stop()
 
-    def serialize(self):
+    def persistence_serialize(self):
         """ Serializes block data
 
         Block developer should override this method by saving data it expects
         to have available next time the service is started
 
-        Note: 'deserialize' method will read this data and populate block
-        accordingly
+        Note: 'persistence_deserialize' method will read this data and
+        populate block accordingly
+
+        Returns: bytes or dict suitable for being persisted according to the
+        persistence module implementation (e.g., file system, redis)
         """
         raise NotImplementedError
 
-    def deserialize(self, data):
+    def persistence_deserialize(self, data):
         """ De-serializes block data
+
+        Args:
+          data: The persisted data this block saved previously.
 
         Block developer should override this method by parsing data in order
         to populate block accordingly
+
+        This method should take this persisted data and set the relevant
+        state or class attributes for the block.
+
         """
+
         raise NotImplementedError
+
+    def _is_method_overridden(self, method):
+        if method in Persistence.__dict__ and method in self.__class__.__dict__:
+            return \
+                Persistence.__dict__[method] != self.__class__.__dict__[method]
+        return False
+
+    def _warn_on_override(self, method1, method2):
+        if self._is_method_overridden(method1) and \
+                self._is_method_overridden(method2):
+            self.logger.warning(
+                "Detected an override of both methods: '{0}' and '{1}', "
+                "method: '{1}' will be ignored".format(method1, method2))

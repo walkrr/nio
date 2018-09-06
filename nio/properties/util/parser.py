@@ -77,7 +77,7 @@ class Parser:
         tok = match.group(0).split('$')
         result = tok[0]
         # add extra check for len(tok) for python37 compatibility
-        if not result and len(tok) > 1:
+        if not result:
             # grab the signal
             result = 'signal'
 
