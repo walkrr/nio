@@ -23,6 +23,8 @@ class Persistence(object):
         super().__init__()
         self._persistence = None
         self._backup_job = None
+        self._warn_on_override("persistence_serialize", "persisted_values")
+        self._warn_on_override("persistence_deserialize", "persisted_values")
 
     def persisted_values(self):
         """ Return a list containing the values to be persisted.
@@ -47,24 +49,40 @@ class Persistence(object):
         """
         self.logger.debug("Loading from persistence")
         # load whole item from persistence
-        item = self._persistence.load(self.id(), default={})
-        for persisted_var in self.persisted_values():
-            if persisted_var in item:
-                self.logger.debug("Loaded value {} for attribute {}".format(
-                    item[persisted_var], persisted_var))
-                # Set the loaded value to the attribute on this class
-                setattr(self, persisted_var, item[persisted_var])
+        data = self._persistence.load(self.id(), default={})
+        if not data:
+            return
+
+        try:
+            self.persistence_deserialize(data)
+        except NotImplementedError:
+            # allow backwards compatibility or persisted_values way
+            for persisted_var in self.persisted_values():
+                if persisted_var in data:
+                    self.logger.debug("Loaded value {} for attribute {}".format(
+                        data[persisted_var], persisted_var))
+                    # Set the loaded value to the attribute on this class
+                    setattr(self, persisted_var, data[persisted_var])
+        except:
+            # log exception while loading and let it continue
+            self.logger.exception(
+                "Failed to deserialize block with data: {}".format(data))
 
     def _save(self):
         """ Save the values to persistence
         """
         self.logger.debug("Saving to persistence")
-        # generate item to be persisted by gathering all variables
-        # to be persisted into a dictionary
-        item = {persisted_var: getattr(self, persisted_var)
-                for persisted_var in self.persisted_values()}
+        try:
+            data = self.persistence_serialize()
+        except NotImplementedError:
+            # allow backwards compatibility or persisted_values way
+            # generate item to be persisted by gathering all variables
+            # to be persisted into a dictionary
+            data = {persisted_var: getattr(self, persisted_var)
+                    for persisted_var in self.persisted_values()}
+
         # save generated dictionary under block's id
-        self._persistence.save(item, self.id())
+        self._persistence.save(data, self.id())
 
     def configure(self, context):
         super().configure(context)
@@ -88,3 +106,46 @@ class Persistence(object):
         # Do one last save before stopping
         self._save()
         super().stop()
+
+    def persistence_serialize(self):
+        """ Serializes block data
+
+        Block developer should override this method by saving data it expects
+        to have available next time the service is started
+
+        Note: 'persistence_deserialize' method will read this data and
+        populate block accordingly
+
+        Returns: bytes or dict suitable for being persisted according to the
+        persistence module implementation (e.g., file system, redis)
+        """
+        raise NotImplementedError
+
+    def persistence_deserialize(self, data):
+        """ De-serializes block data
+
+        Args:
+          data: The persisted data this block saved previously.
+
+        Block developer should override this method by parsing data in order
+        to populate block accordingly
+
+        This method should take this persisted data and set the relevant
+        state or class attributes for the block.
+
+        """
+
+        raise NotImplementedError
+
+    def _is_method_overridden(self, method):
+        if method in Persistence.__dict__ and method in self.__class__.__dict__:
+            return \
+                Persistence.__dict__[method] != self.__class__.__dict__[method]
+        return False
+
+    def _warn_on_override(self, method1, method2):
+        if self._is_method_overridden(method1) and \
+                self._is_method_overridden(method2):
+            self.logger.warning(
+                "Detected an override of both methods: '{0}' and '{1}', "
+                "method: '{1}' will be ignored".format(method1, method2))

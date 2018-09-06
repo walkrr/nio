@@ -76,6 +76,7 @@ class Parser:
     def _transform_attr(self, match):
         tok = match.group(0).split('$')
         result = tok[0]
+        # add extra check for len(tok) for python37 compatibility
         if not result:
             # grab the signal
             result = 'signal'
