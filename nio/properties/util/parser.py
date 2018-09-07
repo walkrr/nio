@@ -16,7 +16,7 @@ class Parser:
 
     """
     escaped = re.compile(r'\\(\$|{{|}})')
-    ident = re.compile(r'(?<!\\)\$([_A-Za-z]([_A-Za-z0-9])*)?|[^\$]*')
+    ident = re.compile(r'(?<!\\)\$([_A-Za-z]([_A-Za-z0-9])*)?')
     ident_stem = re.compile(r'[_a-zA-Z][_a-zA-Z0-9]*$')
 
     def parse(self, tokens):
@@ -74,16 +74,27 @@ class Parser:
         return match.group(0)[1:]
 
     def _transform_attr(self, match):
+        """ Method called from 'sub' to transform a match found by 'sub'
+
+        $ is the first character in match, and the rest of the match contains
+        what could match an identifier, the replacement is made with
+        a 'getattr' with the intention of grabbing the potential attribute
+        from the signal
+
+        Args:
+            match (Match): contains match found
+
+        Returns:
+            replacement string
+        """
+        # split by $ (special character for 'signal')
         tok = match.group(0).split('$')
-        result = tok[0]
-        # add extra check for len(tok) for python37 compatibility
-        if not result:
-            # grab the signal
+        # first item in list will be empty since first character in match was $
+        # and tok[1] will contain was is adjacent to it.
+        # for example $attr1 would split to ["$", "attr1"]
+        if self.ident_stem.match(tok[1]) is not None:
+            result = 'getattr(signal,"{0}")'.format(tok[1])
+        # otherwise just return the signal (substitute $ with signal)
+        else:
             result = 'signal'
-
-            # if the rest of the token is a valid identifier, generate code to
-            # get the corresponding attribute. otherwise just return the signal
-            if self.ident_stem.match(tok[1]) is not None:
-                result = 'getattr(signal,"{0}")'.format(tok[1])
-
         return result
