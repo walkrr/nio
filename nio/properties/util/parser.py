@@ -97,5 +97,4 @@ class Parser:
         # otherwise just return the signal (substitute $ with signal)
         else:
             result = 'signal'
-
         return result
