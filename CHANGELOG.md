@@ -1,7 +1,18 @@
 # Framework changelog
 
+## [3.1.2](https://github.com/niolabs/nio/tree/3.1.2) (2018-09-10)
+[Full Changelog](https://github.com/niolabs/nio/compare/3.1.1...3.1.2)
+
 ## [3.1.1](https://github.com/niolabs/nio/tree/3.1.1) (2018-07-17)
 [Full Changelog](https://github.com/niolabs/nio/compare/3.1.0...3.1.1)
+
+**Added:**
+
+- NIO-1125, adding block messages [\#136](https://github.com/niolabs/nio/pull/136) ([f1401martin](https://github.com/f1401martin))
+
+**Fixed bugs:**
+
+- Calculate a proper UTC timestamp [\#137](https://github.com/niolabs/nio/pull/137) ([tlugger](https://github.com/tlugger))
 
 ## [3.1.0](https://github.com/niolabs/nio/tree/3.1.0) (2018-06-11)
 [Full Changelog](https://github.com/niolabs/nio/compare/3.0...3.1.0)
