@@ -3,6 +3,14 @@
 ## [3.1.2](https://github.com/niolabs/nio/tree/3.1.2) (2018-09-10)
 [Full Changelog](https://github.com/niolabs/nio/compare/3.1.1...3.1.2)
 
+**Added:**
+
+- NIO-1177, adding new serialize/deserialize method to persistence mixin [\#141](https://github.com/niolabs/nio/pull/141) ([f1401martin](https://github.com/f1401martin))
+
+**Fixed bugs:**
+
+- NIO-1170, making unittests run under python37 [\#142](https://github.com/niolabs/nio/pull/142) ([f1401martin](https://github.com/f1401martin))
+
 ## [3.1.1](https://github.com/niolabs/nio/tree/3.1.1) (2018-07-17)
 [Full Changelog](https://github.com/niolabs/nio/compare/3.1.0...3.1.1)
 
