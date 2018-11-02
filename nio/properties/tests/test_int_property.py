@@ -1,11 +1,13 @@
 from nio.signal.base import Signal
 from nio.properties import IntProperty, PropertyHolder
+from nio.properties.exceptions import AllowNoneViolation
 from nio.testing.test_case import NIOTestCaseNoModules
 
 
 class ContainerClass(PropertyHolder):
     property = IntProperty(title="property")
     default = IntProperty(title="default", default=1)
+    none_is_allowed = IntProperty(title="default", default=1, allow_none=True)
 
 
 class TestIntProperty(NIOTestCaseNoModules):
@@ -33,3 +35,15 @@ class TestIntProperty(NIOTestCaseNoModules):
         container.property = "{{ $value }}"
         self.assertIsNotNone(container.property)
         self.assertEqual(container.property(Signal({'value': 42.1})), 42)
+
+    def test_allow_none(self):
+        container = ContainerClass()
+        container.none_is_allowed = "5"
+        self.assertEqual(container.none_is_allowed(), 5)
+        container.none_is_allowed = None
+        self.assertIsNone(container.none_is_allowed())
+        container.none_is_allowed = "{{ None }}"
+        self.assertIsNone(container.none_is_allowed())
+        with self.assertRaises(AllowNoneViolation):
+            container.property = None
+            container.property()
