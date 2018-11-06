@@ -3,7 +3,7 @@ from unittest.mock import Mock, patch
 from nio import Block
 from nio.properties.exceptions import AllowNoneViolation
 from nio.router.base import BlockRouter
-from nio.service.base import Service
+from nio.service.base import BlockException, Service
 from nio.service.context import ServiceContext
 from nio.signal.base import Signal
 from nio.testing.test_case import NIOTestCase
@@ -241,17 +241,32 @@ class TestBaseService(NIOTestCase):
 
     def test_failed_start(self):
         """Test service start failure"""
-        context = ServiceContext({"id": "TestFailedStart"},
-                                 [],
-                                 BlockRouter)
+        class Block1(Block):
+            pass
+
+
+        class Block2(Block):
+            pass
+
+
+        class TestException(Exception):
+            def __init__(self):
+                super().__init__("bad things")
 
         service = Service()
-        service.configure(context)
+        Block1.start = Mock()
+        Block2.start = Mock(side_effect=TestException)
+        blocks = [{"type": Block1,
+                   "properties": {"id": "block1"}},
+                  {"type": Block2,
+                   "properties": {"id": "block2"}}]
 
-        service.start = Mock(side_effect=Exception())
-        with self.assertRaises(Exception):
+        service.do_configure(ServiceContext(
+            properties={"id": "ServiceId"},
+            blocks=blocks,
+            block_router_type=BlockRouter,
+        ))
+        with self.assertRaises(BlockException) as context:
             service.do_start()
-
-        service.start.assert_called_once_with()
-        self.assertIn('error', str(service.status).split(', '))
-        service.stop()
+        self.assertEqual(context.exception.block_label, "block2")
+        self.assertIn("error", str(service.status).split(", "))

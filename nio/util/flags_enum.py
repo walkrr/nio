@@ -67,11 +67,14 @@ class FlagsEnum(object):
         if flag not in self._enum:
             raise InvalidFlag('set, Invalid flag')
 
-    def add(self, flag):
+    def add(self, flag, value=True):
         """ Adds a flag value to the current set of flags
 
         Args:
             flag (value within the enum): the flag to add
+            value: The optional value to set with the flag. Defaults to true
+                which indicates simply that the flag is set. This value must
+                be "truthy" in order for the flag to register
 
         Returns:
             None
@@ -87,11 +90,11 @@ class FlagsEnum(object):
 
             # save old status to send along with changed status
             old_status = copy.deepcopy(self)
-            self._flags[flag.name] = True
+            self._flags[flag.name] = value
             if self._status_change_callback:
                 self._status_change_callback(old_status, self)
 
-    def replace(self, old_flag, new_flag):
+    def replace(self, old_flag, new_flag, new_flag_value=True):
         self._validate_flag(old_flag)
         self._validate_flag(new_flag)
 
@@ -106,7 +109,7 @@ class FlagsEnum(object):
 
         # add new flag
         if not self._flags[new_flag.name]:
-            self._flags[new_flag.name] = True
+            self._flags[new_flag.name] = new_flag_value
             status_changed = True
 
         if status_changed and self._status_change_callback:
@@ -136,11 +139,14 @@ class FlagsEnum(object):
             if self._status_change_callback:
                 self._status_change_callback(old_status, self)
 
-    def set(self, flag):
+    def set(self, flag, value=True):
         """ Sets a flag, override any flags previously added
 
         Args:
             flag (value within the enum): the flag to set
+            value: The optional value to set with the flag. Defaults to true
+                which indicates simply that the flag is set. This value must
+                be "truthy" in order for the flag to register
 
         Returns:
             None
@@ -167,7 +173,7 @@ class FlagsEnum(object):
 
         # set intended flag if not already set
         if not self._flags[flag.name]:
-            self._flags[flag.name] = True
+            self._flags[flag.name] = value
             change_occurred = True
 
         if change_occurred and self._status_change_callback:
@@ -184,7 +190,11 @@ class FlagsEnum(object):
 
         """
         self._validate_flag(flag)
-        return self._flags[flag.name]
+        return bool(self._flags[flag.name])
+
+    def get_flag(self, flag):
+        """ Returns the value of a flag """
+        return self._flags.get(flag.name, False)
 
     def clear(self):
         """ Resets all possible flag values

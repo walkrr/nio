@@ -12,6 +12,17 @@ from nio.util.runner import Runner, RunnerStatus
 from nio.util.threading import spawn
 
 
+class BlockException(Exception):
+
+    """ Raised when a block fails to start, includes the block label.
+    """
+    def __init__(
+            self, *args, block_label="Unknown block", block_id=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.block_label = block_label
+        self.block_id = block_id
+
+
 class BlockExecution(PropertyHolder):
 
     """ An object containing a block and its receivers
@@ -112,7 +123,11 @@ class Service(PropertyHolder, CommandHolder, Runner):
             self._execute_on_blocks_async("do_start")
         else:
             for block in self._blocks.values():
-                block.do_start()
+                try:
+                    block.do_start()
+                except Exception as e:
+                    raise BlockException(
+                        e, block_label=block.label(), block_id=block.id())
 
     def stop(self):
         """Overrideable method to be called when the service stops.
@@ -148,10 +163,19 @@ class Service(PropertyHolder, CommandHolder, Runner):
         """
         threads = []
         for block in self._blocks.values():
-            threads.append(spawn(getattr(block, method)))
+            # no apparent way to retrieve block label from the thread object
+            threads.append({
+                "block": block,
+                "thread": spawn(getattr(block, method)),
+            })
 
         for thread in threads:
-            thread.join()
+            try:
+                thread["thread"].join()
+            except Exception as e:
+                block = thread["block"]
+                raise BlockException(
+                    e, block_label=block.label(), block_id=block.id())
 
     def configure(self, context):
         """Configure the service based on the context
@@ -195,16 +219,27 @@ class Service(PropertyHolder, CommandHolder, Runner):
                 # guarantee 'id' property is assigned to be able to reference
                 # id() property down below
                 block.id = block_context.properties["id"]
-                configure_threads.append(
-                    spawn(block.do_configure, block_context))
+                configure_threads.append({
+                    "block": block,
+                    "thread": spawn(block.do_configure, block_context),
+                })
             else:
-                block.do_configure(block_context)
+                try:
+                    block.do_configure(block_context)
+                except Exception as e:
+                    raise BlockException(
+                        e, block_label=block.label(), block_id=block.id())
             # register it
             self._blocks[block.id()] = block
         # if configuration was async, ensure they are all done
         if configure_threads:
             for thread in configure_threads:
-                thread.join()
+                try:
+                    thread["thread"].join()
+                except Exception as e:
+                    block = thread["block"]
+                    raise BlockException(
+                        e, block_label=block.label(), block_id=block.id())
 
         # populate router context and configure block router
         router_context = RouterContext(self.execution(),
