@@ -17,13 +17,19 @@ def get_user():
     In the chance that no current user is available, a 'Guest' user is returned
     """
     thread = threading.current_thread()
-    return getattr(thread, "user", User())
+    return getattr(thread, "user") if hasattr(thread, "user") else User()
 
 
 def set_user(user):
     """ Sets current user
     """
     setattr(threading.current_thread(), "user", user)
+
+
+def is_user_set():
+    """ Finds out if there is an active user
+    """
+    return hasattr(threading.current_thread(), "user")
 
 
 def clear_user():
