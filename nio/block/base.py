@@ -259,14 +259,52 @@ class Base(PropertyHolder, CommandHolder, Runner):
         This method will be called by the block router whenever signals
         are sent to the block. The method should not return the modified
         signals, but rather call `notify_signals` so that the router
-        can route them properly.
+        can route them properly. To return signals see the helper method
+        process_signal which acts on individual incoming signals.
 
         Args:
             signals (list): A list of signals to be processed by the block
             input_id: The identifier of the input terminal the signals are
                 being delivered to
         """
-        pass  # pragma: no cover
+        out_sigs = []
+        for signal in signals:
+            res = self.process_signal(signal, input_id)
+            # Ignore None values or falsey ones
+            if not res:
+                continue
+            if isinstance(res, Signal):
+                res = [res]
+            if not isinstance(res, list):
+                raise TypeError(
+                    "process_signal must return a Signal or list of Signals")
+            for out_sig in res:
+                if isinstance(out_sig, Signal):
+                    out_sigs.append(out_sig)
+        if out_sigs:
+            self.notify_signals(out_sigs)
+
+    def process_signal(self, signal, input_id=DEFAULT_TERMINAL):
+        """An optional helper method to process one signal at a time.
+
+        If your block only operates on one signal at a time it is often easier
+        to just implement the process_signal method, rather than the plural
+        process_signals. Implementing this method and not process_signals will
+        cause your block to keep incoming signal lists as outgoing signal lists
+        and allows you to return signals rather than notify them.
+        
+        You can still call notify_signals from this method but any signals you
+        return will be grouped into a list with the other returns from the
+        incoming list and notified as an outgoing list.
+
+        Args:
+            signal (Signal): An individual signal that this block is processing
+            input_id: The id of the input the signal came in on
+
+        Returns:
+            out (Signal): A signal or list of signals to notify from this block
+        """
+        pass
 
     @classmethod
     def get_description(cls):
