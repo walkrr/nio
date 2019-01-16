@@ -124,6 +124,58 @@ class TestBaseBlock(NIOTestCaseNoModules):
         with self.assertRaises(TypeError):
             blk.notify_signals(dict_signal, "default")
 
+    def test_process_signal(self):
+        """ Test that we can use the process_signal helper method """
+        blk = Block()
+        sig1 = Signal({'val': 1})
+        sig2 = Signal({'val': 2})
+        # process_signal will return one signal at a time
+        blk.process_signal = Mock(side_effect=[sig1, sig2])
+        with patch.object(blk, '_block_router') as router_patch:
+            # Incoming list of 2 signals is also an outgoing list of 2 signals
+            blk.process_signals([Signal(), Signal()])
+            router_patch.notify_signals.assert_called_once_with(
+                blk, [sig1, sig2], None)
+
+    def test_process_signal_bad_return(self):
+        """Test that we handle returns and exceptions from process_signal"""
+        blk = Block()
+        sig1 = Signal({'val': 1})
+        sig2 = Signal({'val': 2})
+        # process_signal will return one signal at a time
+        blk.process_signal = Mock(return_value=[sig1, sig2])
+        with patch.object(blk, '_block_router') as router_patch:
+            # Return a None value, no notify should get called
+            blk.process_signal = Mock(return_value=None)
+            blk.process_signals([Signal()])
+            self.assertEqual(router_patch.notify_signals.call_count, 0)
+            router_patch.notify_signals.reset_mock()
+
+            # Return a bad value, TypeError should raise
+            blk.process_signal = Mock(return_value="not a sig")
+            with self.assertRaises(TypeError):
+                blk.process_signals([Signal()])
+            self.assertEqual(router_patch.notify_signals.call_count, 0)
+            router_patch.notify_signals.reset_mock()
+
+            # Returning a list of signals is a-ok
+            blk.process_signal = Mock(return_value=[sig1, sig2])
+            # Even though only one signal goes in, our process_signal returns
+            # a list so two signals will come out
+            blk.process_signals([Signal()])
+            router_patch.notify_signals.assert_called_once_with(
+                blk, [sig1, sig2], None)
+            router_patch.notify_signals.reset_mock()
+
+            # Not every return must be a signal
+            blk.process_signal = Mock(side_effect=[sig1, None, sig2])
+            blk.process_signals([Signal(), Signal(), Signal()])
+            # 3 signals came in but only 2 process_signal calls were actual
+            # signals, so only 2 signals go out
+            router_patch.notify_signals.assert_called_once_with(
+                blk, [sig1, sig2], None)
+            router_patch.notify_signals.reset_mock()
+
     def test_add_to_status_with_helper(self):
         """ Test the block adds to its status with the helper method """
         mgmt_signal_handler = Mock()
