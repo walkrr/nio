@@ -9,7 +9,7 @@ When a block creates some new data based on an incoming signal there are a few d
 Include the `EnrichSignals` mixin in your block inheritance and then notify the results of `get_output_signal()`. 
 
 ```python
-from nio import Block, Signal
+from nio import Block
 from nio.block.mixins import EnrichSignals 
 
 class MyBlock(EnrichSignals, Block):
