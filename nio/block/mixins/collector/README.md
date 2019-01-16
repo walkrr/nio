@@ -8,7 +8,7 @@ The mixin adds a `collect` property to the block that determines how long to col
 
 ## Quick Usage
 
-Include the `Collector` mixin in your block and notify signals like normal:
+Include the `Collector` mixin in your block and notify signals like normal. The mixin will take care of performing the actual signal emission at the right time.
 
 ```python
 from nio import Block, Signal
