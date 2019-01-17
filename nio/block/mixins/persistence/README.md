@@ -32,7 +32,7 @@ The mixin will also add an advanced checkbox property called `load_from_persiste
 
 ## Simple Override
 
-The easiest way to make use of this mixin is to override the `persisted_values` method in your block. This method should return a list of the attributes of your block that you would like saved. Data from the block will be serialized and saved using the `[safepickle](https://github.com/niolabs/safepickle)` library. This library works well for simple data types. For more complex data saving see the [Custom Serialization section](#custom-serialization-override) below.
+The easiest way to make use of this mixin is to override the `persisted_values` method in your block. This method should return a list of the attributes of your block that you would like saved. Data from the block will be serialized and saved using the [`safepickle`](https://github.com/niolabs/safepickle) library. This library works well for simple data types. For more complex data saving see the [Custom Serialization section](#custom-serialization-override) below.
 
 ## Custom Serialization Override
 
