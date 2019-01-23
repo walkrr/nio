@@ -1,5 +1,8 @@
 # Framework changelog
 
+## [3.4.1](https://github.com/niolabs/nio/tree/3.4.1) (2019-01-23)
+[Full Changelog](https://github.com/niolabs/nio/compare/3.4.0...3.4.1)
+
 ## [3.4.0](https://github.com/niolabs/nio/tree/3.4.0) (2019-01-16)
 [Full Changelog](https://github.com/niolabs/nio/compare/3.3.0...3.4.0)
 
