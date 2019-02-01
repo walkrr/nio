@@ -1,4 +1,5 @@
 import inspect
+
 from collections import Iterable
 from copy import deepcopy
 
@@ -383,7 +384,5 @@ class BlockRouter(Runner):
                 # Only send the signals to the block, no input_id
                 block_receiver.block.process_signals(signals)
         except:
-            # TODO: define logic to set router back to normal
-            self.status.add(RunnerStatus.error)
             self.logger.exception("{}.process_signals failed".
                                   format(block_receiver.block.label()))

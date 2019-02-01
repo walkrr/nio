@@ -6,7 +6,6 @@ from nio.block.context import BlockContext
 from nio.block.terminals import DEFAULT_TERMINAL
 from nio.router.context import RouterContext
 from nio.service.base import BlockExecution
-from nio.testing.condition import ensure_condition
 from nio.testing.test_case import NIOTestCase
 from nio.util.runner import RunnerStatus
 
@@ -52,8 +51,8 @@ class TestThreadedRouter(NIOTestCase):
 
         # create context initialization data
         blocks = {
-            receiver_block.id():receiver_block,
-            sender_block.id():sender_block
+            receiver_block.id(): receiver_block,
+            sender_block.id(): sender_block
         }
         execution = [BlockExecutionTest(id=sender_block.id(),
                                         receivers=[receiver_block.id()])]
@@ -70,14 +69,11 @@ class TestThreadedRouter(NIOTestCase):
         with patch.object(block_router, "logger", new=logger_mock):
             self.assertFalse(logger_mock.exception.called)
             sender_block.process_signals(Signal({}))
-
-            # asynchronous routers need time to process signals
-            ensure_condition(self._router_in_status,
-                             block_router, RunnerStatus.error)
-            # assert that router status changed and an exception was logged
-            self.assertTrue(block_router.status.is_set(RunnerStatus.error))
+            # assert that an exception was logged
             self.assertTrue(logger_mock.exception.called)
 
+        # We should be able to safely send more signals - aka nothing died
+        sender_block.process_signals(Signal({}))
         block_router.do_stop()
 
     def _router_in_status(self, router, status):
