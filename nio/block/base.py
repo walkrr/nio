@@ -4,6 +4,7 @@ A block contains modular functionality to be used inside of Services. To create
 a custom block, extend this Block class and override the appropriate methods.
 """
 from collections import defaultdict
+from inspect import getargspec
 
 from nio.block.context import BlockContext
 from nio.block.terminals import Terminal, TerminalType, input, output, \
@@ -61,6 +62,8 @@ class Base(PropertyHolder, CommandHolder, Runner):
             self.__class__, TerminalType.input)
         self._default_output = Terminal.get_default_terminal_on_class(
             self.__class__, TerminalType.output)
+        self._process_signal_includes_input_id = \
+            len(getargspec(self.process_signal).args) == 3
         self._messages = defaultdict(str)
 
     def configure(self, context):
@@ -269,7 +272,12 @@ class Base(PropertyHolder, CommandHolder, Runner):
         """
         out_sigs = []
         for signal in signals:
-            res = self.process_signal(signal, input_id)
+            # Determine whether the process_signal method has an argument
+            # for input_id too, or if it's just signal
+            if self._process_signal_includes_input_id:
+                res = self.process_signal(signal, input_id)
+            else:
+                res = self.process_signal(signal)
             # Ignore None values or falsey ones
             if not res:
                 continue
