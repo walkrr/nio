@@ -131,11 +131,37 @@ class TestBaseBlock(NIOTestCaseNoModules):
         sig2 = Signal({'val': 2})
         # process_signal will return one signal at a time
         blk.process_signal = Mock(side_effect=[sig1, sig2])
+
         with patch.object(blk, '_block_router') as router_patch:
             # Incoming list of 2 signals is also an outgoing list of 2 signals
             blk.process_signals([Signal(), Signal()])
-            router_patch.notify_signals.assert_called_once_with(
-                blk, [sig1, sig2], None)
+        router_patch.notify_signals.assert_called_once_with(
+            blk, [sig1, sig2], None)
+
+    def test_process_signal_arguments(self):
+        """ Test that we can declare process_signal without input_id """
+        class ProcessSignalBlockTwoArgs(Block):
+            proc_sig_mock = Mock()
+
+            def process_signal(self, signal, input_id):
+                self.proc_sig_mock(signal, input_id)
+
+        class ProcessSignalBlockOneArg(Block):
+            proc_sig_mock = Mock()
+
+            def process_signal(self, signal):
+                self.proc_sig_mock(signal)
+
+        blk_two_args = ProcessSignalBlockTwoArgs()
+        blk_one_arg = ProcessSignalBlockOneArg()
+        sig = Signal()
+        with patch.object(blk_two_args, '_block_router'):
+            blk_two_args.process_signals([sig])
+        with patch.object(blk_one_arg, '_block_router'):
+            blk_one_arg.process_signals([sig])
+
+        blk_two_args.proc_sig_mock.assert_called_with(sig, DEFAULT_TERMINAL)
+        blk_one_arg.proc_sig_mock.assert_called_with(sig)
 
     def test_process_signal_bad_return(self):
         """Test that we handle returns and exceptions from process_signal"""
