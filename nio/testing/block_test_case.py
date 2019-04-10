@@ -47,7 +47,7 @@ class BlockRouterForTesting(BlockRouter):
 
         """
         if output_id is None:
-            output_id = DEFAULT_TERMINAL
+            output_id = block._default_output.id
 
         self._block_signal_counts[block] = \
             self._block_signal_counts.get(block) or defaultdict(int)
