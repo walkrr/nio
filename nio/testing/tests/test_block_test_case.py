@@ -2,7 +2,7 @@ from copy import copy
 from unittest.mock import patch
 
 from nio.block.base import Block
-from nio.block.terminals import DEFAULT_TERMINAL
+from nio.block.terminals import DEFAULT_TERMINAL, output
 from nio.signal.base import Signal
 from nio.signal.status import BlockStatusSignal
 from nio.util.runner import RunnerStatus
@@ -255,3 +255,27 @@ class TestBlockTestCase(NIOBlockTestCase):
         # second list, the notified signals should reset automatically
         b1.notify_signals([signal2, signal1], DEFAULT_TERMINAL)
         self.assert_last_signal_list_notified([signal2, signal1])
+
+    def test_block_default_output(self):
+        """ Tests that a block with a default output uses it by default """
+
+        @output('out1', default=True)
+        @output('out2')
+        class MyBlock(Block):
+            pass
+
+        blk = MyBlock()
+        self.configure_block(blk, {})
+        sig1, sig2, sig3 = (
+            Signal({'sig': 1}),
+            Signal({'sig': 2}),
+            Signal({'sig': 3}),
+        )
+        blk.notify_signals([sig1], 'out1')
+        self.assert_last_signal_notified(sig1, 'out1')
+        blk.notify_signals([sig2], 'out2')
+        self.assert_last_signal_notified(sig2, 'out2')
+        # Notify the last signal without any output ID, make sure the actual
+        # default terminal of the block is used
+        blk.notify_signals([sig3])
+        self.assert_last_signal_notified(sig3, 'out1')
