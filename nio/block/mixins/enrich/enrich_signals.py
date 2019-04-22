@@ -15,7 +15,7 @@ class EnrichSignals(object):
                             default=EnrichProperties(), order=100,
                             advanced=True)
 
-    def get_output_signal(self, signal_data, incoming_signal, copy=True):
+    def get_output_signal(self, signal_data, incoming_signal, copy=False):
         """ Get an output signal based on the block configuration.
 
         This method will return a single Signal that consists of the fields
