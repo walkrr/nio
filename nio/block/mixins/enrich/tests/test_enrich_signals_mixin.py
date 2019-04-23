@@ -43,6 +43,9 @@ class TestEnrichSignals(NIOBlockTestCase):
         self.assertEqual(out_sig.key1, 'val1')
         self.assertEqual(out_sig.key2, 'val2')
 
+        # the incoming signal was not copied
+        self.assertEqual(incoming_signal, out_sig)
+
     def test_signal_merge(self):
         """ Make sure we can add results to a new field on the signal """
         blk = EnrichingBlock()
@@ -86,28 +89,9 @@ class TestEnrichSignals(NIOBlockTestCase):
         self.assertEqual(out_sig.key1, 'val1')
         self.assertEqual(incoming_signal.key1, 'updated val1')
 
-    def test_no_copy(self):
-        """ Make sure that incoming signals can be copied """
-        blk = EnrichingBlock()
-        self.set_up_block(blk, False, 'results')
-        incoming_signal = Signal({
-            'key1': 'val1',
-            'key2': 'val2'
-        })
+        # the incoming signal was copied
+        self.assertNotEqual(incoming_signal, out_sig)
 
-        result_dict = {'a': 1, 'b': 2}
-        out_sig = blk.get_output_signal(result_dict, incoming_signal,
-                                        copy=False)
-
-        incoming_signal.key1 = 'updated val1'
-
-        # Both signals should have the results now
-        self.assertTrue(hasattr(out_sig, 'results'))
-        self.assertTrue(hasattr(incoming_signal, 'results'))
-
-        # The updated value should also afect our output signal
-        self.assertEqual(out_sig.key1, 'updated val1')
-        self.assertEqual(incoming_signal.key1, 'updated val1')
 
     def test_notified(self):
         """ Make sure we notify the signals properly """
