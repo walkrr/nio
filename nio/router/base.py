@@ -1,6 +1,10 @@
 import inspect
 
-from collections.abc import Iterable
+try:
+    from collections import Iterable
+except ImportError:
+    from collections.abc import Iterable
+    
 from copy import deepcopy
 
 from nio.router.diagnostic import DiagnosticManager
